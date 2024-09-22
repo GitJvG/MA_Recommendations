@@ -1,5 +1,3 @@
-import requests
-from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 import pandas as pd

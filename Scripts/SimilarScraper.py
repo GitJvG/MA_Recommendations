@@ -1,6 +1,4 @@
 import pandas as pd
-from bs4 import BeautifulSoup
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 from utils import load_cookies, update_metadata

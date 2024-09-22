@@ -1,4 +1,4 @@
-# incremental_scrape_recently_added.py
+# Incrementally updates MA_Bands
 import time
 import pandas as pd
 import requests
@@ -18,6 +18,8 @@ BANDSFILE = (os.getenv('BANDPAR'))
 BANDS = os.path.basename(BANDSFILE)
 existing_bands_df = pd.read_csv(BANDSFILE)
 cookies = load_cookies('Cookies.json')
+TEMPFILE = (os.getenv('TEMPID'))
+LYRICS = (os.getenv('BANLYR'))
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -100,14 +102,27 @@ def main():
     df['Band ID'] = df['Band URL'].apply(extract_url_id)
     new_records_df = df[df['Day'] >= last_scraped_day]
 
-    # Fetch the status for new/updated records
-    new_records_df['Status'] = new_records_df['Band URL'].apply(
-    lambda url: get_dt(url, "Status:", headers, cookies).get("Status:", None)
+    # Fetch the status & lyric themes for new/updated records
+    result_df = new_records_df['Band URL'].apply(
+        lambda url: pd.Series(get_dt(url, ["Status:", "Themes:"], headers, cookies))
     )
+    new_records_df['Status'] = result_df['Status:']
+
+    # Create a separate DataFrame for Themes
+    themes_df = new_records_df[['Band ID']].copy()
+    themes_df['Themes:'] = result_df['Themes:']
+
+    if os.path.exists(LYRICS): #Only export lyrics if file exists.
+        existing_df = pd.read_csv(LYRICS)
+    # Merge the existing data with the new data on 'Band ID'
+        merged_df = pd.concat([existing_df, themes_df]).drop_duplicates(subset='Band ID', keep='last')
+        merged_df.to_csv(LYRICS, index=False)
+
     new_records_df = new_records_df.drop(columns=['Date', 'Submitter', 'Day', 'MonthDay'])
 
     # Reorder the columns to match the existing CSV
     new_records_df = new_records_df[['Band URL', 'Band Name', 'Country', 'Genre', 'Status', 'Band ID']]
+    new_records_df[['Band ID', 'Band URL']].to_csv(TEMPFILE)
     # Remove duplicates based on Band ID (overwrite logic)
     for band_id in new_records_df['Band ID']:
         existing_bands_df = existing_bands_df[existing_bands_df['Band ID'] != band_id]

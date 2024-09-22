@@ -1,15 +1,12 @@
 #Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
 
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 from utils import load_cookies, update_metadata
 import os
 from dotenv import load_dotenv
-from HTML_Scraper import fetch, parse_table, extract_href, extract_text
+from HTML_Scraper import fetch, parse_table, extract_text
 
 load_dotenv()
 Master_Data = os.getenv('BANDPAR')
@@ -31,10 +28,6 @@ headers = {
 
 BASEURL = 'https://www.metal-archives.com/band/discography/id/'
 ENDURL = '/tab/all'
-ID = '75'
-FULLURL = BASEURL + ID + ENDURL
-
-html = fetch(FULLURL, 5, 0.05, cookies=cookies, headers=headers)
 
 def parse_html(html, band_id):
     """Parses album data from the provided HTML, including the band ID."""

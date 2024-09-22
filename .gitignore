@@ -1,9 +1,5 @@
 Cookies.json
 SQLpush.py
 __pycache__
-MA_Bands_R.csv
-MA_Bands.csv
-MA_Discog.csv
-MA_Lyrics.csv
-MA_Similar.csv
-metadata.csv
+Datasets/
+Devfile.py
