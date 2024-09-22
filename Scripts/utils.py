@@ -27,3 +27,14 @@ def update_metadata(data_filename):
 def load_cookies(file_path):
     with open(file_path, 'r') as file:
         return json.load(file)
+    
+def save_progress(data, output_file):
+    df = pd.DataFrame(data)
+    try:
+        if pd.read_csv(output_file).empty:
+            df.to_csv(output_file, mode='a', header=True, index=False)
+        else:
+            df.to_csv(output_file, mode='a', header=False, index=False)
+    except FileNotFoundError:
+        df.to_csv(output_file, mode='a', header=True, index=False)
+    print(f"Progress saved to {output_file}")

@@ -3,7 +3,7 @@
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
-from utils import load_cookies, update_metadata
+from utils import load_cookies, update_metadata, save_progress
 import os
 from dotenv import load_dotenv
 from HTML_Scraper import fetch, parse_table, extract_text
@@ -44,17 +44,6 @@ def parse_html(html, band_id):
         album['Band ID'] = band_id
         
     return albums
-
-def save_progress(data, output_file):
-    df = pd.DataFrame(data)
-    try:
-        if pd.read_csv(output_file).empty:
-            df.to_csv(output_file, mode='a', header=True, index=False)
-        else:
-            df.to_csv(output_file, mode='a', header=False, index=False)
-    except FileNotFoundError:
-        df.to_csv(output_file, mode='a', header=True, index=False)
-    print(f"Progress saved to {output_file}")
 
 def main():
     """Main function to process all band IDs."""

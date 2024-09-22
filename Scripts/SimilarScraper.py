@@ -1,7 +1,7 @@
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
-from utils import load_cookies, update_metadata
+from utils import load_cookies, update_metadata, save_progress
 import os
 from dotenv import load_dotenv
 from HTML_Scraper import fetch, extract_href, extract_text, parse_table  # Import your fetch function
@@ -35,18 +35,6 @@ def parse_similar_artists(html, band_id):
             result['Similar Artist ID'] = artist_url.split('/')[-1]
 
     return results
-
-def save_progress(data, output_file):
-    """Saves the progress of the scraping to a CSV file."""
-    df = pd.DataFrame(data)
-    try:
-        if pd.read_csv(output_file).empty:
-            df.to_csv(output_file, mode='a', header=True, index=False)
-        else:
-            df.to_csv(output_file, mode='a', header=False, index=False)
-    except FileNotFoundError:
-        df.to_csv(output_file, mode='a', header=True, index=False)
-    print(f"Progress saved to {output_file}")
 
 def process_band_id(band_id, delay_between_requests=0.1):
     """Processes a single band ID to fetch and parse similar artists."""

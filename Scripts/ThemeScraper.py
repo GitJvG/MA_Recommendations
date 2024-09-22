@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from HTML_Scraper import get_dt
-from utils import update_metadata
+from utils import update_metadata, save_progress
 
 # Load environment variables and setup cookies/headers
 load_dotenv()
@@ -27,22 +27,6 @@ data = pd.read_csv(Master_Data)
 processed = pd.read_csv(output_file) if os.path.exists(output_file) else pd.DataFrame()
 all_band_ids = data['Band ID'].tolist()
 processed_ids = processed['Band ID'].tolist() if not processed.empty else []
-
-def save_progress(data, output_file):
-    """Saves the progress of the scraping to a CSV file."""
-    df = pd.DataFrame(data)
-    try:
-        if df.empty:
-            print("No data to save.")
-            return
-        
-        if os.path.exists(output_file) and not processed.empty:
-            df.to_csv(output_file, mode='a', header=False, index=False)
-        else:
-            df.to_csv(output_file, mode='a', header=True, index=False)
-        print(f"Progress saved to {output_file}")
-    except Exception as e:
-        print(f"Error saving progress: {e}")
 
 def scrape_band_data(band_id, delay_between_requests=0.05):
     band_url = f'https://www.metal-archives.com/bands/id/{band_id}'

@@ -7,7 +7,7 @@ BandScraper.py and afterwards SimilarScraper.py"""
 from Scripts.BandUpdtr import main as Band 
 from Scripts.SimilarScraper import main as Sim 
 
-Band() #Updates MA_Bands.csv
+Band() #Updates MA_Bands.csv and MA_Lyrics.csv
 Sim() #Checks for changes in MA_Bands and scrapes the pages of new/changed bands.
 try:
     from SQLpush import main as push
