@@ -1,7 +1,7 @@
 # Metal-Archives Scraper
 
 ## Overview
-This project contains a collection of scripts designed to scrape various parts of the Metal-Archives (MA) website. Each script targets specific sections of the website, and although the current setup is still evolving, the aim is to synchronize all datasets before merging scripts to simplify the process.
+This project contains a collection of scripts designed to scrape various parts of the Metal-Archives (MA) website. The aim is to create a wrapper script that can scrape and parse just about anything from MA. 
 
 ## Working Scrapers and Parsers
 
