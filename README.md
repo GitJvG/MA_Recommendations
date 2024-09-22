@@ -1,25 +1,61 @@
-Metal-archives scraper and datasets.
+# Metal-Archives Scraper
 
-Datasets: Currently only contains the full dump of bands as of September 18th 2024.
+## Overview
+This project contains a collection of scripts designed to scrape various parts of the Metal-Archives (MA) website. The aim is to create a wrapper script that can scrape and parse just about anything from MA. 
 
-Scripts: Currently only contains a scraper and parser for bands. It takes about 30 minutes to scrape the full dataset.
+## Working Scrapers and Parsers
 
-In progress:
+- **BandScraper/BandParser → `MA_Bands`**:  
+  Scrapes data for:
+  - Band URL
+  - Band Name
+  - Country
+  - Genre
+  - Status
+  - Band ID
 
--Similar artists scraper
+- **SimilarScraper → `MA_Similar`**:  
+  Scrapes data for:
+  - Band URL
+  - Similar Band ID
+  - Similarity Score
+  - Band ID
 
--Similar artists dataset
+- **AlbumScraper → `MA_Discog`**:  
+  Scrapes data for:
+  - Album Name
+  - Type
+  - Year
+  - Number of Reviews
+  - Band ID
 
--SQL database
+- **ThemeScraper → `MA_Lyrics`**:  
+  Scrapes data for:
+  - Lyrical Themes
+  - Band ID
 
-Future goals:
+## Supporting Scripts
 
--Scrapers & datasets for other metal archiving websites
+- **BandUpdtr**:  
+  Updates `MA_Bands` incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new bands from the recently added page on Metal-Archives.
 
--Scraper & datasets for other information such as discography and reviews
+- **HTML_Scraper**:  
+  Contains utility functions for fetching and parsing HTML content that can be reused across various scrapers.
 
--Scripts to realize incremental updates
+- **utils**:  
+  A collection of basic utility functions.
 
-Future future goals:
+## In Progress
 
--Band & Album recommendation algorithm based on datasets and user profile/input
+- **Wrapping Script**:  
+  A unified script that combines the functionality of individual scrapers for more streamlined data collection.
+
+- **Dataset Updates**:  
+  Bringing all scraped datasets up to date and making them available for use.
+
+- **Improving Incremental Updates**:  
+  Enhancing the incremental updating script for better efficiency and accuracy.
+
+- **Project structure**:  
+  Merging similar scripts, reducing the required amount of fetches and modularizing duplicate code.
+
