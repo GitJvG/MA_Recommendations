@@ -56,3 +56,6 @@ This project contains a collection of scripts designed to scrape various parts o
 - **Improving Incremental Updates**:  
   Enhancing the incremental updating script for better efficiency and accuracy.
 
+- **Project structure**:  
+  Merging similar scripts, reducing the required amount of fetches and modularizing duplicate code.
+
