@@ -1,24 +1,25 @@
 import pandas as pd
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Lock
-from utils import load_cookies, update_metadata
+from utils import load_config, update_metadata, process_band_ids
 import os
 from dotenv import load_dotenv
 from HTML_Scraper import fetch, extract_href, extract_text, parse_table  # Import your fetch function
 
 # Load environment variables
-load_dotenv()
+load_dotenv(".env", override=True)
 Master_Data = os.getenv('BANDPAR')
 output_file = os.getenv('SIMBAN')
+TEMPFILE = os.getenv('TEMPID')
 
 # Load band data
 data = pd.read_csv(Master_Data)
 processed = pd.read_csv(output_file)
+TEMPDF = pd.read_csv(TEMPFILE)
 all_band_ids = data['Band ID'].tolist()
 processed = processed['Band ID'].tolist()
 
 # Load cookies
-cookies = load_cookies("Cookies.json")
+COOKIES = load_config('Cookies')
+HEADERS = load_config('Headers')
 
 def parse_similar_artists(html, band_id):
     """Parses similar artists from the provided HTML."""
@@ -36,68 +37,34 @@ def parse_similar_artists(html, band_id):
 
     return results
 
-def save_progress(data, output_file):
-    """Saves the progress of the scraping to a CSV file."""
-    df = pd.DataFrame(data)
-    try:
-        if pd.read_csv(output_file).empty:
-            df.to_csv(output_file, mode='a', header=True, index=False)
-        else:
-            df.to_csv(output_file, mode='a', header=False, index=False)
-    except FileNotFoundError:
-        df.to_csv(output_file, mode='a', header=True, index=False)
-    print(f"Progress saved to {output_file}")
-
-def process_band_id(band_id, delay_between_requests=0.1):
-    """Processes a single band ID to fetch and parse similar artists."""
+def scrape_band_data(band_id, **kwargs):
+    delay_between_requests = kwargs.get('delay_between_requests', 0.1)
     # Define the URL
     url = f'https://www.metal-archives.com/band/ajax-recommendations/id/{band_id}'
-    html_content = fetch(url, retries=5, delay_between_requests=delay_between_requests, cookies=cookies)
+    html_content = fetch(url, retries=5, delay_between_requests=delay_between_requests, cookies=COOKIES, headers=HEADERS)
 
     if html_content:
+        if "No similar artist has been recommended yet" in html_content:
+            return pd.DataFrame(columns=['Artist URL', 'Similar Artist ID', 'Score', 'Band ID'])  # Return an empty DataFrame with the correct columns
         similar_artists = parse_similar_artists(html_content, band_id)
-        return similar_artists
-    return []
+        df = pd.DataFrame(similar_artists)[['Artist URL', 'Similar Artist ID', 'Score', 'Band ID']]
+        return df
+    return pd.DataFrame(columns=['Artist URL', 'Similar Artist ID', 'Score', 'Band ID'])
 
+
+def refresh():
+    band_ids_to_process = [band_id for band_id in TEMPDF['Band ID'].tolist()]
+    print(f"Total bands to process: {len(band_ids_to_process)}")
+    process_band_ids(band_ids_to_process, 200, output_file, scrape_band_data, delay_between_requests=0.05)
+    update_metadata(os.path.basename(output_file))
+    print("Metadata updated.")
+    
 def main():
     """Main function to process all band IDs."""
     processed_set = set(processed)
     band_ids_to_process = [band_id for band_id in all_band_ids if band_id not in processed_set]
     print(f"Total bands to process: {len(band_ids_to_process)}")
-
-    all_similar_artists = []
-    processed_count = 0
-    batch_size = 200 
-
-    lock = Lock()
-
-    def update_processed_count():
-        nonlocal processed_count
-        with lock:
-            processed_count += 1
-            print(f"Processed {processed_count} band IDs.")
-    
-    # Use ThreadPoolExecutor to process band IDs concurrently
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        future_to_band_id = {executor.submit(process_band_id, band_id, delay_between_requests=0.15): band_id for band_id in band_ids_to_process}
-
-        for future in as_completed(future_to_band_id):
-            band_id = future_to_band_id[future]
-            try:
-                similar_artists = future.result()
-                if similar_artists:
-                    all_similar_artists.extend(similar_artists)
-                    update_processed_count()
-                    if processed_count % batch_size == 0:
-                        save_progress(all_similar_artists, output_file)
-                        all_similar_artists.clear()
-            except Exception as e:
-                print(f"Error processing band ID {band_id}: {e}")
-
-    # Save any remaining data after processing
-    if all_similar_artists:
-        save_progress(all_similar_artists, output_file)
-    
+    process_band_ids(band_ids_to_process, 200, output_file, scrape_band_data, delay_between_requests=0.05)
     update_metadata(os.path.basename(output_file))
     print("Metadata updated.")
 

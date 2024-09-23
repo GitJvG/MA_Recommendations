@@ -5,7 +5,7 @@ import json
 import pandas as pd
 from Scripts.utils import update_metadata
 from BandParser import parse
-from utils import load_cookies
+from utils import load_config
 import os
 from dotenv import load_dotenv
 
@@ -16,25 +16,19 @@ RELURL = '/browse/ajax-letter/json/1/l/'
 length = 500  # max number of bands in a single view
 
 # Load environment variables
-raw_dump = os.getenv('BANDRAW')
-parsed_dump = os.getenv('BANDPAR')
+RAW = os.getenv('BANDRAW')
+PARSED = os.getenv('BANDPAR')
+COOKIES = load_config('Cookies')
+HEADERS = load_config('Headers')
 
-# Load cookies from json to bypass cloudflare
-cookies = load_cookies('Cookies.json')
-
-# Set headers
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
-}
-
-def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(), raw_dump=None, parsed_dump=None):
+def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(), raw_destination=None, parsed_destination=None):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,  # if not set, response text is not valid JSON
             'iDisplayStart': start,  # set start index of band names returned
             'iDisplayLength': length  # only response lengths of 500 work
         }
-        r = requests.get(BASEURL + RELURL + letter, params=payload, headers=headers, cookies=cookies)
+        r = requests.get(BASEURL + RELURL + letter, params=payload, headers=HEADERS, cookies=COOKIES)
         return r
 
     # Data columns returned in the JSON object
@@ -74,16 +68,16 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
     data.columns = column_names
     data.index = range(len(data))
 
-    print('Writing band data to csv file:', raw_dump)
-    data.to_csv(raw_dump, index=False)
+    print('Writing band data to csv file:', raw_destination)
+    data.to_csv(raw_destination, index=False)
     print('Updating Metadata')
-    update_metadata(os.path.basename(raw_dump))
+    update_metadata(os.path.basename(raw_destination))
     print('Parsing')
-    parse(parsed_dump, pd.read_csv(raw_dump))
+    parse(parsed_destination, pd.read_csv(raw_destination))
     print('Updating Metadata')
-    update_metadata(os.path.basename(parsed_dump))
+    update_metadata(os.path.basename(parsed_destination))
     print('Done!')
 
 # Call the function
 if __name__ == "__main__":
-    scrape_bands(raw_dump=raw_dump, parsed_dump=parsed_dump)
+    scrape_bands(raw_destination=RAW, parsed_destination=PARSED)
