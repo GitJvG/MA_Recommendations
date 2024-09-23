@@ -1,9 +1,7 @@
 #Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
 
 import pandas as pd
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Lock
-from utils import load_cookies, update_metadata, save_progress
+from utils import load_config, update_metadata, process_band_ids
 import os
 from dotenv import load_dotenv
 from HTML_Scraper import fetch, parse_table, extract_text
@@ -15,16 +13,9 @@ data = pd.read_csv(Master_Data)
 processed = pd.read_csv(output_file)
 all_band_ids = data['Band ID'].tolist()
 processed = processed['Band ID'].tolist()
-
-
-cookies = load_cookies("Cookies.json")
-
-headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive'
-    }
+cookies = load_config('Cookies')
+headers = load_config('Headers')
+temp_file = os.getenv('TEMPID')
 
 BASEURL = 'https://www.metal-archives.com/band/discography/id/'
 ENDURL = '/tab/all'
@@ -38,57 +29,41 @@ def parse_html(html, band_id):
         {'key': 'Reviews', 'extractor': extract_text},
     ]
     albums = parse_table(html, table_class='display discog', row_selector='tr', column_extractors=column_extractors)
-    
-    # Add the band ID to each album entry
-    for album in albums:
-        album['Band ID'] = band_id
-        
-    return albums
+
+    # Convert to DataFrame and add Band ID
+    df_albums = pd.DataFrame(albums)
+    df_albums['Band ID'] = band_id
+    return df_albums
+
+def fetch_album_data(band_id, **kwargs):
+    """Fetches album data for a given band ID and returns it as a DataFrame."""
+    delay_between_requests = kwargs.get('delay_between_requests', 0.1)
+    cookies = kwargs.get('cookies', None)
+    headers = kwargs.get('headers', None)
+    url = f"{BASEURL}{band_id}{ENDURL}"
+    html_content = fetch(url, retries=5, delay_between_requests=delay_between_requests, cookies=cookies, headers=headers)
+
+    if html_content:
+        return parse_html(html_content, band_id)[['Album Name', 'Type', 'Year', 'Reviews', 'Band ID']]
+    return pd.DataFrame(columns=['Album Name', 'Type', 'Year', 'Reviews', 'Band ID'])
+
+def refresh():
+    """Refreshes the data using band IDs from the temporary file."""
+    temp_data = pd.read_csv(temp_file)
+    band_ids_to_process = temp_data['Band ID'].tolist()
+
+    print(f"Total bands to refresh: {len(band_ids_to_process)}")
+    process_band_ids(band_ids_to_process, 200, output_file, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
+    update_metadata(os.path.basename(output_file))
+    print("Metadata updated.")
 
 def main():
     """Main function to process all band IDs."""
     processed_set = set(processed)
     band_ids_to_process = [band_id for band_id in all_band_ids if band_id not in processed_set]
+    
     print(f"Total bands to process: {len(band_ids_to_process)}")
-
-    all_album_data = []
-    processed_count = 0
-    batch_size = 200 
-
-    lock = Lock()
-
-    def update_processed_count():
-        nonlocal processed_count
-        with lock:
-            processed_count += 1
-            print(f"Processed {processed_count} band IDs.")
-    
-    # Use ThreadPoolExecutor to process band IDs concurrently
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        future_to_band_id = {
-            executor.submit(fetch, f"{BASEURL}{band_id}{ENDURL}", 5, 0.05, cookies=cookies, headers=headers): band_id
-            for band_id in band_ids_to_process
-        }
-
-        for future in as_completed(future_to_band_id):
-            band_id = future_to_band_id[future]
-            try:
-                html_content = future.result()  # Get the fetched HTML content
-                if html_content:
-                    album_data = parse_html(html_content, band_id)  # Parse the HTML for album data
-                    if album_data:
-                        all_album_data.extend(album_data)
-                        update_processed_count()
-                        if processed_count % batch_size == 0:
-                            save_progress(all_album_data, output_file)
-                            all_album_data.clear()
-            except Exception as e:
-                print(f"Error processing band ID {band_id}: {e}")
-
-    # Save any remaining data after processing
-    if all_album_data:
-        save_progress(all_album_data, output_file)
-    
+    process_band_ids(band_ids_to_process, 200, output_file, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
     update_metadata(os.path.basename(output_file))
     print("Metadata updated.")
 

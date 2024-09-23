@@ -3,14 +3,6 @@ import time
 from bs4 import BeautifulSoup
 
 def fetch(url, retries=5, delay_between_requests=0.05, cookies=None, headers=None):
-    if not headers:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive'
-        }
-
     for attempt in range(retries):
         try:
             response = requests.get(url, headers=headers, cookies=cookies)
