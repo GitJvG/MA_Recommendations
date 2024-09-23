@@ -41,12 +41,12 @@ This project contains a collection of scripts designed to scrape various parts o
 ## Supporting Scripts
 
 - **Refresh**:  
-  Updates all final datasets incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new 
-  bands from the recently added page on Metal-Archives.
-  -NOTE: Something doesn't work properly which causes duplicates. For the time being I've added a duplicates removing 
-  function at the end, this is only a temporary fix.
-  -NOTE: This script only checks the first recently added page on Metal-Archives. For this reason datasets should be kept up 
-  to date as incremental updates won't see changes made longer than 3~5 days ago. I'll work on this eventually.
+  Updates all final datasets incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new bands from the recently added page on Metal-Archives.
+
+  **NOTES**:  
+  - Something doesn't work properly, which causes duplicates. For the time being, I've added a duplicates removal function at the end. This is only a temporary fix.
+  - This script only checks the first recently added page on Metal-Archives. For this reason, datasets should be kept up to date, as incremental updates won't capture changes made more than 3-5 days ago. I'll work on improving this eventually.
+
 
 - **HTML_Scraper & utils**:  
   A collection of basic utility functions and functions for fetching and parsing HTML content.
