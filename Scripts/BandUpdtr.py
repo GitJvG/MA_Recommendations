@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 from bs4 import BeautifulSoup
 from HTML_Scraper import get_dt
-from utils import update_metadata, load_config, replace_records
+from utils import update_metadata, load_config, save_progress
 
 load_dotenv(".env", override=True)
 
@@ -15,8 +15,6 @@ load_dotenv(".env", override=True)
 URL = 'https://www.metal-archives.com/archives/ajax-band-list/by/created/json/1/1/'
 METADATA_FILE = os.getenv('METADATA')
 BANDSFILE = (os.getenv('BANDPAR'))
-BANDS = os.path.basename(BANDSFILE)
-existing_bands_df = pd.read_csv(BANDSFILE)
 COOKIES = load_config('Cookies')
 HEADERS = load_config('Headers')
 TEMPFILE = (os.getenv('TEMPID'))
@@ -78,7 +76,7 @@ def clean_html_column(column):
 
 def main():
     #Main function to fetch, filter, and display recently added bands.
-    last_scraped_day = get_scrape_day(METADATA_FILE, BANDS)
+    last_scraped_day = get_scrape_day(METADATA_FILE, os.path.basename(BANDSFILE))
     print(f"Last scraped day: {last_scraped_day}")
 
     # Fetch new data
@@ -103,29 +101,21 @@ def main():
     themes_df = new_records_df[['Band ID']].copy()
     themes_df['Themes:'] = result_df['Themes:']
 
-    if os.path.exists(LYRICS): #Only export lyrics if file exists.
-        existing_df = pd.read_csv(LYRICS)
-    # Merge the existing data with the new data on 'Band ID'
-        merged_df = replace_records(existing_df, themes_df, 'Band ID')
-        merged_df.to_csv(LYRICS, index=False)
+    save_progress(themes_df, LYRICS)
 
     new_records_df = new_records_df.drop(columns=['Date', 'Submitter', 'Day', 'MonthDay'])
 
     # Reorder the columns to match the existing CSV
     new_records_df = new_records_df[['Band URL', 'Band Name', 'Country', 'Genre', 'Status', 'Band ID']]
     new_records_df[['Band ID', 'Band URL']].to_csv(TEMPFILE, index=False)
-    # Remove duplicates based on Band ID (overwrite logic)
-    updated_bands_df = replace_records(existing_bands_df, new_records_df, 'Band ID')
 
     # Print and save new records
     if not new_records_df.empty:
         print("New records added since last scrape (no duplicates):")
-        updated_bands_df.to_csv(BANDSFILE, index=False)
+        save_progress(new_records_df, BANDSFILE)
     else:
         print("No new records added since last scrape or no new unique records.")
-
-    print('Updating Metadata')
-    update_metadata(os.path.basename(BANDS))
+    update_metadata(os.path.basename(BANDSFILE))
     print('Done!')
 if __name__ == "__main__":
     main()

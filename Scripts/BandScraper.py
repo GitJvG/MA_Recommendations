@@ -68,13 +68,8 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
     data.columns = column_names
     data.index = range(len(data))
 
-    print('Writing band data to csv file:', raw_destination)
-    data.to_csv(raw_destination, index=False)
-    print('Updating Metadata')
-    update_metadata(os.path.basename(raw_destination))
     print('Parsing')
     parse(parsed_destination, pd.read_csv(raw_destination))
-    print('Updating Metadata')
     update_metadata(os.path.basename(parsed_destination))
     print('Done!')
 
