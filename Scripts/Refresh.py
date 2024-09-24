@@ -1,8 +1,4 @@
-"""Just a lazy shorcut to execute incremental refreshes
-
-If the dataset hasn't been refreshed in ~3-4 days
-it may be better to do a full clean scrape using 
-BandScraper.py and afterwards SimilarScraper.py"""
+"""Incremental updater is only based on day number as of now, this will be updated later. Should work fine for the rest of the current month."""
 
 from dotenv import load_dotenv
 import os

@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from HTML_Scraper import get_dt
 from utils import load_config, process_band_ids
 
-# Load environment variables and setup cookies/headers
 load_dotenv()
 cookies = load_config('Cookies')
 headers = load_config('Headers')
@@ -14,8 +13,7 @@ data = pd.read_csv(Master_Data)
 processed = pd.read_csv(output_file) if os.path.exists(output_file) else pd.DataFrame()
 all_band_ids = data['Band ID'].tolist()
 processed_ids = processed['Band ID'].tolist() if not processed.empty else []
-TEMPFILE = os.getenv('TEMPID')
-TEMPDF = pd.read_csv(TEMPFILE)
+TEMPDF = pd.read_csv(os.getenv('TEMPID'))
 
 def scrape_band_data(band_id, **kwargs):
     delay_between_requests = kwargs.get('delay_between_requests', 0.1)
