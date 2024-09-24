@@ -1,4 +1,4 @@
-# Incrementally updates MA_Bands
+# Incrementally updates MA_Bands & MA_Lyrics
 import time
 import pandas as pd
 import requests
@@ -7,16 +7,15 @@ from dotenv import load_dotenv
 import os
 from bs4 import BeautifulSoup
 from HTML_Scraper import get_dt
-from utils import update_metadata, load_config, replace_records
+from utils import load_config, save_progress
 
 load_dotenv(".env", override=True)
 
 # Constants
-URL = 'https://www.metal-archives.com/archives/ajax-band-list/by/created/json/1/1/'
+URL_ADDED = 'https://www.metal-archives.com/archives/ajax-band-list/by/created/'
+URL_MODIFIED = 'https://www.metal-archives.com/archives/ajax-band-list/by/modified/'
 METADATA_FILE = os.getenv('METADATA')
 BANDSFILE = (os.getenv('BANDPAR'))
-BANDS = os.path.basename(BANDSFILE)
-existing_bands_df = pd.read_csv(BANDSFILE)
 COOKIES = load_config('Cookies')
 HEADERS = load_config('Headers')
 TEMPFILE = (os.getenv('TEMPID'))
@@ -24,33 +23,27 @@ LYRICS = (os.getenv('BANLYR'))
 
 def extract_url_id(url):
     return url.split('/')[-1]
-    
+
 def get_scrape_day(file_path, filename):
-    #Load the last scraped date for a specific file from the metadata CSV and return the day of the month.
+    # Load the last scraped date for a specific file from the metadata CSV and return the day of the month.
     try:
-        df = pd.read_csv(file_path)      
-        # Find the row where the Filename matches the provided filename
+        df = pd.read_csv(file_path)
         file_info = df[df['Filename'] == filename]
-        
         if not file_info.empty:
-            # Extract the date string
             date_str = file_info.iloc[0]['Date']
             date = datetime.strptime(date_str, '%Y-%m-%d')
             return date.day
-    
     except Exception as e:
         print(f"Error: {e}")
-    
-    # Return a default day if not found (Refreshes all bands on the page with 0)
-    return 0
+    return 0  # Default day (refreshes all bands on the page with 0)
 
-def get_recently_added_page(length=550, total=550, sEcho=1):
-    #Fetch all recently added bands in a single request.
+def fetch_bands_page(url, length=200, start=0, sEcho=1):
+    # Generalized function to fetch bands data (either 'added' or 'modified')
     payload = {
         'sEcho': sEcho,
         'iColumns': 6,
         'sColumns': '',
-        'iDisplayStart': 0,
+        'iDisplayStart': start,
         'iDisplayLength': length,
         'mDataProp_0': 0,
         'mDataProp_1': 1,
@@ -67,65 +60,105 @@ def get_recently_added_page(length=550, total=550, sEcho=1):
         'bSortable_3': True,
         'bSortable_4': True,
         'bSortable_5': True,
-        '_': int(time.time() * 1000)  # Use current timestamp for the request
+        '_': int(time.time() * 1000)  # Use current timestamp
     }
-    r = requests.get(URL, params=payload, headers=HEADERS, cookies=COOKIES)
-    print("Response Status Code:", r.status_code)
+    r = requests.get(url, params=payload, headers=HEADERS, cookies=COOKIES)
+    print(f"Response Status Code: {r.status_code}")
     return r.json()
 
 def clean_html_column(column):
     return column.apply(lambda x: BeautifulSoup(x, 'html.parser').get_text())
 
-def main():
-    #Main function to fetch, filter, and display recently added bands.
-    last_scraped_day = get_scrape_day(METADATA_FILE, BANDS)
-    print(f"Last scraped day: {last_scraped_day}")
+def display_bands_until_last_scraped_day(url, rows_per_page=200):
+    """Generalized function to fetch bands (added/modified) until the last scraped day."""
 
-    # Fetch new data
-    data = get_recently_added_page()
-    records = data.get('aaData', [])
+    last_scraped_day = get_scrape_day(METADATA_FILE, os.path.basename(BANDSFILE))
+    print(f"Last scraped day from metadata: {last_scraped_day}")
+    
+    page = 1
+    scrape_more = True
+    all_records = []
 
-    # Convert to DataFrame
-    df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date', 'Submitter'])
-    df[['Country', 'Genre', 'Band Name']] = df[['Country', 'Genre', 'Band URL']].apply(clean_html_column)
-    df['Band URL'] = df['Band URL'].apply(lambda x: BeautifulSoup(x, 'html.parser').find('a')['href'])
-    df['Day'] = df['MonthDay'].str.extract(r'(\d{1,2})').astype(int)
+    while scrape_more:
+        start_index = (page - 1) * rows_per_page
+        data = fetch_bands_page(url, length=rows_per_page, start=start_index)
+        records = data.get('aaData', [])
+
+        if not records:
+            print(f"No more records found on page {page}.")
+            break
+        
+        # Convert the records to a DataFrame and clean the HTML content
+        df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date', 'Submitter'])
+        df[['Country', 'Genre', 'Band Name']] = df[['Country', 'Genre', 'Band URL']].apply(clean_html_column)
+        df['Band URL'] = df['Band URL'].apply(lambda x: BeautifulSoup(x, 'html.parser').find('a')['href'])
+        
+        # Extract the day from the MonthDay column
+        df['Day'] = df['MonthDay'].str.extract(r'(\d{1,2})').astype(int)
+
+        # Check if any of the day numbers are lower than the last scraped day
+        if df['Day'].min().item() < last_scraped_day:
+            print(f"Reached a day ({df['Day'].min().item()}) lower than the last scraped day ({last_scraped_day}). Stopping.")
+            scrape_more = False
+
+        filtered_df = df[df['Day'] >= last_scraped_day]
+
+        if not filtered_df.empty:
+            print(f"Adding {len(filtered_df)} records from page {page}.")
+            all_records.append(filtered_df)
+        else:
+            print(f"No records found after filtering on page {page}.")
+        
+        page += 1  # Move to the next page
+
+    if all_records:
+        # Combine all records into a single DataFrame
+        combined_df = pd.concat(all_records, ignore_index=True)
+        return combined_df
+    else:
+        print("No records found.")
+        return pd.DataFrame()  # Return empty DataFrame if no records
+
+def process_combined_data(df):
     df['Band ID'] = df['Band URL'].apply(extract_url_id)
-    new_records_df = df[df['Day'] >= last_scraped_day]
-
+    
     # Fetch the status & lyric themes for new/updated records
-    result_df = new_records_df['Band URL'].apply(
+    result_df = df['Band URL'].apply(
         lambda url: pd.Series(get_dt(url, ["Status:", "Themes:"], HEADERS, COOKIES))
     )
-    new_records_df.loc[:, 'Status'] = result_df['Status:']
+    df.loc[:, 'Status'] = result_df['Status:']
 
     # Create a separate DataFrame for Themes
-    themes_df = new_records_df[['Band ID']].copy()
+    themes_df = df[['Band ID']].copy()
     themes_df['Themes:'] = result_df['Themes:']
+    save_progress(themes_df, LYRICS)
 
-    if os.path.exists(LYRICS): #Only export lyrics if file exists.
-        existing_df = pd.read_csv(LYRICS)
-    # Merge the existing data with the new data on 'Band ID'
-        merged_df = replace_records(existing_df, themes_df, 'Band ID')
-        merged_df.to_csv(LYRICS, index=False)
+    df = df.drop(columns=['Date', 'Submitter', 'MonthDay'])
 
-    new_records_df = new_records_df.drop(columns=['Date', 'Submitter', 'Day', 'MonthDay'])
-
-    # Reorder the columns to match the existing CSV
-    new_records_df = new_records_df[['Band URL', 'Band Name', 'Country', 'Genre', 'Status', 'Band ID']]
-    new_records_df[['Band ID', 'Band URL']].to_csv(TEMPFILE, index=False)
-    # Remove duplicates based on Band ID (overwrite logic)
-    updated_bands_df = replace_records(existing_bands_df, new_records_df, 'Band ID')
+    df = df[['Band URL', 'Band Name', 'Country', 'Genre', 'Status', 'Band ID']]
+    #Save bands to temp file for other updating scripts.
+    save_progress(df[['Band ID']], TEMPFILE)
 
     # Print and save new records
-    if not new_records_df.empty:
-        print("New records added since last scrape (no duplicates):")
-        updated_bands_df.to_csv(BANDSFILE, index=False)
+    if not df.empty:
+        print(f"New records added since last scrape (no duplicates):{len(df)}")
+        save_progress(df, BANDSFILE)
     else:
         print("No new records added since last scrape or no new unique records.")
-
-    print('Updating Metadata')
-    update_metadata(os.path.basename(BANDS))
     print('Done!')
+
+def main():
+    # Fetch and process records from both the 'added' and 'modified' URLs
+    print("Fetching recently added bands:")
+    added_bands_df = display_bands_until_last_scraped_day(URL_ADDED)
+
+    print("Fetching recently modified bands:")
+    modified_bands_df = display_bands_until_last_scraped_day(URL_MODIFIED)
+
+    # Combine both DataFrames if they are not empty
+    if not added_bands_df.empty or not modified_bands_df.empty:
+        combined_df = pd.concat([added_bands_df, modified_bands_df], ignore_index=True)
+        process_combined_data(combined_df)
+
 if __name__ == "__main__":
     main()

@@ -5,7 +5,6 @@ def extract_url_id(url):
     return url.split('/')[-1]  # ID is the last part of the URL
 
 def parse(destination, data=pd.DataFrame):
-    # Initialize lists to store the parsed data
     band_urls = []
     band_names = []
     band_countries = []

@@ -3,7 +3,6 @@ import requests
 from pandas import DataFrame
 import json
 import pandas as pd
-from Scripts.utils import update_metadata
 from BandParser import parse
 from utils import load_config
 import os
@@ -16,12 +15,11 @@ RELURL = '/browse/ajax-letter/json/1/l/'
 length = 500  # max number of bands in a single view
 
 # Load environment variables
-RAW = os.getenv('BANDRAW')
 PARSED = os.getenv('BANDPAR')
 COOKIES = load_config('Cookies')
 HEADERS = load_config('Headers')
 
-def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(), raw_destination=None, parsed_destination=None):
+def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(), parsed_destination=None):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,  # if not set, response text is not valid JSON
@@ -29,6 +27,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
             'iDisplayLength': length  # only response lengths of 500 work
         }
         r = requests.get(BASEURL + RELURL + letter, params=payload, headers=HEADERS, cookies=COOKIES)
+        r.raise_for_status()  # Raise an error for bad HTTP responses
         return r
 
     # Data columns returned in the JSON object
@@ -38,46 +37,53 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
     # Retrieve the data
     for letter in letters:
         print('Current letter = ', letter)
-        r = get_url(letter=letter, start=0, length=length)
-        js = r.json()
-        n_records = js['iTotalRecords']
-        n_chunks = int(n_records / length) + 1
-        print('Total records = ', n_records)
+        try:
+            r = get_url(letter=letter, start=0, length=length)
+            js = r.json()
+            n_records = js['iTotalRecords']
+            n_chunks = (n_records // length) + 1
+            print('Total records = ', n_records)
 
-        # Retrieve chunks
-        for i in range(n_chunks):
-            start = length * i
-            end = min(start + length, n_records)
-            print('Fetching band entries ', start, 'to ', end)
+            # Retrieve chunks
+            for i in range(n_chunks):
+                start = length * i
+                end = min(start + length, n_records)
+                print('Fetching band entries ', start, 'to ', end)
 
-            for attempt in range(10):
-                time.sleep(3)  # Obeying robots.txt "Crawl-delay: 3"
-                try:
-                    r = get_url(letter=letter, start=start, length=length)
-                    js = r.json()
-                    # Store response
-                    df = DataFrame(js['aaData'])
-                    data = pd.concat([data, df], ignore_index=True)
-                except json.JSONDecodeError:
-                    print('JSONDecodeError on attempt ', attempt, ' of 10.')
-                    print('Retrying...')
-                    continue
-                break
+                for attempt in range(10):
+                    time.sleep(3)  # Obeying robots.txt "Crawl-delay: 3"
+                    try:
+                        r = get_url(letter=letter, start=start, length=length)
+                        js = r.json()
+                        # Store response
+                        df = DataFrame(js['aaData'])
+                        data = pd.concat([data, df], ignore_index=True)
+                        break  # Exit retry loop if successful
+                    except json.JSONDecodeError:
+                        print('JSONDecodeError on attempt ', attempt + 1, ' of 10.')
+                        if attempt == 9:
+                            print('Max attempts reached, skipping this chunk.')
+                            break
+                        continue
+                    except requests.HTTPError as e:
+                        print(f"HTTP error occurred: {e}")
+                        break  # Exit the loop on HTTP error
+
+        except requests.HTTPError as e:
+            print(f"HTTP error occurred while fetching letter '{letter}': {e}")
+            continue  # Skip to the next letter
 
     # Set informative names
     data.columns = column_names
     data.index = range(len(data))
 
-    print('Writing band data to csv file:', raw_destination)
-    data.to_csv(raw_destination, index=False)
-    print('Updating Metadata')
-    update_metadata(os.path.basename(raw_destination))
-    print('Parsing')
-    parse(parsed_destination, pd.read_csv(raw_destination))
-    print('Updating Metadata')
-    update_metadata(os.path.basename(parsed_destination))
-    print('Done!')
+    if not data.empty:
+        print('Parsing')
+        parse(parsed_destination, data)  # Ensure you pass the correct DataFrame here
+        print('Done!')
+    else:
+        print("No data retrieved.")
 
 # Call the function
 if __name__ == "__main__":
-    scrape_bands(raw_destination=RAW, parsed_destination=PARSED)
+    scrape_bands(parsed_destination=PARSED)
