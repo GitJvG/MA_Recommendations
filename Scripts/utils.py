@@ -10,11 +10,12 @@ CONFIG = os.getenv('CONFIG')
 metadata_path = os.getenv('METADATA')
 
 file_paths = {
-    'MA_Bands': ['Band ID'],
-    'MA_Similar': ['Band ID', 'Similar Artist ID'],
-    'MA_Discog': ['Album Name', 'Type', 'Year', 'Band ID'],
-    'MA_Lyrics': ['Band ID'],
-    'Meta': ['Filename']
+    'MA_Bands.csv': ['Band ID'],
+    'MA_Similar.csv': ['Band ID', 'Similar Artist ID'],
+    'MA_Discog.csv': ['Album Name', 'Type', 'Year', 'Band ID'],
+    'MA_Lyrics.csv': ['Band ID'],
+    'metadata.csv': ['Filename'],
+    'MA_Changes.csv': ['Band ID']
 }
 
 def load_config(attribute):
@@ -33,11 +34,12 @@ def save_progress(new_data, output_file):
         # Drop duplicates, keeping the last entry based on the unique columns
         df_updated = df_combined.drop_duplicates(subset=unique_columns, keep='last')
         df_updated.to_csv(output_file, mode='w', header=True, index=False)
-    
+         
     except FileNotFoundError:
         df_new.to_csv(output_file, mode='w', header=True, index=False)
 
     print(f"Progress saved to {output_file}")
+    update_metadata(os.path.basename(output_file))
 
 def process_band_ids(band_ids_to_process, batch_size, output_file, function, **kwargs):
     print(f"Total bands to process: {len(band_ids_to_process)}")
@@ -74,6 +76,6 @@ def update_metadata(data_filename):
         'Filename': data_filename,
         'Date': pd.Timestamp.now().strftime('%Y-%m-%d')
     }])
-    metadata_df = save_progress(new_entry, metadata_path, 'Meta')
+    metadata_df = save_progress(new_entry, metadata_path)
     print('Metadata updated!')
     return metadata_df

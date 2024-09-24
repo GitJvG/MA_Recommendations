@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-from BandUpdtr import main as Band_Themes 
-Band_Themes() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
+from BandUpdtr import main as Band_and_Themes 
+Band_and_Themes() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
 from SimilarScraper import refresh as ReSim 
 ReSim() #Fetches all similar band data on Band IDs in Temp/MA_Changes.csv
 from AlbumScraper import refresh as ReAlb
