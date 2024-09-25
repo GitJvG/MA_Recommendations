@@ -1,7 +1,7 @@
 # Metal-Archives Scraper
 
 ## Access Scraped Datasets
-You can download the full set of scraped datasets from the following link (Check the `MA_bands` entry in the metadata file for when it was last updated):
+You can download the full set of scraped datasets from the following link (Check the `MA_bands` entry in `metadata.csv` for when it was last updated):
 [Access Datasets on Google Drive](https://drive.google.com/drive/folders/1aycZqvoVg2mDFkfQNaDga9_aistGJ-8T?usp=drive_link)
 
 ## Overview
@@ -44,7 +44,7 @@ This project contains a collection of scripts designed to scrape various parts o
   Updates all final datasets incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new/modified bands from the recently added/modified page on Metal-Archives.
 
   **NOTES**:  
-  - This script only checks the first recently added page on Metal-Archives. For this reason, datasets should be kept up to date, as incremental updates won't capture changes made more than 3-5 days ago. I'll work on improving this eventually.
+  - In the current state it will only work for the remainder of September. A fix will be implemented soon.
 
 
 - **HTML_Scraper & utils**:  
