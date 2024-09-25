@@ -51,13 +51,13 @@ This project contains a collection of scripts designed to scrape various parts o
 
 ## In Progress
 
-- **Data analysis**
+- **Data analysis**:
   Exploring, cleaning and transforming the data and creating a basic model that can predict what bands you might like given you like x band.
 
-- **Mass scraping wrapper**
+- **Mass scraping wrapper**:
   Whilst the current scripts allow you to scrape nearly all masterdata on bands, there is no wrapper script that executes them all in the right order.
 
-- **Clearer script hierarchy
+- **Clearer script hierarchy**:
   I aim to present two wrapper scripts: one that scrapes everything and one that can do incremental updates on your datasets after you've done a full scrape/imported the public datasets from google drive.
   The scripts for scraping individual sections will remain available but should be less prominent.
   
