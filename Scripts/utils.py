@@ -76,6 +76,21 @@ def update_metadata(data_filename):
         'Filename': data_filename,
         'Date': pd.Timestamp.now().strftime('%Y-%m-%d')
     }])
-    metadata_df = save_progress(new_entry, metadata_path)
+    
+    try:
+        metadata_df = pd.read_csv(metadata_path)
+        
+        # Drop any rows where 'Filename' matches data_filename to avoid duplicates
+        metadata_df = metadata_df[metadata_df['Filename'] != data_filename]
+        
+        # Append the new entry (this ensures the new entry replaces the old one)
+        metadata_df = pd.concat([metadata_df, new_entry], ignore_index=True)
+        
+    except FileNotFoundError:
+        # If the metadata file doesn't exist, create a new DataFrame
+        metadata_df = new_entry
+
+    metadata_df.to_csv(metadata_path, index=False)
+
     print('Metadata updated!')
     return metadata_df
