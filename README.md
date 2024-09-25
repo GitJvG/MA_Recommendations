@@ -46,9 +46,6 @@ This project contains a collection of scripts designed to scrape various parts o
 - **Refresh**:  
   Updates all final datasets incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new/modified bands from the recently added/modified page on Metal-Archives.
 
-  **NOTES**:  
-  - In the current state it will only work for the remainder of September. A fix will be implemented soon.
-
 - **HTML_Scraper & utils**:  
   A collection of basic utility functions and functions for fetching and parsing HTML content.
 
