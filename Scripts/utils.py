@@ -94,3 +94,18 @@ def update_metadata(data_filename):
 
     print('Metadata updated!')
     return metadata_df
+
+def remove_duplicates(file_path):
+    """Failsafe measure. Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary."""
+    filename = os.path.basename(file_path)
+    
+    if filename not in file_paths:
+        print(f"No unique columns defined for {filename}. Skipping.")
+        return
+
+    df = pd.read_csv(file_path)
+    unique_columns = file_paths[filename]
+    df_updated = df.drop_duplicates(subset=unique_columns, keep='last')
+    df_updated.to_csv(file_path, mode='w', header=True, index=False)
+    
+    print(f"Duplicates removed and progress saved for {filename}.")
