@@ -6,76 +6,38 @@ similar_artists_df = pd.DataFrame(similar_artists_df, columns=['Band ID', 'Simil
 
 # Function to filter the similar bands table based on a given band ID
 def get_similar_bands(band_id):
-    """
-    Returns a filtered DataFrame containing rows where the specified band ID
-    is present in either the Similar Artist ID or the Band ID columns.
-    
-    Parameters:
-    - band_id (int or str): The ID of the band to search for.
-    
-    Returns:
-    - pd.DataFrame: Filtered DataFrame with relevant similar bands.
-    """
-    # Filter rows where the specified band ID is in either column
+    """Returns a filtered DataFrame containing similar bands."""
+    # Filter for bands that are either similar to or list the given band as similar
     filtered_df = similar_artists_df[
-        (similar_artists_df['Band ID'] == band_id) | 
+        (similar_artists_df['Band ID'] == band_id) |
         (similar_artists_df['Similar Artist ID'] == band_id)
     ]
-    return filtered_df.reset_index(drop=True)
+    return filtered_df
 
-# Function to aggregate scores and return a unique set of similar bands
-def aggregate_similar_bands(filtered_df):
-    """
-    Aggregates the scores for similar bands to ensure unique bands
-    are returned with the highest similarity score.
-    
-    Parameters:
-    - filtered_df (pd.DataFrame): DataFrame containing similar bands.
-    
-    Returns:
-    - pd.DataFrame: DataFrame with unique bands and their highest similarity scores.
-    """
-    # Group by Similar Artist ID and take the max score
-    aggregated_df = filtered_df.groupby('Similar Artist ID', as_index=False).agg({
-        'Score': 'max'
-    })
-
-    # Sort by Score in descending order
-    aggregated_df = aggregated_df.sort_values(by='Score', ascending=False).reset_index(drop=True)
-    
-    return aggregated_df
-
-# Function to get the complete list of similar bands for a given band ID
 def get_complete_similar_bands(band_id):
-    """
-    Get a complete list of similar bands for a given band ID.
-    
-    Parameters:
-    - band_id (int or str): The ID of the band to search for.
-    
-    Returns:
-    - pd.DataFrame: DataFrame of complete similar bands sorted by score.
-    """
+    """Get a complete list of similar bands for a given band ID."""
     # Get bands that are directly similar to the given band
     filtered_similar_bands = get_similar_bands(band_id)
     
-    # Include bands that list the original band as similar
+    # Combine scores from both perspectives
+    filtered_similar_bands['IsOriginal'] = filtered_similar_bands['Band ID'] == band_id
     bands_listing_original = similar_artists_df[similar_artists_df['Similar Artist ID'] == band_id]
+    bands_listing_original['IsOriginal'] = False  # Mark these as original listings
 
-    # Combine the two DataFrames
-    complete_bands = pd.concat([
-        filtered_similar_bands[['Similar Artist ID', 'Score']],
+    # Concatenate and aggregate in one step
+    combined_df = pd.concat([
+        filtered_similar_bands[['Similar Artist ID', 'Score', 'IsOriginal']],
         bands_listing_original[['Band ID', 'Score']].rename(columns={'Band ID': 'Similar Artist ID'})
     ])
 
-    # Aggregate scores to ensure unique similar bands
-    complete_aggregated = aggregate_similar_bands(complete_bands)
-    #Ensures it won't show itself as a similar band.
-    complete_aggregated = complete_aggregated[complete_aggregated['Similar Artist ID'] != band_id]
-    return complete_aggregated
+    # Aggregate scores while ensuring uniqueness and taking the maximum score
+    aggregated_df = combined_df.groupby('Similar Artist ID', as_index=False).agg({'Score': 'max'})
+
+    # Filter out the original band from the results
+    return aggregated_df[aggregated_df['Similar Artist ID'] != band_id].sort_values(by='Score', ascending=False)
 
 # Example usage
-example_band_id = 115  # ID for Slayer, a popular thrash metal band
+example_band_id = 19  # ID for Slayer, a popular thrash metal band
 complete_similar_bands = get_complete_similar_bands(example_band_id)
 
 # Display the resulting DataFrame
