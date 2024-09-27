@@ -17,54 +17,45 @@ BANDSFILE = os.getenv('BANDPAR')
 SIMILAR = os.getenv('SIMBAN')
 similar_artists_df = pd.read_csv(SIMILAR)
 lyrics_df = pd.read_csv(LYRICS)
-bands_df = pd.read_csv(BANDSFILE)
+bands_df = pd.read_csv(BANDSFILE, usecols=['Band Name', 'Country', 'Genre', 'Band ID'])
 
 def normalize(x):
-    result = (x-x.min())/(x.max() - x.min())
-    return result
+    return (x - x.min()) / (x.max() - x.min())
 
 def preproc_data():
-    """transforms, merges and processes datasets."""
-    # Process genres
+    """Transforms, merges and processes datasets."""
     global bands_df
     global lyrics_df
     bands_df = process_genres(bands_df, 'Genre')
     
     # Preprocess themes
     lyrics_df['Themes:'] = lyrics_df['Themes:'].str.split(',')
-    lyrics_df['Themes:'] = lyrics_df['Themes:'].apply(lambda x: ', '.join([theme.strip() for theme in x if isinstance(x, list) and theme.strip()]) if isinstance(x, list) else x)
+    lyrics_df['Themes:'] = lyrics_df['Themes:'].apply(lambda x: ', '.join(theme.strip() for theme in x if isinstance(x, list) and theme.strip()) if isinstance(x, list) else x)
     lyrics_df = lyrics_df.dropna(subset=['Themes:'])
     lyrics_df = lyrics_df[lyrics_df['Themes:'] != '']
     lyrics_df['Themes:'] = lyrics_df['Themes:'].str.lower()
 
     # Merge datasets
     merged_df = pd.merge(bands_df, lyrics_df, how='inner', on='Band ID')
-
+    
     return merged_df
 
 def filter_by_genre_overlap(merged_df, band_id):
     """Filters bands based on genre overlap."""
-    # Fetch info for the input band
     band_info = merged_df[merged_df['Band ID'] == band_id]
     
     if band_info.empty:
-        return pd.DataFrame(), []
+        return pd.DataFrame()
 
-    # Extract the processed genre list for the input band
     band_genres = band_info['Processed Genre'].values[0]
 
-    # Check for partial genre overlap
-    merged_df['Genre Overlap'] = merged_df['Processed Genre'].apply(
-        lambda genres: any(band_genre in genres for band_genre in band_genres)
-    )
+    # Directly filter without creating a column
+    overlap_bands_df = merged_df[merged_df['Processed Genre'].apply(lambda genres: any(band_genre in genres for band_genre in band_genres))].reset_index(drop=True)
     
-    # Filter bands that have at least one genre overlap
-    overlap_bands_df = merged_df[merged_df['Genre Overlap']].reset_index(drop=True)
-    print(overlap_bands_df)
     return overlap_bands_df
     
 def calculate_similarity(overlap_bands_df, band_id, column):
-    """Calculates similarity based on a given column (e.g., 'Genre', 'Themes:') and modifies dataframe in place."""
+    """Calculates similarity based on a given column and modifies dataframe in place."""
     if overlap_bands_df.empty:
         print("No similar bands found with overlapping genres.")
         return None
@@ -89,18 +80,21 @@ def calculate_similarity(overlap_bands_df, band_id, column):
 
     # Add similarity scores as a new column (in-place)
     overlap_bands_df[f'{column}_Similarity'] = similarity_scores
-    
-    # Return the similarity scores
-    return similarity_scores
 
+    # Drop the original column only if it exists. It's not needed after calculation
+    if column in overlap_bands_df.columns:
+        overlap_bands_df.drop(columns=[column], inplace=True)
+    return similarity_scores
 
 def get_complete_similar_bands(band_id):
     filtered_similar_bands = similar_artists_df[
         (similar_artists_df['Band ID'] == band_id) | (similar_artists_df['Similar Artist ID'] == band_id)
     ]
     bands_listing_original = similar_artists_df[similar_artists_df['Similar Artist ID'] == band_id]
-    complete_bands = pd.concat([filtered_similar_bands[['Similar Artist ID', 'Score']],
-                                 bands_listing_original[['Band ID', 'Score']].rename(columns={'Band ID': 'Similar Artist ID'})])
+    complete_bands = pd.concat([
+        filtered_similar_bands[['Similar Artist ID', 'Score']],
+        bands_listing_original[['Band ID', 'Score']].rename(columns={'Band ID': 'Similar Artist ID'})
+    ])
     return aggregate_similar_bands(complete_bands)
 
 def aggregate_similar_bands(filtered_df):
@@ -121,6 +115,7 @@ def get_recommendations(band_id, genre_weight, lyrical_weight, similar_weight):
 
     # Step 3: Filter on processed genre overlap
     overlap_bands_df = filter_by_genre_overlap(merged_df, band_id)
+    overlap_bands_df.drop(columns=['Processed Genre'], inplace=True)
 
     # Calculate similarity based on genre and lyrics
     calculate_similarity(overlap_bands_df, band_id, 'Genre')
@@ -129,24 +124,26 @@ def get_recommendations(band_id, genre_weight, lyrical_weight, similar_weight):
     # Get the similarity scores from the similar bands DataFrame, with a fallback to 0 for missing scores
     overlap_bands_df['Similar_Band_Score'] = similar_bands_df.set_index('Similar Artist ID').reindex(overlap_bands_df['Band ID'], fill_value=0)['Score'].values
 
+    # Normalize the similarity scores
     overlap_bands_df['Themes:_Similarity'] = normalize_score(overlap_bands_df['Themes:_Similarity'])
     overlap_bands_df['Genre_Similarity'] = normalize_score(overlap_bands_df['Genre_Similarity'])
     overlap_bands_df['Similar_Band_Score'] = normalize_score(overlap_bands_df['Similar_Band_Score'])
 
+    # Calculate the total score
     overlap_bands_df['Total_Score'] = (
         lyrical_weight * overlap_bands_df['Themes:_Similarity'] +
-        similar_weight * overlap_bands_df['Similar_Band_Score'] +  # Ensure similar_scores is aligned properly
+        similar_weight * overlap_bands_df['Similar_Band_Score'] +
         genre_weight * overlap_bands_df['Genre_Similarity']
     )
-
-    print(overlap_bands_df.info())
+    # Drop the indiv score columns
+    overlap_bands_df.drop(columns=['Themes:_Similarity', 'Similar_Band_Score', 'Genre_Similarity'], inplace=True)
+    
     # Sort and select top recommendations
     recommended_bands = overlap_bands_df[overlap_bands_df["Band ID"] != band_id].nlargest(10, 'Total_Score')
 
     return recommended_bands
 
 # Example of fetching recommendations for a band
-recommendations = get_recommendations(115, genre_weight = 0.333, lyrical_weight=0.333, similar_weight=0.333)  # Adjust weights as needed
+recommendations = get_recommendations(115, genre_weight=0.333, lyrical_weight=0.333, similar_weight=0.333)  # Adjust weights as needed
 print("\nRecommendations based on Similar Bands and Genres:")
 print(recommendations)
-print(recommendations.info())

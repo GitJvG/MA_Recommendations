@@ -4,4 +4,4 @@ __pycache__
 Datasets/
 Development/
 Logs.xlsx
-Analysis/SimpleReccomendation.py
+Analysis\SimpleReccomendation.py
