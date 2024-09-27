@@ -5,3 +5,6 @@ Datasets/
 Development/
 Logs.xlsx
 Analysis\SimpleReccomendation.py
+my_trained_model.h5
+my_trained_model
+Analysis/
