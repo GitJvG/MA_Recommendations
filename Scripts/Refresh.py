@@ -3,6 +3,8 @@
 from dotenv import load_dotenv
 from utils import remove_duplicates
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 load_dotenv()
 
 from BandUpdtr import main as Band_and_Themes 

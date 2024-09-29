@@ -29,7 +29,7 @@ def save_progress(new_data, output_file):
     df_new = pd.DataFrame(new_data)
     unique_columns = file_paths[os.path.basename(output_file)]
     try:
-        df_existing = pd.read_csv(output_file)
+        df_existing = pd.read_csv(output_file, keep_default_na=False)
         df_combined = pd.concat([df_existing, df_new], ignore_index=True)
         # Drop duplicates, keeping the last entry based on the unique columns
         df_updated = df_combined.drop_duplicates(subset=unique_columns, keep='last')

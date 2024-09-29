@@ -4,7 +4,11 @@ __pycache__
 Datasets/
 Development/
 Logs.xlsx
-Analysis\SimpleReccomendation.py
+Analysis\
 my_trained_model.h5
 my_trained_model
 Analysis/
+templates/
+app.py
+Models/
+migrations/
