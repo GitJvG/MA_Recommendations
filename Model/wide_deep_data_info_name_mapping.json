@@ -1,40 +1,46 @@
 {
     "sparse_col":{
-        "sex":0,
-        "nationality":1,
-        "band_name":2,
-        "country":3,
-        "status":4,
-        "genre1":5,
-        "genre2":6,
-        "genre3":7,
-        "genre4":8,
-        "theme1":9,
-        "theme2":10,
-        "theme3":11,
-        "theme4":12
+        "nationality":0,
+        "band_name":1,
+        "country":2,
+        "status":3,
+        "ugenre1":4,
+        "ugenre2":5,
+        "ugenre3":6,
+        "igenre1":7,
+        "igenre2":8,
+        "igenre3":9,
+        "igenre4":10,
+        "theme1":11,
+        "theme2":12,
+        "theme3":13,
+        "theme4":14,
+        "gender":15
     },
     "dense_col":{
-        "age":0
+        "birthyear":0
     },
     "user_sparse_col":{
-        "sex":0,
-        "nationality":1
+        "nationality":0,
+        "ugenre1":4,
+        "ugenre2":5,
+        "ugenre3":6,
+        "gender":15
     },
     "user_dense_col":{
-        "age":0
+        "birthyear":0
     },
     "item_sparse_col":{
-        "band_name":2,
-        "country":3,
-        "status":4,
-        "genre1":5,
-        "genre2":6,
-        "genre3":7,
-        "genre4":8,
-        "theme1":9,
-        "theme2":10,
-        "theme3":11,
-        "theme4":12
+        "band_name":1,
+        "country":2,
+        "status":3,
+        "igenre1":7,
+        "igenre2":8,
+        "igenre3":9,
+        "igenre4":10,
+        "theme1":11,
+        "theme2":12,
+        "theme3":13,
+        "theme4":14
     }
 }

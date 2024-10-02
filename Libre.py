@@ -1,35 +1,31 @@
+import warnings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
 import random
-import warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+warnings.filterwarnings("ignore")
 from app.models import UserBandPreference, Item, users as Users
 from Scripts.utils import load_config
 from libreco.data import DatasetFeat, random_split, DataInfo
 from libreco.algorithms import WideDeep
 from keras.backend import clear_session
-warnings.filterwarnings("ignore")
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
 
 # Create a database engine
 DATABASE_URI = load_config('SQL_Url')
-engine = create_engine(DATABASE_URI)
-Session = sessionmaker(bind=engine)
-session = Session()
-model_path ="Model"
-model_name="wide_deep"
-
-# Create a database engine
-DATABASE_URI = load_config('SQL_Url')
-engine = create_engine(DATABASE_URI)
-Session = sessionmaker(bind=engine)
-session = Session()
-model_path ="Model"
+ENGINE = create_engine(DATABASE_URI)
+session = sessionmaker(bind=ENGINE)
+SESSION = session()
+MODEL_PATH ="Model"
 model_name="wide_deep"
 
 def load_data():
     # Load data from your tables
-    user_band_preference_data = session.query(UserBandPreference).all()
-    user_dimensions = session.query(Users).all()
+    user_band_preference_data = SESSION.query(UserBandPreference).all()
+    user_dimensions = SESSION.query(Users).all()
 
     # User preferences
     users_preference = pd.DataFrame(
@@ -42,10 +38,10 @@ def load_data():
     #User dimensions
     user_dimensions = pd.DataFrame(
         [(dim.id, dim.username, dim.Birthyear, dim.gender, dim.nationality, dim.genre1, dim.genre2, dim.genre3) for dim in user_dimensions],
-        columns=['user', 'username', 'birthyear', 'gender', 'nationality', 'genre1', 'genre2', 'genre3']
+        columns=['user', 'username', 'birthyear', 'gender', 'nationality', 'ugenre1', 'ugenre2', 'ugenre3']
     )
     #Only query ID's until the subset details are needed for are defined.
-    band_ids = session.query(Item.item).filter(Item.item.notin_(interacted_band_ids)).all()
+    band_ids = SESSION.query(Item.item).filter(Item.item.notin_(interacted_band_ids)).all()
     band_ids = pd.DataFrame(band_ids, columns=['item'])
     
 
@@ -57,11 +53,11 @@ def load_data():
     users = users.merge(user_dimensions, on='user')
 
     #Only query details for interactions and negative samples
-    detailed_band_data = session.query(Item).filter(Item.item.in_(users['item'])).all()
+    detailed_band_data = SESSION.query(Item).filter(Item.item.in_(users['item'])).all()
     items = pd.DataFrame(
         [(band.item, band.band_name, band.country, band.status, band.genre1, band.genre2, 
           band.genre3, band.genre4, band.theme1, band.theme2, band.theme3, band.theme4) for band in detailed_band_data],
-        columns=['item', 'band_name', 'country', 'status', 'genre1', 'genre2', 'genre3', 'genre4',
+        columns=['item', 'band_name', 'country', 'status', 'igenre1', 'igenre2', 'igenre3', 'igenre4',
                  'theme1', 'theme2', 'theme3', 'theme4']
     )
     
@@ -70,8 +66,8 @@ def load_data():
 
     #Create one big dataset
     data = users.merge(items, on='item')
-
-    return data, users
+    print(data.info())
+    return data
 
 def generate_negative_samples(users, items):
     """Generate negative samples for each user. For each user, select random bands they haven't interacted with and assign label=0."""
@@ -100,21 +96,36 @@ def train(model, train_data, eval_data):
     )
 
 def fresh_training():
-    data, users = load_data()
+    data = load_data()
     print(data.shape)
-    print(users.shape)
+
 
     data
     train_data, eval_data = random_split(data, multi_ratios=[0.8, 0.2], seed=42)
 
     # Sparse columns (categorical with many unique values)
-    sparse_col = ["sex", "nationality", "band_name", "country", "status", "genre1", "genre2", "genre3", "genre4", "theme1", "theme2", "theme3", "theme4"]
+    sparse_col = [
+        "nationality", "band_name", "country", "status",
+        "ugenre1", "ugenre2", "ugenre3",
+        "igenre1", "igenre2", "igenre3", "igenre4",
+        "theme1", "theme2", "theme3", "theme4", "gender"
+    ]
+    
     # Dense columns (numerical with fewer unique values)
-    dense_col = ["age"]
+    dense_col = ["birthyear"]  # Optional to derive 'age'
+
     # User columns (user attributes)
-    user_col = ["sex", "age", "nationality"]
+    user_col = [
+        "birthyear", "gender", "nationality",
+        "ugenre1", "ugenre2", "ugenre3"
+    ]
+
     # Item columns (item attributes)
-    item_col = ["band_name", "country", "status", "genre1", "genre2", "genre3", "genre4", "theme1", "theme2", "theme3", "theme4"]
+    item_col = [
+        "band_name", "country", "status",
+        "igenre1", "igenre2", "igenre3", "igenre4",
+        "theme1", "theme2", "theme3", "theme4"
+    ]
 
     train_data, data_info = DatasetFeat.build_trainset(train_data, user_col, item_col, sparse_col, dense_col)
     eval_data = DatasetFeat.build_evalset(eval_data)
@@ -133,11 +144,11 @@ def fresh_training():
     #Train
     train(model, train_data, eval_data)
     #Save
-    data_info.save(model_path, model_name=model_name)
-    model.save(model_path, model_name=model_name)
+    data_info.save(MODEL_PATH, model_name=model_name)
+    model.save(MODEL_PATH, model_name=model_name)
 
 def update_model(new_data):
-    loaded_data_info = DataInfo.load(model_path, model_name=model_name)
+    loaded_data_info = DataInfo.load(MODEL_PATH, model_name=model_name)
     train_data, eval_data = random_split(new_data, multi_ratios=[0.8, 0.2])
     train_data, new_data_info = DatasetFeat.merge_trainset(train_data, loaded_data_info, merge_behavior=True)
     eval_data = DatasetFeat.merge_evalset(eval_data, new_data_info)
@@ -156,18 +167,18 @@ def update_model(new_data):
     hidden_units=(128, 64, 32),
     )
 
-    model.rebuild_model(path=model_path, model_name=model_name, full_assign=True)
+    model.rebuild_model(path=MODEL_PATH, model_name=model_name, full_assign=True)
 
     #Train
     train(model, train_data, eval_data)
     #Save
-    new_data_info.save(model_path, model_name=model_name)
-    model.save(model_path, model_name=model_name)
+    new_data_info.save(MODEL_PATH, model_name=model_name)
+    model.save(MODEL_PATH, model_name=model_name)
 
 def use_model(model_name):
-    loaded_data_info = DataInfo.load(model_path, model_name=model_name)
-    loaded_model = WideDeep.load(model_path, model_name=model_name, data_info=loaded_data_info)
+    loaded_data_info = DataInfo.load(MODEL_PATH, model_name=model_name)
+    loaded_model = WideDeep.load(MODEL_PATH, model_name=model_name, data_info=loaded_data_info)
     print(loaded_model.recommend_user(user=1, n_rec=10))
 
 if __name__ == "__main__":
-    print(load_data())
+    use_model(model_name)
