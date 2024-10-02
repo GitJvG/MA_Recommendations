@@ -3,14 +3,20 @@ from sqlalchemy.orm import sessionmaker
 import pandas as pd
 import random
 import warnings
-from app.models import UserBandPreference, DIM_Band, DIM_Lyrics
+from app.models import UserBandPreference, Item, users as Users
 from Scripts.utils import load_config
-from libreco.data import DatasetFeat, random_split
-from Analysis.CleanGenre import simple_clean2
-warnings.filterwarnings("ignore")
+from libreco.data import DatasetFeat, random_split, DataInfo
 from libreco.algorithms import WideDeep
-from libreco.data import DataInfo
 from keras.backend import clear_session
+warnings.filterwarnings("ignore")
+
+# Create a database engine
+DATABASE_URI = load_config('SQL_Url')
+engine = create_engine(DATABASE_URI)
+Session = sessionmaker(bind=engine)
+session = Session()
+model_path ="Model"
+model_name="wide_deep"
 
 # Create a database engine
 DATABASE_URI = load_config('SQL_Url')
@@ -23,70 +29,54 @@ model_name="wide_deep"
 def load_data():
     # Load data from your tables
     user_band_preference_data = session.query(UserBandPreference).all()
-    dim_band_data = session.query(DIM_Band).all()
-    lyrical_data = session.query(DIM_Lyrics).all()
-    # Create user DataFrame
-    users = pd.DataFrame(
+    user_dimensions = session.query(Users).all()
+
+    # User preferences
+    users_preference = pd.DataFrame(
         [(pref.user_id, pref.band_id, pref.liked) for pref in user_band_preference_data],
         columns=['user', 'item', 'label']
     )
+    #Subset for faster calculations
+    interacted_band_ids = set(users_preference['item'])
 
-    # Create items DataFrame
-    items = pd.DataFrame(
-        [(band.Band_ID, band.Band_Name, band.Country, band.Genre, band.Status) for band in dim_band_data],
-        columns=['item', 'band_name', 'country', 'genre', 'status']
+    #User dimensions
+    user_dimensions = pd.DataFrame(
+        [(dim.id, dim.username, dim.Birthyear, dim.gender, dim.nationality, dim.genre1, dim.genre2, dim.genre3) for dim in user_dimensions],
+        columns=['user', 'username', 'birthyear', 'gender', 'nationality', 'genre1', 'genre2', 'genre3']
     )
-
-    items['cleaned_genre'] = items['genre'].apply(simple_clean2)
-    # Split the cleaned genres by commas into separate columns
-    genres_split = items['cleaned_genre'].str.split(r',\s*', expand=True).fillna('missing')
-    genres_split = genres_split.iloc[:, :4]
-    # Rename columns for the split genres
-    genres_split.columns = [f'genre{i+1}' for i in range(genres_split.shape[1])]
-
-    # Concatenate the split genres back to the original DataFrame
-    items = pd.concat([items, genres_split], axis=1)
-
-    # Drop the original 'genre' and 'cleaned_genre' columns if desired
-    items.drop(columns=['genre', 'cleaned_genre'], inplace=True)
-
-    lyrics = pd.DataFrame(
-        [(lyr.Themes, lyr.Band_ID) for lyr in lyrical_data],
-        columns=['theme', 'item']
-    )
-
-    themes_split = lyrics['theme'].str.split(',', expand=True)
-    themes_split = themes_split.fillna('missing')
-    #limit it to max 6 themes
-    themes_split = themes_split.iloc[:, :4]
-    # Optionally rename columns before concatenation
-    themes_split.columns = [f'theme{i+1}' for i in range(themes_split.shape[1])]
-
-    # Concatenate the split themes back to the original DataFrame
-    lyrics = pd.concat([lyrics, themes_split], axis=1)
-
-    # Drop the original 'Themes' column
-    lyrics.drop(columns=['theme'], inplace=True)
-
-    # Complete band set, used separately later on as well
-    all_items = items.merge(lyrics, on='item')
+    #Only query ID's until the subset details are needed for are defined.
+    band_ids = session.query(Item.item).filter(Item.item.notin_(interacted_band_ids)).all()
+    band_ids = pd.DataFrame(band_ids, columns=['item'])
+    
 
     #Add randomly selected negatives for new bands to be recommended.
-    negative_samples = generate_negative_samples(users, all_items)
-    users = pd.concat([users, negative_samples], ignore_index=True)
-    users['nationality'] = "Dutch"
-    users['sex'] = "Male"
-    users['age'] = 20
+    negative_samples = generate_negative_samples(users_preference, band_ids)
+    #Complete list of user interactions + neg samples
+    users = pd.concat([users_preference, negative_samples], ignore_index=True)
+    #Add user dimensions to complete user interaction list
+    users = users.merge(user_dimensions, on='user')
+
+    #Only query details for interactions and negative samples
+    detailed_band_data = session.query(Item).filter(Item.item.in_(users['item'])).all()
+    items = pd.DataFrame(
+        [(band.item, band.band_name, band.country, band.status, band.genre1, band.genre2, 
+          band.genre3, band.genre4, band.theme1, band.theme2, band.theme3, band.theme4) for band in detailed_band_data],
+        columns=['item', 'band_name', 'country', 'status', 'genre1', 'genre2', 'genre3', 'genre4',
+                 'theme1', 'theme2', 'theme3', 'theme4']
+    )
+    
+    #Fillna, applied on whole dataframe because of the large amount of columns that could contain nulls
+    items.fillna("missing", inplace=True)
+
     #Create one big dataset
-    data = users.merge(all_items, on='item')
+    data = users.merge(items, on='item')
 
     return data, users
 
 def generate_negative_samples(users, items):
     """Generate negative samples for each user. For each user, select random bands they haven't interacted with and assign label=0."""
-    all_bands = set(items['item'])  # All available bands
     negative_samples = []
-
+    all_bands = set(items['item'])
     for user_id in users['user'].unique():
         interacted_bands = set(users[users['user'] == user_id]['item'])
         non_interacted_bands = all_bands - interacted_bands
@@ -180,4 +170,4 @@ def use_model(model_name):
     print(loaded_model.recommend_user(user=1, n_rec=10))
 
 if __name__ == "__main__":
-    use_model(model_name)
+    print(load_data())

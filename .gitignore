@@ -4,15 +4,8 @@ __pycache__
 Datasets/
 Development/
 Logs.xlsx
-Analysis\
-my_trained_model.h5
-my_trained_model
 Analysis/
-templates/
 app/
-Models/
 migrations/
 run.py
-DONTUSE.py
-band_recommender_weights.h5
-TFRS2.py
+optimization.py
