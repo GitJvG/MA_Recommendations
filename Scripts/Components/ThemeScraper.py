@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
-from HTML_Scraper import get_dt
+from Scripts.Components.HTML_Scraper import get_dt
 from utils import load_config, process_band_ids
 
 load_dotenv()

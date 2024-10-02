@@ -7,11 +7,11 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 load_dotenv()
 
-from BandUpdtr import main as Band_and_Themes 
+from Scripts.Components.BandUpdtr import main as Band_and_Themes 
 Band_and_Themes() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
-from SimilarScraper import refresh as ReSim 
+from Scripts.Components.SimilarScraper import refresh as ReSim 
 ReSim() #Fetches all similar band data on Band IDs in Temp/MA_Changes.csv
-from AlbumScraper import refresh as ReAlb
+from Scripts.Components.AlbumScraper import refresh as ReAlb
 ReAlb() #Fetches all discograpghy band data on Band IDs in Temp/MA_Changes.csv
 TEMP = os.getenv('TEMPID')
 if os.path.exists(TEMP): #Deletes temp file created by BandUpdtr

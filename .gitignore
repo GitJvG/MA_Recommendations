@@ -9,6 +9,10 @@ my_trained_model.h5
 my_trained_model
 Analysis/
 templates/
-app.py
+app/
 Models/
 migrations/
+run.py
+DONTUSE.py
+band_recommender_weights.h5
+TFRS2.py

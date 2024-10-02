@@ -3,7 +3,7 @@ import requests
 from pandas import DataFrame
 import json
 import pandas as pd
-from BandParser import parse
+from Scripts.Components.BandParser import parse
 from utils import load_config
 import os
 from dotenv import load_dotenv
@@ -19,7 +19,7 @@ PARSED = os.getenv('BANDPAR')
 COOKIES = load_config('Cookies')
 HEADERS = load_config('Headers')
 
-def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(), parsed_destination=None):
+def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split()):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,  # if not set, response text is not valid JSON
@@ -79,11 +79,11 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
 
     if not data.empty:
         print('Parsing')
-        parse(parsed_destination, data)  # Ensure you pass the correct DataFrame here
+        parse(PARSED, data)  # Ensure you pass the correct DataFrame here
         print('Done!')
     else:
         print("No data retrieved.")
 
 # Call the function
 if __name__ == "__main__":
-    scrape_bands(parsed_destination=PARSED)
+    scrape_bands()

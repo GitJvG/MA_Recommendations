@@ -2,7 +2,7 @@ import pandas as pd
 from utils import load_config, process_band_ids
 import os
 from dotenv import load_dotenv
-from HTML_Scraper import fetch, extract_href, extract_text, parse_table  # Import your fetch function
+from Scripts.Components.HTML_Scraper import fetch, extract_href, extract_text, parse_table  # Import your fetch function
 
 # Load environment variables
 load_dotenv(".env", override=True)

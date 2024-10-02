@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 from bs4 import BeautifulSoup
-from Scripts.HTML_Scraper import get_dt
+from Scripts.Components.HTML_Scraper import get_dt
 from Scripts.utils import load_config, save_progress
 
 load_dotenv(".env", override=True)

@@ -4,7 +4,7 @@ import pandas as pd
 from utils import load_config, process_band_ids
 import os
 from dotenv import load_dotenv
-from HTML_Scraper import fetch, parse_table, extract_text
+from Scripts.Components.HTML_Scraper import fetch, parse_table, extract_text
 
 load_dotenv()
 Master_Data = os.getenv('BANDPAR')
