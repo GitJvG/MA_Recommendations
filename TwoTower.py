@@ -89,16 +89,6 @@ def Twotower():
     data_info.save(MODEL_PATH, model_name="two_tower")
     two_tower.save(MODEL_PATH, model_name="two_tower")
 
-def generate_candidates(user_id, all_items, user_preferences, top_n=10):
-    """Generate candidate items for a user based on popularity and their preferences."""
-    # 1. Filter items based on user preferences (for example, genre)
-    preferred_items = user_preferences[user_preferences['user'] == user_id]['item'].values
-    
-    # 2. Generate candidates from preferred items and popular items
-    candidate_items = set(preferred_items) | set(all_items['item'].value_counts().nlargest(top_n).index)
-    
-    return list(candidate_items)
-
 def rank_candidates(user_id, candidate_items, model):
 
     scores = model.predict(user_id, candidate_items)
