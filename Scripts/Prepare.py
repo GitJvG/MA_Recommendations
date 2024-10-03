@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
 import warnings
-from app.models import DIM_Band, DIM_Lyrics
+from app.models import DIM_Band, DIM_Lyrics, DIM_Similar_Band
 from Scripts.utils import load_config
 from Analysis.CleanGenre import simple_clean2
 
@@ -22,12 +22,19 @@ def Prepare_Items():
     # Load data from your tables
     dim_band_data = session.query(DIM_Band).all()
     lyrical_data = session.query(DIM_Lyrics).all()
+    popularity = session.query(DIM_Similar_Band).all()
 
     # Create items DataFrame
     items = pd.DataFrame(
         [(band.Band_ID, band.Band_Name, band.Country, band.Genre, band.Status) for band in dim_band_data],
         columns=['item', 'band_name', 'country', 'genre', 'status']
     )
+
+    popularity = pd.DataFrame(
+        [(pop.Band_ID, pop.Artist_URL, pop.Similar_Artist_ID, pop.Score) for pop in popularity],
+        columns=['item', 'band_name', 'similar_item', 'score']
+    )
+    popularity = precompute_all_similarities(popularity)[['item', 'score']]
 
     items['cleaned_genre'] = items['genre'].apply(simple_clean2)
     # Split the cleaned genres by commas into separate columns
@@ -61,6 +68,24 @@ def Prepare_Items():
     lyrics.drop(columns=['theme'], inplace=True)
 
     # Complete band set, used separately later on as well
-    all_items = items.merge(lyrics, on='item')
+    all_items = items.merge(lyrics, on='item').merge(popularity, on='item')
 
     return all_items
+
+def precompute_all_similarities(df):
+    """Precomputes all similar bands and avoids duplicates."""
+    # Create a copy of the DataFrame with Band ID and Similar Artist ID switched
+    switched_df = df.copy()
+
+    switched_df = switched_df.rename(columns={'item': 'similar_item', 'similar_item': 'item'})
+
+    # Append the switched version to the original DataFrame
+    combined_df = pd.concat([df, switched_df])
+
+    # Sum to indicate popularity
+    aggregated_df = combined_df.groupby(['item'], as_index=False).agg({'score': 'sum'})
+
+    return aggregated_df
+
+if __name__ == "__main__":
+    print(Prepare_Items().head())

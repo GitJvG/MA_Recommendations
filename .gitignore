@@ -9,3 +9,4 @@ app/
 migrations/
 run.py
 optimization.py
+Model/
