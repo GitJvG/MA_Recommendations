@@ -10,8 +10,9 @@ from libreco.algorithms import TwoTower
 from keras.backend import clear_session
 import tensorflow as tf
 from Data import load_data
-from LibreStopping import EarlyStopping
 from libreco.evaluation import evaluate
+from LibreStopping.LibreStopping import EarlyStopping
+# Clone from 'https://github.com/GitJvG/LibreStopping'
 
 tf.get_logger().setLevel('ERROR')
 
