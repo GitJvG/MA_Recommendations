@@ -25,6 +25,7 @@ def load_data():
         columns=['user', 'item', 'label']
     )
     users_preference['label'] = users_preference['label'].replace(0, -1)
+    users_preference = users_preference.fillna(0)
     #Subset for faster calculations
     interacted_band_ids = set(users_preference['item'])
 

@@ -10,3 +10,5 @@ migrations/
 run.py
 optimization.py
 Model/
+temppush.py
+LibreStopping.py
