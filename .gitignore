@@ -1,13 +1,10 @@
 Config.json
-SQLpush.py
 __pycache__
 Datasets/
 Development/
-Logs.xlsx
 Analysis/
 app/
 migrations/
 run.py
-optimization.py
 Model/
-temppush.py
+SQLupsert.py

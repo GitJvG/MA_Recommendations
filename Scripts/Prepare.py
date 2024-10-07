@@ -6,7 +6,7 @@ import pandas as pd
 import warnings
 from app.models import DIM_Band, DIM_Lyrics, DIM_Similar_Band
 from Scripts.utils import load_config
-from Analysis.CleanGenre import simple_clean2
+from Scripts.Components.CleanGenre import simple_clean2
 
 warnings.filterwarnings("ignore")
 

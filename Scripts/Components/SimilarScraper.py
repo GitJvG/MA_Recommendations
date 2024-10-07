@@ -1,5 +1,5 @@
 import pandas as pd
-from utils import load_config, process_band_ids
+from Scripts.utils import load_config, process_band_ids
 import os
 from dotenv import load_dotenv
 from Scripts.Components.HTML_Scraper import fetch, extract_href, extract_text, parse_table  # Import your fetch function

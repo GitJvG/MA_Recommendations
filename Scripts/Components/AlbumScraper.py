@@ -1,7 +1,7 @@
 #Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
 
 import pandas as pd
-from utils import load_config, process_band_ids
+from Scripts.utils import load_config, process_band_ids
 import os
 from dotenv import load_dotenv
 from Scripts.Components.HTML_Scraper import fetch, parse_table, extract_text

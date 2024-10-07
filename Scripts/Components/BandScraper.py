@@ -4,7 +4,7 @@ from pandas import DataFrame
 import json
 import pandas as pd
 from Scripts.Components.BandParser import parse
-from utils import load_config
+from Scripts.utils import load_config
 import os
 from dotenv import load_dotenv
 
