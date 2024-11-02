@@ -108,10 +108,7 @@ def extract_html_data(html, is_url=False):
     if pd.isna(html):
         return None
     soup = BeautifulSoup(html, 'html.parser')
-    anchor = soup.find('a')
-    if anchor:
-        return anchor['href'] if is_url else anchor.get_text(strip=True)
-    return soup.get_text(strip=True)
+    return soup.find('a')['href'] if is_url else soup.get_text(strip=True)
     
 def parse_bands_data(data, column_mapping):
     parsed_data = {}
@@ -130,4 +127,3 @@ def parse_bands_data(data, column_mapping):
 
     # Convert parsed data to DataFrame and return
     return pd.DataFrame(parsed_data)
-

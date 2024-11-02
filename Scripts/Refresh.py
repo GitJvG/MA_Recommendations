@@ -15,7 +15,7 @@ def refresh():
     else:
         print(f"{TEMP} does not exist.")
 
-    from Scripts.Components.BandUpdtr import main as Band_and_Themes 
+    from Scripts.Components.BandScraper import updater as Band_and_Themes 
     Band_and_Themes() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
     from Scripts.Components.SimilarScraper import refresh as ReSim 
     ReSim() #Fetches all similar band data on Band IDs in Temp/MA_Changes.csv
