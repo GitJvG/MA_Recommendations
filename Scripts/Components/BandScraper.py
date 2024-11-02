@@ -11,8 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv(".env", override=True)
 
-BASEURL = 'https://www.metal-archives.com'
-RELURL = '/browse/ajax-letter/json/1/l/'
+BASEURL = 'https://www.metal-archives.com/browse/ajax-letter/json/1/l/'
 URL_MODIFIED = 'https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/'
 length = 500  # max number of bands in a single view
 
@@ -43,18 +42,20 @@ updater_column_mapping = {
     'Submitter': {'source_col': 'Submitter', 'is_url': False}
 }
 
+def make_request(url, params=None):
+    r = requests.get(url, params=params, headers=HEADERS, cookies=COOKIES)
+    r.raise_for_status()  # Raise an error for bad HTTP responses
+    return r.json()
+
 def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split()):
     def get_url(letter, start=0, length=length):
         payload = {
-            'sEcho': 0,  # if not set, response text is not valid JSON
-            'iDisplayStart': start,  # set start index of band names returned
+            'sEcho': 0,
+            'iDisplayStart': start,
             'iDisplayLength': length
         }
-        r = requests.get(BASEURL + RELURL + letter, params=payload, headers=HEADERS, cookies=COOKIES)
-        r.raise_for_status()  # Raise an error for bad HTTP responses
-        return r
+        return make_request(BASEURL + letter, params=payload)
 
-    # Data columns returned in the JSON object
     column_names = ['NameLink', 'Country', 'Genre', 'Status']
     data = DataFrame()  # for collecting the results
 
@@ -97,7 +98,6 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
             print(f"HTTP error occurred while fetching letter '{letter}': {e}")
             continue  # Skip to the next letter
 
-    # Set informative names
     data.columns = column_names
     data.index = range(len(data))
 
@@ -144,10 +144,7 @@ def fetch_bands_page(url, length=200, start=0, sEcho=1):
         'sSortDir_0': 'desc',
         '_': int(time.time() * 1000)
     }
-    
-    r = requests.get(url, params=payload, headers=HEADERS, cookies=COOKIES)
-    print(f"Response Status Code: {r.status_code}")
-    return r.json()
+    return make_request(url, params=payload)
 
 def display_bands_until_last_scraped_day(url, last_scraped_day=None, is_final_month=False, rows_per_page=200):
     page = 1
@@ -217,7 +214,6 @@ def updater():
         print("Failed to retrieve the last scraped date.")
         return
 
-    # Loop through both 'created' and 'modified' URLs
     for url_base in [URL_MODIFIED]:
         print(f"Processing data for URL base: {url_base}")
 
