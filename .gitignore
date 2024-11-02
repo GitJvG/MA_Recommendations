@@ -8,3 +8,12 @@ migrations/
 run.py
 Model/
 SQLupsert.py
+Temp/MA_Changes.csv
+FullRefresh.py
+tests/
+model_folder_path/
+Preprocessed_sets/
+.venv
+archive/
+test.bat
+Scripts/Components/test.py

@@ -88,7 +88,7 @@ def generate_candidates(user_id, k=1000):
     return candidate_items
 
 # Generate candidates for each user
-def generate_candidates_for_all_users(k=1000):
+def generate_candidates_for_all_users(k=3000):
     candidate_list = []
 
     # Loop through all users in the user_dimensions DataFrame

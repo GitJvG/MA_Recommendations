@@ -1,25 +1,35 @@
 import requests
 import time
 from bs4 import BeautifulSoup
+import pandas as pd
 
 def fetch(url, retries=5, delay_between_requests=0.05, cookies=None, headers=None):
+    session = requests.Session()
+    if headers:
+        session.headers.update(headers)
+    if cookies:
+        session.cookies.update(cookies)
+    
     for attempt in range(retries):
         try:
-            response = requests.get(url, headers=headers, cookies=cookies)
+            response = session.get(url)
             time.sleep(delay_between_requests)
             
+            # Check if the response is successful
             if response.status_code == 200:
-                return response.text
-            elif response.status_code == 429:
-                print(f"Rate limit exceeded for {url}. Retrying...")
+                return response.text  # Successful response
+            else:
+                # Retry on any non-200 status code with exponential backoff
+                print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
                 sleep_time = 2 ** attempt  # Exponential backoff
                 time.sleep(sleep_time)
-            else:
-                print(f"Failed to fetch data for {url}. Status code: {response.status_code}")
-                return None
         except requests.RequestException as e:
-            print(f"Request failed for {url}: {e}")
+            # Retry on request exceptions as well
+            print(f"Request failed for {url}: {e}. Attempt {attempt + 1}")
             time.sleep(2 ** attempt)  # Exponential backoff on exception
+    
+    # If all retries are exhausted
+    print(f"Failed to retrieve {url}.")
     return None
 
 def parse_table(html, table_id=None, table_class=None, row_selector='tr', column_extractors=None):
@@ -58,7 +68,6 @@ def parse_table(html, table_id=None, table_class=None, row_selector='tr', column
 
     return results
 
-
 def extract_href(cell):
     """Extracts the href attribute from a table cell."""
     return cell.find('a')['href'] if cell.find('a') else None
@@ -69,7 +78,6 @@ def extract_text(cell):
 
 def get_dt(band_url, strings, headers, cookies, delay_between_requests=0.05):
     try:
-        # Fetch the HTML content using the fetch function
         html_content = fetch(band_url, cookies=cookies, headers=headers, delay_between_requests=delay_between_requests)
         
         if html_content is None:
@@ -85,8 +93,8 @@ def get_dt(band_url, strings, headers, cookies, delay_between_requests=0.05):
         for string in strings:
             dt_tag = soup.find('dt', string=string)
             if dt_tag:
-                status = dt_tag.find_next('dd').text.strip()  # Get the text from the following 'dd' tag
-                results[string] = status
+                data = dt_tag.find_next('dd').text.strip()  # Get the text from the following 'dd' tag
+                results[string] = data
             else:
                 print(f"Element '{string}' not found.")
                 results[string] = None
@@ -95,4 +103,31 @@ def get_dt(band_url, strings, headers, cookies, delay_between_requests=0.05):
     except Exception as e:
         print(f"Error fetching status for {band_url}: {e}")
         return None
+    
+def extract_html_data(html, is_url=False):
+    if pd.isna(html):
+        return None
+    soup = BeautifulSoup(html, 'html.parser')
+    anchor = soup.find('a')
+    if anchor:
+        return anchor['href'] if is_url else anchor.get_text(strip=True)
+    return soup.get_text(strip=True)
+    
+def parse_bands_data(data, column_mapping):
+    parsed_data = {}
+
+    # Initialize lists for each parsed column
+    for col in column_mapping.keys():
+        parsed_data[col] = []
+
+    # Process each row in the DataFrame
+    for _, row in data.iterrows():
+        for col, mapping in column_mapping.items():
+            source_col = mapping['source_col']
+            is_url = mapping.get('is_url', False)
+            parsed_value = extract_html_data(row[source_col], is_url=is_url)
+            parsed_data[col].append(parsed_value)
+
+    # Convert parsed data to DataFrame and return
+    return pd.DataFrame(parsed_data)
 

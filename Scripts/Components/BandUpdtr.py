@@ -12,7 +12,6 @@ from Scripts.utils import load_config, save_progress
 load_dotenv(".env", override=True)
 
 # Constants
-URL_ADDED = 'https://www.metal-archives.com/archives/ajax-band-list/by/created/selection/'
 URL_MODIFIED = 'https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/'
 METADATA_FILE = os.getenv('METADATA')
 BANDSFILE = os.getenv('BANDPAR')
@@ -51,27 +50,12 @@ def determine_urls_to_scrape(last_scraped_date, url_base):
 def fetch_bands_page(url, length=200, start=0, sEcho=1):
     payload = {
         'sEcho': sEcho,
-        'iColumns': 6,
-        'sColumns': '',
         'iDisplayStart': start,
         'iDisplayLength': length,
-        'mDataProp_0': 0,
-        'mDataProp_1': 1,
-        'mDataProp_2': 2,
-        'mDataProp_3': 3,
-        'mDataProp_4': 4,
-        'mDataProp_5': 5,
-        'iSortCol_0': 4,
         'sSortDir_0': 'desc',
-        'iSortingCols': 1,
-        'bSortable_0': True,
-        'bSortable_1': True,
-        'bSortable_2': True,
-        'bSortable_3': True,
-        'bSortable_4': True,
-        'bSortable_5': True,
         '_': int(time.time() * 1000)
     }
+    
     r = requests.get(url, params=payload, headers=HEADERS, cookies=COOKIES)
     print(f"Response Status Code: {r.status_code}")
     return r.json()
@@ -149,7 +133,7 @@ def main():
         return
 
     # Loop through both 'created' and 'modified' URLs
-    for url_base in [URL_ADDED, URL_MODIFIED]:
+    for url_base in [URL_MODIFIED]:
         print(f"Processing data for URL base: {url_base}")
 
         # Determine URLs to scrape (from the last scraped date to the current month)

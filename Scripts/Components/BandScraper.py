@@ -24,7 +24,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
         payload = {
             'sEcho': 0,  # if not set, response text is not valid JSON
             'iDisplayStart': start,  # set start index of band names returned
-            'iDisplayLength': length  # only response lengths of 500 work
+            'iDisplayLength': length
         }
         r = requests.get(BASEURL + RELURL + letter, params=payload, headers=HEADERS, cookies=COOKIES)
         r.raise_for_status()  # Raise an error for bad HTTP responses
@@ -79,7 +79,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
 
     if not data.empty:
         print('Parsing')
-        parse(PARSED, data)  # Ensure you pass the correct DataFrame here
+        parse(PARSED, data)
         print('Done!')
     else:
         print("No data retrieved.")

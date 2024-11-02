@@ -15,8 +15,6 @@ DATABASE_URI = load_config('SQL_Url')
 engine = create_engine(DATABASE_URI)
 Session = sessionmaker(bind=engine)
 session = Session()
-model_path ="C:/Users/jurri/Desktop/Project/Model"
-model_name="wide_deep"
 
 def Prepare_Items():
     # Load data from your tables
@@ -88,4 +86,4 @@ def precompute_all_similarities(df):
     return aggregated_df
 
 if __name__ == "__main__":
-    print(Prepare_Items().head())
+    print(Prepare_Items().info())
