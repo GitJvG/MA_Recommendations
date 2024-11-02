@@ -7,12 +7,12 @@ from dotenv import load_dotenv
 from Scripts.Components.HTML_Scraper import fetch, parse_table, extract_text
 
 load_dotenv()
-Master_Data = os.getenv('BANDPAR')
-output_file = os.getenv('BANDIS')
-data = pd.read_csv(Master_Data)
-processed = pd.read_csv(output_file)
-all_band_ids = data['Band ID'].tolist()
+BANDSFILE = os.getenv('BANDPAR')
+DISCOGFILE = os.getenv('BANDIS')
+data = pd.read_csv(BANDSFILE)
+processed = pd.read_csv(DISCOGFILE)
 processed = processed['Band ID'].tolist()
+all_band_ids = data['Band ID'].tolist()
 cookies = load_config('Cookies')
 headers = load_config('Headers')
 temp_file = os.getenv('TEMPID')
@@ -53,13 +53,13 @@ def refresh():
     band_ids_to_process = temp_data['Band ID'].tolist()
 
     print(f"Total bands to refresh: {len(band_ids_to_process)}")
-    process_band_ids(band_ids_to_process, 200, output_file, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
+    process_band_ids(band_ids_to_process, 200, DISCOGFILE, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
 
 def main():
     """Main function to process all band IDs."""
     processed_set = set(processed)
     band_ids_to_process = [band_id for band_id in all_band_ids if band_id not in processed_set]
-    process_band_ids(band_ids_to_process, 200, output_file, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
+    process_band_ids(band_ids_to_process, 200, DISCOGFILE, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
 
 
 if __name__ == "__main__":

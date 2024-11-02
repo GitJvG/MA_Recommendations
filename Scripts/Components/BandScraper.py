@@ -16,7 +16,6 @@ URL_MODIFIED = 'https://www.metal-archives.com/archives/ajax-band-list/by/modifi
 length = 500  # max number of bands in a single view
 
 # Load environment variables
-PARSED = os.getenv('BANDPAR')
 COOKIES = load_config('Cookies')
 HEADERS = load_config('Headers')
 METADATA_FILE = os.getenv('METADATA')
@@ -104,7 +103,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
     if not data.empty:
         print('Parsing')
         parsed_data = parse_bands_data(data, initials_column_mapping)
-        parsed_data.to_csv(PARSED, index=False)
+        parsed_data.to_csv(BANDSFILE, index=False)
         print('Done!')
     else:
         print("No data retrieved.")
