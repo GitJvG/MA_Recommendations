@@ -24,8 +24,6 @@ def refresh():
     from Scripts.Components.DetailScraper import refresh as ReDet
     ReDet()
 
-
-    """Despite some efforts I keep getting duplicates, so for the time being this will do a second check and only keep the last entries."""
     csv_files = ['Datasets\MA_Bands.csv', 'Datasets\MA_Similar.csv', 'Datasets\MA_Discog.csv', 'Datasets\MA_Lyrics.csv', 'Datasets\metadata.csv']
     for csv in csv_files:
         remove_duplicates(csv)

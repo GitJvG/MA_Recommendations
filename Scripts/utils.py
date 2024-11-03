@@ -59,7 +59,7 @@ def Parallel_processing(items_to_process, batch_size, output_file, function, **k
         nonlocal processed_count
         with lock:
             processed_count += 1
-            print(f"Processed {processed_count} band IDs.")
+            print(f"Processed {processed_count} items.")
     
     with ThreadPoolExecutor(max_workers=2) as executor:
         future_to_band_id = {executor.submit(function, band_id, **kwargs): band_id for band_id in items_to_process}
@@ -90,12 +90,9 @@ def update_metadata(data_filename):
         
         # Drop any rows where 'Filename' matches data_filename to avoid duplicates
         metadata_df = metadata_df[metadata_df['Filename'] != data_filename]
-        
-        # Append the new entry (this ensures the new entry replaces the old one)
         metadata_df = pd.concat([metadata_df, new_entry], ignore_index=True)
         
     except FileNotFoundError:
-        # If the metadata file doesn't exist, create a new DataFrame
         metadata_df = new_entry
 
     metadata_df.to_csv(metadata_path, index=False)
