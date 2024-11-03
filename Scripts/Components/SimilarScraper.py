@@ -24,16 +24,14 @@ HEADERS = load_config('Headers')
 def parse_similar_artists(html, band_id):
     """Parses similar artists from the provided HTML."""
     column_extractors = [
-        {'key': 'Artist URL', 'extractor': extract_href},  # Extract the href attribute for the artist URL
-        {'key': 'Band ID', 'extractor': lambda _: band_id},  # Add the band ID directly
-        {'key': 'Similar Artist ID', 'extractor': extract_href},  # Extract artist ID from URL
-        {'key': 'Score', 'extractor': extract_text},  # Extract the score as text
+        (0, extract_href),  # First column Similar Artist ID
+        (3, extract_text),  # Fourth column (Score)
     ]
     results = parse_table(html, table_id='artist_list', row_selector='tr', column_extractors=column_extractors)
     for result in results:
-        artist_url = result.get('Artist URL')
-        if artist_url:
-            result['Similar Artist ID'] = artist_url.split('/')[-1]
+        if result[0]:  # Accessing the first column which is 'Similar Artist ID'
+            result[0] = result[0].split('/')[-1]  # Extracting the ID from the URL
+        result['Band ID'] = band_id
 
     return results
 
@@ -45,12 +43,11 @@ def scrape_band_data(band_id, **kwargs):
 
     if html_content:
         if "No similar artist has been recommended yet" in html_content:
-            return pd.DataFrame(columns=['Artist URL', 'Similar Artist ID', 'Score', 'Band ID'])  # Return an empty DataFrame with the correct columns
+            return pd.DataFrame(columns=['Similar Artist ID', 'Score', 'Band ID'])  # Return an empty DataFrame with the correct columns
         similar_artists = parse_similar_artists(html_content, band_id)
-        df = pd.DataFrame(similar_artists)[['Artist URL', 'Similar Artist ID', 'Score', 'Band ID']]
+        df = pd.DataFrame(similar_artists)[['Similar Artist ID', 'Score', 'Band ID']]
         return df
-    return pd.DataFrame(columns=['Artist URL', 'Similar Artist ID', 'Score', 'Band ID'])
-
+    return pd.DataFrame(columns=['Similar Artist ID', 'Score', 'Band ID'])
 
 def refresh():
     band_ids_to_process = [band_id for band_id in TEMPDF['Band ID'].tolist()]

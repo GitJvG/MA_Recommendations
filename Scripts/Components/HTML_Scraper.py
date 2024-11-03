@@ -50,18 +50,16 @@ def parse_table(html, table_id=None, table_class=None, row_selector='tr', column
     rows = table.find('tbody').find_all(row_selector)
     for row in rows:
         cells = row.find_all('td')
-        if len(cells) < len(column_extractors):  # Check if the row has enough cells
+        if len(cells) < max(col[0] for col in column_extractors) + 1:  # Check if the row has enough cells
             continue
 
         row_data = {}
-        for idx, extractor_info in enumerate(column_extractors):
+        for idx, (col_index, extractor) in enumerate(column_extractors):
             try:
-                key = extractor_info['key']
-                extractor = extractor_info['extractor']
-                row_data[key] = extractor(cells[idx])  # Apply the extractor to the appropriate cell
+                row_data[idx] = extractor(cells[col_index])  # Apply the extractor to the appropriate cell
             except Exception as e:
-                print(f"Error extracting data for {key}: {e}")
-                row_data[key] = None  # Handle cases where extraction might fail
+                print(f"Error extracting data for index {col_index}: {e}")
+                row_data[idx] = None  # Handle cases where extraction might fail
 
         results.append(row_data)
 

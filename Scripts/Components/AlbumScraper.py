@@ -23,10 +23,10 @@ ENDURL = '/tab/all'
 def parse_html(html, band_id):
     """Parses album data from the provided HTML, including the band ID."""
     column_extractors = [
-        {'key': 'Album Name', 'extractor': extract_text},
-        {'key': 'Type', 'extractor': extract_text},
-        {'key': 'Year', 'extractor': extract_text},
-        {'key': 'Reviews', 'extractor': extract_text},
+        (0, extract_text),  # (Album Name)
+        (1, extract_text),  # (Type)
+        (2, extract_text),  # (Year)
+        (3, extract_text),  # (Reviews)
     ]
     albums = parse_table(html, table_class='display discog', row_selector='tr', column_extractors=column_extractors)
 
