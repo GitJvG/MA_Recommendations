@@ -6,7 +6,7 @@ from pandas import DataFrame
 import json
 import pandas as pd
 from Scripts.utils import load_config,save_progress
-from Scripts.Components.HTML_Scraper import parse_bands_data, get_dt
+from Scripts.Components.HTML_Scraper import extract_href, extract_text
 from dotenv import load_dotenv
 
 load_dotenv(".env", override=True)
@@ -22,24 +22,6 @@ METADATA_FILE = os.getenv('METADATA')
 BANDSFILE = os.getenv('BANDPAR')
 TEMPFILE = os.getenv('TEMPID')
 LYRICS = os.getenv('BANLYR')
-
-initials_column_mapping = {
-    'Band URL': {'source_col': 'NameLink', 'is_url': True},
-    'Band Name': {'source_col': 'NameLink', 'is_url': False},
-    'Country': {'source_col': 'Country'},
-    'Genre': {'source_col': 'Genre'},
-    'Status': {'source_col': 'Status'}
-}
-
-updater_column_mapping = {
-    'MonthDay': {'source_col': 'MonthDay'},
-    'Band URL': {'source_col': 'Band URL', 'is_url': True},
-    'Band Name': {'source_col': 'Band URL', 'is_url': False},
-    'Country': {'source_col': 'Country'},
-    'Genre': {'source_col': 'Genre'},
-    'Date': {'source_col': 'Date'},
-    'Submitter': {'source_col': 'Submitter', 'is_url': False}
-}
 
 def make_request(url, params=None):
     r = requests.get(url, params=params, headers=HEADERS, cookies=COOKIES)
@@ -79,10 +61,12 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
                     try:
                         r = get_url(letter=letter, start=start, length=length)
                         js = r.json()
-                        # Store response
-                        df = DataFrame(js['aaData'])
-                        data = pd.concat([data, df], ignore_index=True)
+
+                        df_chunk = DataFrame(js['aaData'], columns=column_names)
+                        # Append chunk to the main data DataFrame
+                        data = pd.concat([data, df_chunk], ignore_index=True)
                         break  # Exit retry loop if successful
+
                     except json.JSONDecodeError:
                         print('JSONDecodeError on attempt ', attempt + 1, ' of 10.')
                         if attempt == 9:
@@ -97,13 +81,14 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
             print(f"HTTP error occurred while fetching letter '{letter}': {e}")
             continue  # Skip to the next letter
 
-    data.columns = column_names
-    data.index = range(len(data))
-
     if not data.empty:
         print('Parsing')
-        parsed_data = parse_bands_data(data, initials_column_mapping)
-        parsed_data.to_csv(BANDSFILE, index=False)
+        data['Band URL'] = data['NameLink'].apply(extract_href)
+        data['Band Name'] = data['NameLink'].apply(extract_text)
+        data['Band ID'] = data['Band URL'].apply(extract_url_id)
+        data = data.drop(columns=['NameLink'])
+
+        data.to_csv(BANDSFILE, index=False)
         print('Done!')
     else:
         print("No data retrieved.")
@@ -158,23 +143,25 @@ def display_bands_until_last_scraped_day(url, last_scraped_day=None, is_final_mo
         if not records:
             print(f"No more records found on page {page}.")
             break
-        
+
         df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date', 'Submitter'])
         
-        # Parse the DataFrame using the shared function
-        parsed_df = parse_bands_data(df, updater_column_mapping)
-        
-        parsed_df['Day'] = parsed_df['MonthDay'].str.extract(r'(\d{1,2})').astype(int)
-        if is_final_month and parsed_df['Day'].min().item() < last_scraped_day:
-            print(f"Reached a day ({parsed_df['Day'].min().item()}) lower than the last scraped day ({last_scraped_day}). Stopping.")
+        # Strip HTML tags directly where needed
+        df['Band URL'] = df['Band URL'].apply(extract_href)
+        df['Band Name'] = df['Band URL'].apply(extract_text)
+        df['Submitter'] = df['Submitter'].apply(extract_text)
+        df['Band ID'] = df['Band URL'].apply(extract_url_id)
+        df['Day'] = df['MonthDay'].str.extract(r'(\d{1,2})').astype(int)
+        if is_final_month and df['Day'].min().item() < last_scraped_day:
+            print(f"Reached a day ({df['Day'].min().item()}) lower than the last scraped day ({last_scraped_day}). Stopping.")
             scrape_more = False
 
-        filtered_df = parsed_df if not is_final_month else parsed_df[parsed_df['Day'] >= last_scraped_day]
+        filtered_df = df if not is_final_month else df[df['Day'] >= last_scraped_day]
 
         if not filtered_df.empty:
             print(f"Adding {len(filtered_df)} records from page {page}.")
             all_records.append(filtered_df)
-        
+
         page += 1
 
     if all_records:
@@ -185,23 +172,11 @@ def display_bands_until_last_scraped_day(url, last_scraped_day=None, is_final_mo
         return pd.DataFrame()
 
 def process_combined_data(df):
-    df['Band ID'] = df['Band URL'].apply(extract_url_id)
-    
-    result_df = df['Band URL'].apply(
-        lambda url: pd.Series(get_dt(url, ["Status:", "Themes:"], HEADERS, COOKIES))
-    )
-    df.loc[:, 'Status'] = result_df['Status:']
-
-    themes_df = df[['Band ID']].copy()
-    themes_df['Themes:'] = result_df['Themes:']
-    save_progress(themes_df, LYRICS)
-
-    df = df.drop(columns=['Date', 'Submitter', 'MonthDay'])
     df = df[['Band URL', 'Band Name', 'Country', 'Genre', 'Status', 'Band ID']]
-    save_progress(df[['Band ID']], TEMPFILE)
 
     if not df.empty:
         print(f"New records added since last scrape (no duplicates): {len(df)}")
+        save_progress(df[['Band ID']], TEMPFILE)
         save_progress(df, BANDSFILE)
     else:
         print("No new records added since last scrape or no new unique records.")

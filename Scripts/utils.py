@@ -14,6 +14,7 @@ file_paths = {
     'MA_Similar.csv': ['Band ID', 'Similar Artist ID'],
     'MA_Discog.csv': ['Album Name', 'Type', 'Year', 'Band ID'],
     'MA_Lyrics.csv': ['Band ID'],
+    'MA_Details.csv': ['Band ID'],
     'metadata.csv': ['Filename'],
     'MA_Changes.csv': ['Band ID']
 }
@@ -27,19 +28,26 @@ def load_config(attribute):
 
 def save_progress(new_data, output_file):
     df_new = pd.DataFrame(new_data)
-    unique_columns = file_paths[os.path.basename(output_file)]
-    try:
-        df_existing = pd.read_csv(output_file, keep_default_na=False)
-        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        # Drop duplicates, keeping the last entry based on the unique columns
-        df_updated = df_combined.drop_duplicates(subset=unique_columns, keep='last')
-        df_updated.to_csv(output_file, mode='w', header=True, index=False)
-         
-    except FileNotFoundError:
-        df_new.to_csv(output_file, mode='w', header=True, index=False)
 
-    print(f"Progress saved to {output_file}")
+    # Check if the file already exists
+    if os.path.exists(output_file):
+        # If the file exists, load it and handle duplicates
+        unique_columns = file_paths.get(os.path.basename(output_file))  
+        try:
+            df_existing = pd.read_csv(output_file, keep_default_na=False)
+            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+            # Drop duplicates based on unique columns
+            df_updated = df_combined.drop_duplicates(subset=unique_columns, keep='last')
+            df_updated.to_csv(output_file, mode='w', header=True, index=False)
+        except Exception as e:
+            print(f"Error updating file '{output_file}': {e}")
+    else:
+        # If the file doesn't exist, simply create it with the new data
+        df_new.to_csv(output_file, mode='w', header=True, index=False)
+        print(f"Created new file: {output_file}")
+
     update_metadata(os.path.basename(output_file))
+    print(f"Progress saved to {output_file}")
 
 def process_band_ids(band_ids_to_process, batch_size, output_file, function, **kwargs):
     print(f"Total bands to process: {len(band_ids_to_process)}")

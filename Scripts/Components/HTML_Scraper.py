@@ -1,7 +1,6 @@
 import requests
 import time
 from bs4 import BeautifulSoup
-import pandas as pd
 
 def fetch(url, retries=5, delay_between_requests=0.05, cookies=None, headers=None):
     session = requests.Session()
@@ -68,62 +67,12 @@ def parse_table(html, table_id=None, table_class=None, row_selector='tr', column
 
     return results
 
-def extract_href(cell):
-    """Extracts the href attribute from a table cell."""
-    return cell.find('a')['href'] if cell.find('a') else None
-
-def extract_text(cell):
-    """Extracts the text content from a table cell."""
-    return cell.text.strip()
-
-def get_dt(band_url, strings, headers, cookies, delay_between_requests=0.05):
-    try:
-        html_content = fetch(band_url, cookies=cookies, headers=headers, delay_between_requests=delay_between_requests)
-        
-        if html_content is None:
-            return None  # Return early if fetching failed
-        
-        soup = BeautifulSoup(html_content, 'html.parser')
-
-        if isinstance(strings, str):
-            strings = [strings]
-        
-        results = {}
-        
-        for string in strings:
-            dt_tag = soup.find('dt', string=string)
-            if dt_tag:
-                data = dt_tag.find_next('dd').text.strip()  # Get the text from the following 'dd' tag
-                results[string] = data
-            else:
-                print(f"Element '{string}' not found.")
-                results[string] = None
-        
-        return results
-    except Exception as e:
-        print(f"Error fetching status for {band_url}: {e}")
-        return None
-    
-def extract_html_data(html, is_url=False):
-    if pd.isna(html):
-        return None
+def extract_href(html):
+    """Extracts the href attribute from an HTML string."""
     soup = BeautifulSoup(html, 'html.parser')
-    return soup.find('a')['href'] if is_url else soup.get_text(strip=True)
-    
-def parse_bands_data(data, column_mapping):
-    parsed_data = {}
+    link = soup.find('a')
+    return link['href'] if link else None
 
-    # Initialize lists for each parsed column
-    for col in column_mapping.keys():
-        parsed_data[col] = []
-
-    # Process each row in the DataFrame
-    for _, row in data.iterrows():
-        for col, mapping in column_mapping.items():
-            source_col = mapping['source_col']
-            is_url = mapping.get('is_url', False)
-            parsed_value = extract_html_data(row[source_col], is_url=is_url)
-            parsed_data[col].append(parsed_value)
-
-    # Convert parsed data to DataFrame and return
-    return pd.DataFrame(parsed_data)
+def extract_text(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    return soup.get_text(strip=True)
