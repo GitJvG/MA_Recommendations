@@ -8,6 +8,7 @@ import pandas as pd
 from Scripts.utils import load_config,save_progress
 from Scripts.Components.HTML_Scraper import extract_href, extract_text
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
 
 load_dotenv(".env", override=True)
 
@@ -87,6 +88,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
 
     if not data.empty:
         print('Parsing')
+        data['NameLink'] = data['NameLink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
         data['Band URL'] = data['NameLink'].apply(extract_href)
         data['Band Name'] = data['NameLink'].apply(extract_text)
         data['Band ID'] = data['Band URL'].apply(extract_url_id)
@@ -149,11 +151,15 @@ def Update_modified(url, last_scraped_day=None, is_final_month=False, rows_per_p
             print(f"No more records found on page {page}.")
             break
 
-        df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date'])
+        df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date', 'Submitter'])
         
         # Strip HTML tags directly where needed
-        df['Band URL'] = df['Band URL'].apply(extract_href)
-        df['Band Name'] = df['Band URL'].apply(extract_text)
+        df['Soup'] = df['Band URL'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
+        df['Soup Country'] = df['Country'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
+        df['Country'] = df['Soup Country'].apply(extract_text)
+        df['Band URL'] = df['Soup'].apply(extract_href)
+        df['Band Name'] = df['Soup'].apply(extract_text)
+        df['Country'] = df['Country']
         df['Band ID'] = df['Band URL'].apply(extract_url_id)
         df['Day'] = df['MonthDay'].str.extract(r'(\d{1,2})').astype(int)
         if is_final_month and df['Day'].min().item() < last_scraped_day:
@@ -170,7 +176,7 @@ def Update_modified(url, last_scraped_day=None, is_final_month=False, rows_per_p
 
     if all_records:
         combined_df = pd.concat(all_records, ignore_index=True)
-        combined_df[['Band URL', 'Band Name', 'Country', 'Genre', 'Band ID']]
+        combined_df = combined_df[['Band URL', 'Band Name', 'Country', 'Genre', 'Band ID']]
         return combined_df
     else:
         print("No records found.")
@@ -201,4 +207,4 @@ def updater():
 
 # Call the function
 if __name__ == "__main__":
-    scrape_bands()
+    updater()

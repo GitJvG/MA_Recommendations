@@ -14,7 +14,7 @@ data = pd.read_csv(BANDSFILE)
 all_band_ids = data['Band ID'].tolist()
 processed = pd.read_csv(DETAILS)[['Band ID']] if os.path.exists(DETAILS) else pd.DataFrame()
 processed = processed['Band ID'].tolist() if not processed.empty else []
-TEMPDF = pd.read_csv(os.getenv('TEMPID'))
+temp_file = os.getenv('TEMPID')
 
 # Constants
 COOKIES = load_config('Cookies')
@@ -63,7 +63,7 @@ def main():
 
 def refresh():
     """Refreshes the data using band IDs from the temporary file."""
-    temp_data = pd.read_csv(TEMPDF)
+    temp_data = pd.read_csv(temp_file)
     band_ids_to_process = temp_data['Band ID'].tolist()
 
     print(f"Total bands to refresh: {len(band_ids_to_process)}")
@@ -71,6 +71,5 @@ def refresh():
 
 if __name__ == "__main__":
     main()
-
 
 

@@ -1,4 +1,4 @@
-from .Components import BandScraper, AlbumScraper, ThemeScraper, SimilarScraper
+from .Components import BandScraper, AlbumScraper, SimilarScraper, DetailScraper
 
 def FullScrape():
     BandScraper.scrape_bands()
@@ -7,8 +7,8 @@ def FullScrape():
     AlbumScraper.main()
     """AlbumScraper may take up to 17 hours"""
     print('Full discography scraped')
-    ThemeScraper.main()
-    """ThemeScraper may take up to 17 hours"""
+    DetailScraper.main()
+    """DetailScraper may take up to 17 hours"""
     print('Full lyrical themes scraped')
     SimilarScraper.main()
     """SimilarScraper may take up to 17 hours"""

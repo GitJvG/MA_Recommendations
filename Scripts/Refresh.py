@@ -15,12 +15,14 @@ def refresh():
     else:
         print(f"{TEMP} does not exist.")
 
-    from Scripts.Components.BandScraper import updater as Band_and_Themes 
-    Band_and_Themes() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
+    from Scripts.Components.BandScraper import updater as BandList
+    BandList() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
     from Scripts.Components.SimilarScraper import refresh as ReSim 
     ReSim() #Fetches all similar band data on Band IDs in Temp/MA_Changes.csv
     from Scripts.Components.AlbumScraper import refresh as ReAlb
     ReAlb() #Fetches all discograpghy band data on Band IDs in Temp/MA_Changes.csv
+    from Scripts.Components.DetailScraper import refresh as ReDet
+    ReDet()
 
 
     """Despite some efforts I keep getting duplicates, so for the time being this will do a second check and only keep the last entries."""

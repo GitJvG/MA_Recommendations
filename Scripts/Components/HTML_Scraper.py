@@ -67,12 +67,9 @@ def parse_table(html, table_id=None, table_class=None, row_selector='tr', column
 
     return results
 
-def extract_href(html):
-    """Extracts the href attribute from an HTML string."""
-    soup = BeautifulSoup(html, 'html.parser')
+def extract_href(soup):
     link = soup.find('a')
     return link['href'] if link else None
 
-def extract_text(html):
-    soup = BeautifulSoup(html, 'html.parser')
+def extract_text(soup):
     return soup.get_text(strip=True)
