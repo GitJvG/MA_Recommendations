@@ -49,8 +49,8 @@ def save_progress(new_data, output_file):
     update_metadata(os.path.basename(output_file))
     print(f"Progress saved to {output_file}")
 
-def process_band_ids(band_ids_to_process, batch_size, output_file, function, **kwargs):
-    print(f"Total bands to process: {len(band_ids_to_process)}")
+def Parallel_processing(items_to_process, batch_size, output_file, function, **kwargs):
+    print(f"Total bands to process: {len(items_to_process)}")
     all_band_data = []  # This will now hold DataFrames
     processed_count = 0
     lock = Lock()
@@ -62,7 +62,7 @@ def process_band_ids(band_ids_to_process, batch_size, output_file, function, **k
             print(f"Processed {processed_count} band IDs.")
     
     with ThreadPoolExecutor(max_workers=2) as executor:
-        future_to_band_id = {executor.submit(function, band_id, **kwargs): band_id for band_id in band_ids_to_process}
+        future_to_band_id = {executor.submit(function, band_id, **kwargs): band_id for band_id in items_to_process}
 
         for future in as_completed(future_to_band_id):
             band_id = future_to_band_id[future]

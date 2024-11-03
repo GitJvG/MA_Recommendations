@@ -1,7 +1,7 @@
 #Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
 
 import pandas as pd
-from Scripts.utils import load_config, process_band_ids
+from Scripts.utils import load_config, Parallel_processing
 import os
 from dotenv import load_dotenv
 from Scripts.Components.HTML_Scraper import fetch, parse_table, extract_text
@@ -53,13 +53,13 @@ def refresh():
     band_ids_to_process = temp_data['Band ID'].tolist()
 
     print(f"Total bands to refresh: {len(band_ids_to_process)}")
-    process_band_ids(band_ids_to_process, 200, DISCOGFILE, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
+    Parallel_processing(band_ids_to_process, 200, DISCOGFILE, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
 
 def main():
     """Main function to process all band IDs."""
     processed_set = set(processed)
     band_ids_to_process = [band_id for band_id in all_band_ids if band_id not in processed_set]
-    process_band_ids(band_ids_to_process, 200, DISCOGFILE, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
+    Parallel_processing(band_ids_to_process, 200, DISCOGFILE, fetch_album_data, delay_between_requests=0.05, cookies=cookies, headers=headers)
 
 
 if __name__ == "__main__":

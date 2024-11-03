@@ -16,5 +16,4 @@ Preprocessed_sets/
 .venv
 archive/
 test.bat
-Scripts/Components/test.py
 Scripts/Components/test2.py

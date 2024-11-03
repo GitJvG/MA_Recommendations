@@ -1,5 +1,5 @@
 import pandas as pd
-from Scripts.utils import load_config, process_band_ids
+from Scripts.utils import load_config, Parallel_processing
 import os
 from dotenv import load_dotenv
 from Scripts.Components.HTML_Scraper import fetch, extract_href, extract_text, parse_table  # Import your fetch function
@@ -54,13 +54,13 @@ def scrape_band_data(band_id, **kwargs):
 
 def refresh():
     band_ids_to_process = [band_id for band_id in TEMPDF['Band ID'].tolist()]
-    process_band_ids(band_ids_to_process, 200, SIMILARFILE, scrape_band_data, delay_between_requests=0.05)
+    Parallel_processing(band_ids_to_process, 200, SIMILARFILE, scrape_band_data, delay_between_requests=0.05)
     
 def main():
     """Main function to process all band IDs."""
     processed_set = set(processed)
     band_ids_to_process = [band_id for band_id in all_band_ids if band_id not in processed_set]
-    process_band_ids(band_ids_to_process, 200, SIMILARFILE, scrape_band_data, delay_between_requests=0.05)
+    Parallel_processing(band_ids_to_process, 200, SIMILARFILE, scrape_band_data, delay_between_requests=0.05)
 
 if __name__ == "__main__":
     main()

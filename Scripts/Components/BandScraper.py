@@ -25,10 +25,10 @@ LYRICS = os.getenv('BANLYR')
 
 def make_request(url, params=None):
     r = requests.get(url, params=params, headers=HEADERS, cookies=COOKIES)
-    r.raise_for_status()  # Raise an error for bad HTTP responses
+    r.raise_for_status()
     return r.json()
 
-def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split()):
+def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(), status=False):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,
@@ -37,7 +37,11 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
         }
         return make_request(BASEURL + letter, params=payload)
 
-    column_names = ['NameLink', 'Country', 'Genre', 'Status']
+    """Include or exclude status, I decided not to use status from this page as it is not displayed on the 'modified' page of metallum 
+    and thus not easily updatable without going to each individual band page. Status will thus be scraped by DetailScraper which scrapes all data from the individual band pages."""
+    column_names = ['NameLink', 'Country', 'Genre']
+    if status:
+        column_names.append('Status')
     data = DataFrame()  # for collecting the results
 
     # Retrieve the data
@@ -108,6 +112,7 @@ def get_last_scraped_date(file_path, filename):
     return None
 
 def determine_urls_to_scrape(last_scraped_date, url_base):
+    """Constructs urls for each yearmonth since last scraping"""
     current_date = datetime.now()
     urls_to_scrape = []
 
@@ -130,7 +135,7 @@ def fetch_bands_page(url, length=200, start=0, sEcho=1):
     }
     return make_request(url, params=payload)
 
-def display_bands_until_last_scraped_day(url, last_scraped_day=None, is_final_month=False, rows_per_page=200):
+def Update_modified(url, last_scraped_day=None, is_final_month=False, rows_per_page=200):
     page = 1
     scrape_more = True
     all_records = []
@@ -144,12 +149,11 @@ def display_bands_until_last_scraped_day(url, last_scraped_day=None, is_final_mo
             print(f"No more records found on page {page}.")
             break
 
-        df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date', 'Submitter'])
+        df = pd.DataFrame(records, columns=['MonthDay', 'Band URL', 'Country', 'Genre', 'Date'])
         
         # Strip HTML tags directly where needed
         df['Band URL'] = df['Band URL'].apply(extract_href)
         df['Band Name'] = df['Band URL'].apply(extract_text)
-        df['Submitter'] = df['Submitter'].apply(extract_text)
         df['Band ID'] = df['Band URL'].apply(extract_url_id)
         df['Day'] = df['MonthDay'].str.extract(r'(\d{1,2})').astype(int)
         if is_final_month and df['Day'].min().item() < last_scraped_day:
@@ -166,21 +170,11 @@ def display_bands_until_last_scraped_day(url, last_scraped_day=None, is_final_mo
 
     if all_records:
         combined_df = pd.concat(all_records, ignore_index=True)
+        combined_df[['Band URL', 'Band Name', 'Country', 'Genre', 'Band ID']]
         return combined_df
     else:
         print("No records found.")
         return pd.DataFrame()
-
-def process_combined_data(df):
-    df = df[['Band URL', 'Band Name', 'Country', 'Genre', 'Status', 'Band ID']]
-
-    if not df.empty:
-        print(f"New records added since last scrape (no duplicates): {len(df)}")
-        save_progress(df[['Band ID']], TEMPFILE)
-        save_progress(df, BANDSFILE)
-    else:
-        print("No new records added since last scrape or no new unique records.")
-    print('Done!')
 
 def updater():
     last_scraped_date = get_last_scraped_date(METADATA_FILE, os.path.basename(BANDSFILE))
@@ -188,24 +182,22 @@ def updater():
         print("Failed to retrieve the last scraped date.")
         return
 
-    for url_base in [URL_MODIFIED]:
-        print(f"Processing data for URL base: {url_base}")
-
-        # Determine URLs to scrape (from the last scraped date to the current month)
-        urls_to_scrape = determine_urls_to_scrape(last_scraped_date, url_base)
+    urls_to_scrape = determine_urls_to_scrape(last_scraped_date, URL_MODIFIED)
     
-        # Loop through each URL and scrape data
-        for i, url in enumerate(urls_to_scrape):
-            is_final_month = (i == len(urls_to_scrape) - 1)
-            last_scraped_day = last_scraped_date.day if is_final_month else None
+    # Loop through each URL and scrape data
+    for i, url in enumerate(urls_to_scrape):
+        is_final_month = (i == len(urls_to_scrape) - 1)
+        last_scraped_day = last_scraped_date.day if is_final_month else None
 
-            print(f"Fetching bands for URL: {url}")
-            bands_df = display_bands_until_last_scraped_day(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month)
+        print(f"Fetching bands for URL: {url}")
+        bands_df = Update_modified(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month)
 
-            if not bands_df.empty:
-                process_combined_data(bands_df)
-            else:
-                print(f"No new records found for {url}.")
+        if not bands_df.empty:
+            print(f"New records added since last scrape (no duplicates): {len(bands_df)}")
+            save_progress(bands_df[['Band ID']], TEMPFILE)
+            save_progress(bands_df, BANDSFILE)
+        else:
+            print(f"No new records found for {url}.")
 
 # Call the function
 if __name__ == "__main__":
