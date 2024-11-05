@@ -10,7 +10,7 @@ Please check the entries in `metadata.csv` for information on when the datasets 
 ## Overview
 This project contains a collection of scripts designed to scrape various parts of the Metal-Archives (MA) website. The aim is to create a wrapper script that can scrape and parse just about anything from MA.
 
-## Working Scrapers and Parsers
+## Working Scrapers
 
 - **BandScraper/BandParser → `MA_Bands`**:  
   Scrapes data for:
@@ -18,12 +18,11 @@ This project contains a collection of scripts designed to scrape various parts o
   - Band Name
   - Country
   - Genre
-  - Status
   - Band ID
+    - optionally Status
 
 - **SimilarScraper → `MA_Similar`**:  
   Scrapes data for:
-  - Band URL
   - Similar Band ID
   - Similarity Score
   - Band ID
@@ -36,30 +35,36 @@ This project contains a collection of scripts designed to scrape various parts o
   - Number of Reviews
   - Band ID
 
-- **ThemeScraper → `MA_Lyrics`**:  
+- **DetailScraper → `MA_Details`**:  
   Scrapes data for:
-  - Lyrical Themes
+  - Country of origin
+  - Location
+  - Status
+  - Formed in
+  - Genre
+  - Themes
+  - Current label
+  - Years active
   - Band ID
+  - Last label
 
 ## Supporting Scripts
 
 - **Refresh**:  
   Updates all final datasets incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new/modified bands from the recently added/modified page on Metal-Archives.
 
-- **HTML_Scraper & utils**:  
-  A collection of basic utility functions and functions for fetching and parsing HTML content.
+- **FullScraper**:  
+  Fully scrapes Metallum from scratch. Starts by quickly scraping all bands and some basic data after which it scrapes corresponding band specific pages: Similar bands, Band details & Band discography.
+  - Note: The initial basic data scraping is much more efficient and only takes about 17 minutes, the band specific page scraping takes about 16 hours for each distinct page. All in all it could take up to 48.5 hours to scrape all of metallum on these topics.
 
 ## In Progress
 
 - **Data analysis**:
   Exploring, cleaning and transforming the data and creating a basic model that can predict what bands you might like given you like x band.
+  
+- **Optimizing scrapers**:
+  Looking into options to speed up the scrapers and make the incremental refreshing more reliable. A particular issue seems to be the deletion of bands from mettalum, this currently isn't handled well resulting in datasets that aren't perfectly in sync with eachother and data on removed bands.
 
-- **Mass scraping wrapper**:
-  Whilst the current scripts allow you to scrape nearly all masterdata on bands, there is no wrapper script that executes them all in the right order.
-
-- **Clearer script hierarchy**:
-  I aim to present two wrapper scripts: one that scrapes everything and one that can do incremental updates on your datasets after you've done a full scrape/imported the public datasets from google drive.
-  The scripts for scraping individual sections will remain available but should be less prominent.
   
 
 
