@@ -4,20 +4,58 @@ import json
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
+from datetime import datetime
 
 load_dotenv()
 CONFIG = os.getenv('CONFIG')
 metadata_path = os.getenv('METADATA')
 
+def get_last_scraped_date(file_path, filename):
+    try:
+        df = pd.read_csv(file_path)
+        file_info = df[df['Filename'] == filename]
+        if not file_info.empty:
+            date_str = file_info.iloc[0]['Date']
+            return datetime.strptime(date_str, '%Y-%m-%d')
+    except Exception as e:
+        print(f"Error: {e}")
+    return None
+
+class Env:
+    _instance = None
+    
+    @staticmethod
+    def get_instance():
+        if Env._instance is None:
+            Env._instance = Env()
+        return Env._instance
+
+    def __init__(self):
+        if Env._instance is not None:
+            raise Exception("This is a singleton!")
+        self.cook = load_config('Cookies')
+        self.head = load_config('Headers')
+        self.meta = os.getenv('METADATA')
+        self.temp = os.getenv('TEMPID')
+        self.dele = os.getenv('TEMPDEL')
+        self.simi = os.getenv('SIMBAN')
+        self.disc = os.getenv('BANDIS')
+        self.band = os.getenv('BANDPAR')
+        self.deta = os.getenv('DETAIL')
+        self.bandold = os.getenv('BANDPAR_OLD')
+        self.url_modi= os.getenv('URLMODIFIED')
+   
 file_paths = {
     'MA_Bands.csv': ['Band ID'],
     'MA_Similar.csv': ['Band ID', 'Similar Artist ID'],
     'MA_Discog.csv': ['Album Name', 'Type', 'Year', 'Band ID'],
-    'MA_Lyrics.csv': ['Band ID'],
     'MA_Details.csv': ['Band ID'],
     'metadata.csv': ['Filename'],
     'MA_Changes.csv': ['Band ID']
 }
+
+def extract_url_id(url):
+    return url.split('/')[-1]
 
 def load_config(attribute):
     """Attribute as Cookies or Headers"""
@@ -114,3 +152,18 @@ def remove_duplicates(file_path):
     df_updated.to_csv(file_path, mode='w', header=True, index=False)
     
     print(f"Duplicates removed and progress saved for {filename}.")
+
+def Main_based_scrape(target_path):
+    """Scrapes all ids existing in the main MA_bands, not in the target file"""
+    env = Env.get_instance()
+    all_band_ids = set(pd.read_csv(env.band)['Band ID'])
+    processed_set = set(pd.read_csv(target_path)['Band ID'])
+
+    band_ids_to_process = list(all_band_ids - processed_set)
+    band_ids_to_delete = list(processed_set-all_band_ids)
+
+    target_df = pd.read_csv(target_path)
+    updated_df = target_df[~target_df['Band ID'].isin(band_ids_to_delete)]
+    updated_df.to_csv(target_path, index=False)
+
+    return band_ids_to_process

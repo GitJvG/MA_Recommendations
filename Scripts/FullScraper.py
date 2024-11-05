@@ -9,7 +9,7 @@ def FullScrape():
     print('Full discography scraped')
     DetailScraper.main()
     """DetailScraper may take up to 17 hours"""
-    print('Full lyrical themes scraped')
+    print('Full details scraped')
     SimilarScraper.main()
     """SimilarScraper may take up to 17 hours"""
     print('Full Similar bands scraped')

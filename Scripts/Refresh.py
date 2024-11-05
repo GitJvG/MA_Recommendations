@@ -1,22 +1,15 @@
 """Incremental updater is only based on day number as of now, this will be updated later. Should work fine for the rest of the current month."""
-
-from dotenv import load_dotenv
-from utils import remove_duplicates
+from utils import remove_duplicates, Env
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-load_dotenv()
+
+env = Env.get_instance()
 
 def refresh():
-    TEMP = os.getenv('TEMPID')
-    if os.path.exists(TEMP): #Deletes temp file created by BandUpdtr on the last run.
-        os.remove(TEMP)  # Delete the file
-        print(f"{TEMP} has been deleted.")
-    else:
-        print(f"{TEMP} does not exist.")
-
-    from Scripts.Components.BandScraper import updater as BandList
-    BandList() #Updates both MA_Bands and MA_Lyrics. Together reduces the amount of requests needed. Also saves a list of edited Band IDs in Temp/MA_Changes.csv
+       
+    from Scripts.Components.BandScraper import scrape_bands
+    scrape_bands()
     from Scripts.Components.SimilarScraper import refresh as ReSim 
     ReSim() #Fetches all similar band data on Band IDs in Temp/MA_Changes.csv
     from Scripts.Components.AlbumScraper import refresh as ReAlb
@@ -24,7 +17,7 @@ def refresh():
     from Scripts.Components.DetailScraper import refresh as ReDet
     ReDet()
 
-    csv_files = ['Datasets\MA_Bands.csv', 'Datasets\MA_Similar.csv', 'Datasets\MA_Discog.csv', 'Datasets\MA_Lyrics.csv', 'Datasets\metadata.csv']
+    csv_files = ['Datasets/MA_Bands.csv', 'Datasets/MA_Similar.csv', 'Datasets/MA_Discog.csv', 'Datasets/MA_Details.csv', 'Datasets/metadata.csv']
     for csv in csv_files:
         remove_duplicates(csv)
 

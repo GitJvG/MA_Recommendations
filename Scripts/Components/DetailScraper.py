@@ -3,29 +3,24 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from Scripts.Components.HTML_Scraper import fetch
-from Scripts.utils import load_config, Parallel_processing
+from Scripts.utils import Parallel_processing, Env, Main_based_scrape
 from bs4 import BeautifulSoup
+from Scripts.Components.ModifiedUpdater import Modified_based_scrape
 
 load_dotenv(".env", override=True)
+env = Env.get_instance()
 
-BANDSFILE = os.getenv('BANDPAR')
-DETAILS = 'Datasets/MA_Details.csv'
-data = pd.read_csv(BANDSFILE)
+data = pd.read_csv(env.band)
 all_band_ids = data['Band ID'].tolist()
-processed = pd.read_csv(DETAILS)[['Band ID']] if os.path.exists(DETAILS) else pd.DataFrame()
+processed = pd.read_csv(env.deta)[['Band ID']] if os.path.exists(env.deta) else pd.DataFrame()
 processed = processed['Band ID'].tolist() if not processed.empty else []
-temp_file = os.getenv('TEMPID')
-
-# Constants
-COOKIES = load_config('Cookies')
-HEADERS = load_config('Headers')
 
 def get_band_data(band_id, **kwargs):
     delay_between_requests = kwargs.get('delay_between_requests', 0.1)
     band_url = f'https://www.metal-archives.com/bands/id/{band_id}'
     
     try:
-        html_content = fetch(band_url, cookies=COOKIES, headers=HEADERS, delay_between_requests=delay_between_requests)
+        html_content = fetch(band_url, cookies=env.cook, headers=env.head, delay_between_requests=delay_between_requests)
         
         if html_content is None:
             return None  # Return early if fetching failed
@@ -57,19 +52,14 @@ def get_band_data(band_id, **kwargs):
         return None
 
 def main():
-    processed_set = set(processed)
-    band_ids_to_process = [band_id for band_id in all_band_ids if band_id not in processed_set]
-    Parallel_processing(band_ids_to_process, 500, DETAILS, get_band_data, delay_between_requests=0.05)
+    band_ids_to_process = Main_based_scrape(env.deta)
+    Parallel_processing(band_ids_to_process, 500, env.deta, get_band_data, delay_between_requests=0.05)
 
 def refresh():
-    """Refreshes the data using band IDs from the temporary file."""
-    temp_data = pd.read_csv(temp_file)
-    band_ids_to_process = temp_data['Band ID'].tolist()
-
-    print(f"Total bands to refresh: {len(band_ids_to_process)}")
-    Parallel_processing(band_ids_to_process, 500, DETAILS, get_band_data, delay_between_requests=0.05)
+    # Complete = true because all band ids in main should at least have a profile
+    Modified_based_scrape(env.deta, get_band_data, complete=True)
 
 if __name__ == "__main__":
-    main()
+    print(get_band_data(70))
 
 
