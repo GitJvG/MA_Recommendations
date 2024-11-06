@@ -17,7 +17,7 @@ def make_request(url, params=None):
     r.raise_for_status()
     return r.json()
 
-def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split()):
+def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,
