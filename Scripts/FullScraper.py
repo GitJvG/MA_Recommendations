@@ -1,7 +1,7 @@
 from .Components import BandScraper, AlbumScraper, SimilarScraper, DetailScraper
 
 def FullScrape():
-    BandScraper.scrape_bands()
+    BandScraper.Full_scrape()
     """BandScraper should take about 30 minutes"""
     print('Full list of bands scraped')
     AlbumScraper.main()

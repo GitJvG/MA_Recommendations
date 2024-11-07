@@ -40,14 +40,14 @@ def fetch_bands_page(url, length=200, start=0, sEcho=1):
     return make_request(url, params=payload)
 
 
-def Modified_Set(url, last_scraped_day=None, is_final_month=False, rows_per_page=200):
+def Modified_Set(url, last_scraped_day=None, is_final_month=False, length=200):
     """Returns set of band ids that have been modified since last scraping date"""
     page = 1
     band_ids = set()
 
     while True:
-        start_index = (page - 1) * rows_per_page
-        data = fetch_bands_page(url, length=rows_per_page, start=start_index)
+        start_index = (page - 1) * length
+        data = fetch_bands_page(url, length=length, start=start_index)
         records = data.get('aaData', [])
 
         if not records:
@@ -104,10 +104,12 @@ def Modified_based_scrape(target_path, function, complete = False):
     if last_scraped_main in {today, today - timedelta(days=1)}:
         all_band_ids = set(pd.read_csv(env.band)['Band ID'])
         processed_set = set(pd.read_csv(target_path)['Band ID'])
-        band_ids_to_delete = list(processed_set-all_band_ids)
+
+        band_ids_to_delete = list(processed_set - all_band_ids)
+
         target_df = pd.read_csv(target_path)
         updated_df = target_df[~target_df['Band ID'].isin(band_ids_to_delete)]
-        updated_df.to_csv(target_path, index=False)
+        updated_df.to_csv(target_path, mode='w', index=False)
     
         if complete:
             missing_ids = all_band_ids - processed_set

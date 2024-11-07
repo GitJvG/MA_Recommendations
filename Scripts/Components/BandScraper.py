@@ -9,7 +9,6 @@ from Scripts.Components.HTML_Scraper import extract_href, extract_text
 from bs4 import BeautifulSoup
 
 env = Env.get_instance()
-BASEURL = 'https://www.metal-archives.com/browse/ajax-letter/json/1/l/'
 length = 500  # max number of bands in a single view
 
 def make_request(url, params=None):
@@ -24,7 +23,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
             'iDisplayStart': start,
             'iDisplayLength': length
         }
-        return make_request(BASEURL + letter, params=payload)
+        return make_request(env.url_band + letter, params=payload)
 
     column_names = ['NameLink', 'Country', 'Genre', 'Status']
     data = DataFrame()
@@ -79,11 +78,11 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
         print("No data retrieved.")
         return
     
-def refresh():
+def Full_scrape():
     data = scrape_bands()
     data.to_csv(env.band, index=False, mode='w')
     update_metadata(os.path.basename(env.band))
     print('Done!')
 # Call the function
 if __name__ == "__main__":
-    scrape_bands()
+    Full_scrape()

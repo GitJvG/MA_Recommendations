@@ -59,6 +59,6 @@ def refresh():
     Modified_based_scrape(env.deta, get_band_data, complete=True)
 
 if __name__ == "__main__":
-    print(get_band_data(70))
+    refresh()
 
 

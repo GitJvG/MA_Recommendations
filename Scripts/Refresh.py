@@ -3,7 +3,6 @@ from utils import remove_duplicates, Env
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from Scripts.Components.BandScraper import scrape_bands
 from Scripts.Components.SimilarScraper import refresh as ReSim
 from Scripts.Components.AlbumScraper import refresh as ReAlb
@@ -13,13 +12,15 @@ env = Env.get_instance()
 
 def refresh():
     scrape_bands()
-    """ReSim()
+    ReSim()
     ReAlb()
-    ReDet()"""
+    ReDet()
 
-    csv_files = ['Datasets/MA_Bands.csv', 'Datasets/MA_Similar.csv', 'Datasets/MA_Discog.csv', 'Datasets/MA_Details.csv', 'Datasets/metadata.csv']
+def remove_dupes():
+    csv_files = [env.band, env.simi, env.disc, env.deta, env.meta]
     for csv in csv_files:
         remove_duplicates(csv)
 
 if __name__ == "__main__":
     refresh()
+    remove_dupes()

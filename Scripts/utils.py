@@ -44,6 +44,7 @@ class Env:
         self.deta = os.getenv('DETAIL')
         self.bandold = os.getenv('BANDPAR_OLD')
         self.url_modi= os.getenv('URLMODIFIED')
+        self.url_band= os.getenv('URLBANDS')
         self.retries = load_config('Retries')
         self.delay = load_config('Delay')
    
