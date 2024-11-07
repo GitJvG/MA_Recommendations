@@ -44,6 +44,8 @@ class Env:
         self.deta = os.getenv('DETAIL')
         self.bandold = os.getenv('BANDPAR_OLD')
         self.url_modi= os.getenv('URLMODIFIED')
+        self.retries = load_config('Retries')
+        self.delay = load_config('Delay')
    
 file_paths = {
     'MA_Bands.csv': ['Band ID'],

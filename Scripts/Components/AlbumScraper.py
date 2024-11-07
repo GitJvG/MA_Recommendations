@@ -26,7 +26,7 @@ def parse_html(html, band_id):
 def fetch_album_data(band_id):
     """Fetches album data for a given band ID and returns it as a DataFrame."""
     url = f"{BASEURL}{band_id}{ENDURL}"
-    html_content = fetch(url, retries=10, cookies=env.cook, headers=env.head)
+    html_content = fetch(url, headers=env.head)
 
     if html_content:
         df = parse_html(html_content, band_id)
@@ -41,7 +41,7 @@ def refresh():
 def main():
     """Main function to process all band IDs."""
     band_ids_to_process = Main_based_scrape(env.disc)
-    Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data, delay_between_requests=0.05, cookies=env.cook, headers=env.head)
+    Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
 
 if __name__ == "__main__":
     main()

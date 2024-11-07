@@ -1,13 +1,13 @@
 import requests
 import time
 from bs4 import BeautifulSoup
+from utils import Env
+env = Env.get_instance()
 
-def fetch(url, retries=5, delay_between_requests=0.05, cookies=None, headers=None):
+def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=env.head):
     session = requests.Session()
-    if headers:
-        session.headers.update(headers)
-    if cookies:
-        session.cookies.update(cookies)
+    session.headers.update(headers)
+    session.cookies.update(env.cook)
     
     for attempt in range(retries):
         try:

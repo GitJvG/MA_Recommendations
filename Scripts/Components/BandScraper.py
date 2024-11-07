@@ -43,8 +43,8 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
                 end = min(start + length, n_records)
                 print('Fetching band entries ', start, 'to ', end)
 
-                for attempt in range(10):
-                    time.sleep(1)  # Obeying robots.txt "Crawl-delay: 3"
+                for attempt in range(env.retries):
+                    time.sleep(env.delay)
                     try:
                         js = get_url(letter=letter, start=start, length=length)  # Get JSON here as well
 
@@ -74,14 +74,16 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
         data['Band Name'] = data['NameLink'].apply(extract_text)
         data['Band ID'] = data['Band URL'].apply(extract_url_id)
         data = data[['Band URL','Band Name','Country','Genre','Band ID']]
-
-        data.to_csv(env.band, index=False, mode='w')
-        update_metadata(os.path.basename(env.band))
-        print('Done!')
+        return data
     else:
         print("No data retrieved.")
-
-
+        return
+    
+def refresh():
+    data = scrape_bands()
+    data.to_csv(env.band, index=False, mode='w')
+    update_metadata(os.path.basename(env.band))
+    print('Done!')
 # Call the function
 if __name__ == "__main__":
     scrape_bands()

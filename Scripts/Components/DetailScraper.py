@@ -15,12 +15,11 @@ all_band_ids = data['Band ID'].tolist()
 processed = pd.read_csv(env.deta)[['Band ID']] if os.path.exists(env.deta) else pd.DataFrame()
 processed = processed['Band ID'].tolist() if not processed.empty else []
 
-def get_band_data(band_id, **kwargs):
-    delay_between_requests = kwargs.get('delay_between_requests', 0.1)
+def get_band_data(band_id):
     band_url = f'https://www.metal-archives.com/bands/id/{band_id}'
     
     try:
-        html_content = fetch(band_url, cookies=env.cook, headers=env.head, delay_between_requests=delay_between_requests)
+        html_content = fetch(band_url, headers=env.head)
         
         if html_content is None:
             return None  # Return early if fetching failed
@@ -53,7 +52,7 @@ def get_band_data(band_id, **kwargs):
 
 def main():
     band_ids_to_process = Main_based_scrape(env.deta)
-    Parallel_processing(band_ids_to_process, 500, env.deta, get_band_data, delay_between_requests=0.05)
+    Parallel_processing(band_ids_to_process, 500, env.deta, get_band_data)
 
 def refresh():
     # Complete = true because all band ids in main should at least have a profile

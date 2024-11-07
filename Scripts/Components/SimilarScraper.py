@@ -20,11 +20,9 @@ def parse_similar_artists(html, band_id):
 
     return results
 
-def scrape_band_data(band_id, **kwargs):
-    delay_between_requests = kwargs.get('delay_between_requests', 0.1)
-    # Define the URL
+def scrape_band_data(band_id):
     url = f'https://www.metal-archives.com/band/ajax-recommendations/id/{band_id}'
-    html_content = fetch(url, retries=5, delay_between_requests=delay_between_requests, cookies=env.cook, headers=env.head)
+    html_content = fetch(url, headers=env.head)
 
     if html_content:
         if "No similar artist has been recommended yet" in html_content:
@@ -41,7 +39,7 @@ def refresh():
     
 def main():
     band_ids_to_process = Main_based_scrape(env.simi)
-    Parallel_processing(band_ids_to_process, 200, env.simi, scrape_band_data, delay_between_requests=0.05)
+    Parallel_processing(band_ids_to_process, 200, env.simi, scrape_band_data)
 
 if __name__ == "__main__":
     main()
