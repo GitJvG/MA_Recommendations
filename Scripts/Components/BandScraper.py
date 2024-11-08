@@ -5,7 +5,7 @@ from pandas import DataFrame
 import json
 import pandas as pd
 from Scripts.utils import Env, extract_url_id, update_metadata
-from Scripts.Components.HTML_Scraper import extract_href, extract_text
+from Scripts.Components.Helper.HTML_Scraper import extract_href, extract_text
 from bs4 import BeautifulSoup
 
 env = Env.get_instance()
@@ -83,6 +83,7 @@ def Full_scrape():
     data.to_csv(env.band, index=False, mode='w')
     update_metadata(os.path.basename(env.band))
     print('Done!')
+    
 # Call the function
 if __name__ == "__main__":
     Full_scrape()

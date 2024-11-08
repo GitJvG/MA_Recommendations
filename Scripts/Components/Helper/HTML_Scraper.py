@@ -1,7 +1,7 @@
 import requests
 import time
 from bs4 import BeautifulSoup
-from utils import Env
+from Scripts.utils import Env
 env = Env.get_instance()
 
 def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=env.head):

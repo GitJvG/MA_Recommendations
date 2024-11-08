@@ -1,8 +1,8 @@
 #Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
 import pandas as pd
 from Scripts.utils import Parallel_processing, Env, Main_based_scrape
-from Scripts.Components.HTML_Scraper import fetch, parse_table, extract_text
-from Scripts.Components.ModifiedUpdater import Modified_based_scrape
+from Scripts.Components.Helper.HTML_Scraper import fetch, parse_table, extract_text
+from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
 env = Env.get_instance()
 
 BASEURL = 'https://www.metal-archives.com/band/discography/id/'
@@ -36,8 +36,9 @@ def fetch_album_data(band_id):
 
 def refresh():
     # Complete false because many bands don't have any discog entries.
-    Modified_based_scrape(env.disc, fetch_album_data, complete=False)
-
+    band_ids_to_process = Modified_based_list(env.disc, complete=False)
+    Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
+    
 def main():
     """Main function to process all band IDs."""
     band_ids_to_process = Main_based_scrape(env.disc)

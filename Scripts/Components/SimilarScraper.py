@@ -1,7 +1,7 @@
 import pandas as pd
 from Scripts.utils import Parallel_processing, Env, Main_based_scrape
-from Scripts.Components.HTML_Scraper import fetch, extract_href, extract_text, parse_table # Import your fetch function
-from Scripts.Components.ModifiedUpdater import Modified_based_scrape
+from Scripts.Components.Helper.HTML_Scraper import fetch, extract_href, extract_text, parse_table # Import your fetch function
+from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
 
 # Load environment variables
 env = Env.get_instance()
@@ -35,7 +35,8 @@ def scrape_band_data(band_id):
     return pd.DataFrame(columns=['Similar Artist ID', 'Score', 'Band ID'])
 
 def refresh():
-    Modified_based_scrape(env.simi, scrape_band_data, complete=False)
+    band_ids_to_process = Modified_based_list(env.simi, complete=False)
+    Parallel_processing(band_ids_to_process, 200, env.simi, scrape_band_data)
     
 def main():
     band_ids_to_process = Main_based_scrape(env.simi)

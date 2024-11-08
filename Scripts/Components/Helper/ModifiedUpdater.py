@@ -91,7 +91,7 @@ def Update_list(output_path):
     
     return list(bands_ids)
 
-def Modified_based_scrape(target_path, function, complete = False):
+def Modified_based_list(target_path, complete = False):
     env = Env.get_instance()
     last_scraped_main = get_last_scraped_date(env.band, os.path.basename(target_path))
     today = datetime.today().date()
@@ -117,7 +117,7 @@ def Modified_based_scrape(target_path, function, complete = False):
 
     # Proceed with parallel processing on the final list of IDs
     print(f"Total bands to refresh for {target_path}: {len(band_ids_to_process)}")
-    Parallel_processing(band_ids_to_process, 200, target_path, function)
+    return band_ids_to_process
 
 if __name__ == "__main__":
     print(len(Modified_Set(env.url_modi, 6, True)))
