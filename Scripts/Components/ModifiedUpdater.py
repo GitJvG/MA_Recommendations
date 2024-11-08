@@ -29,25 +29,25 @@ def determine_urls_to_scrape(last_scraped_date, url_base):
 
     return urls_to_scrape
 
-def fetch_bands_page(url, length=200, start=0, sEcho=1):
+def fetch_bands_page(url, start=0, sEcho=1):
     payload = {
         'sEcho': sEcho,
         'iDisplayStart': start,
-        'iDisplayLength': length,
         'sSortDir_0': 'desc',
         '_': int(time.time() * 1000)
     }
     return make_request(url, params=payload)
 
 
-def Modified_Set(url, last_scraped_day=None, is_final_month=False, length=200):
+def Modified_Set(url, last_scraped_day=None, is_final_month=False):
     """Returns set of band ids that have been modified since last scraping date"""
     page = 1
     band_ids = set()
 
     while True:
-        start_index = (page - 1) * length
-        data = fetch_bands_page(url, length=length, start=start_index)
+        # The page always display 200 regardless of what iDisplayLength is passed
+        start_index = (page - 1) * 200
+        data = fetch_bands_page(url, start=start_index)
         records = data.get('aaData', [])
 
         if not records:
@@ -118,3 +118,6 @@ def Modified_based_scrape(target_path, function, complete = False):
     # Proceed with parallel processing on the final list of IDs
     print(f"Total bands to refresh for {target_path}: {len(band_ids_to_process)}")
     Parallel_processing(band_ids_to_process, 200, target_path, function)
+
+if __name__ == "__main__":
+    print(len(Modified_Set(env.url_modi, 6, True)))

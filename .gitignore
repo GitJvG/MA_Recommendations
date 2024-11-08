@@ -12,3 +12,5 @@ model_folder_path/
 Preprocessed_sets/
 .venv/
 Backlog/
+pickle/
+Newdev
