@@ -7,8 +7,13 @@ from threading import Lock
 from datetime import datetime
 
 load_dotenv()
-CONFIG = os.getenv('CONFIG')
-metadata_path = os.getenv('METADATA')
+
+def load_config(attribute):
+    """Attribute as Cookies or Headers"""
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+        
+    return config.get(attribute)
 
 def get_last_scraped_date(file_path, filename):
     try:
@@ -36,58 +41,39 @@ class Env:
         self.cook = load_config('Cookies')
         self.head = load_config('Headers')
         self.meta = os.getenv('METADATA')
-        self.temp = os.getenv('TEMPID')
-        self.dele = os.getenv('TEMPDEL')
         self.simi = os.getenv('SIMBAN')
         self.disc = os.getenv('BANDIS')
         self.band = os.getenv('BANDPAR')
         self.deta = os.getenv('DETAIL')
-        self.bandold = os.getenv('BANDPAR_OLD')
+        self.memb = os.getenv('MEMBER')
         self.url_modi= os.getenv('URLMODIFIED')
         self.url_band= os.getenv('URLBANDS')
         self.retries = load_config('Retries')
         self.delay = load_config('Delay')
-   
+
+env = Env.get_instance()
+  
 file_paths = {
     'MA_Bands.csv': ['Band ID'],
     'MA_Similar.csv': ['Band ID', 'Similar Artist ID'],
     'MA_Discog.csv': ['Album Name', 'Type', 'Year', 'Band ID'],
     'MA_Details.csv': ['Band ID'],
-    'metadata.csv': ['Filename'],
-    'MA_Changes.csv': ['Band ID']
+    'MA_Member.csv':['Band ID', 'Member ID'],
+    'metadata.csv': ['Filename']
 }
 
 def extract_url_id(url):
     return url.split('/')[-1]
 
-def load_config(attribute):
-    """Attribute as Cookies or Headers"""
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-        
-    return config.get(attribute)
-
 def save_progress(new_data, output_file):
     df_new = pd.DataFrame(new_data)
 
-    # Check if the file already exists
     if os.path.exists(output_file):
-        # If the file exists, load it and handle duplicates
-        unique_columns = file_paths.get(os.path.basename(output_file))  
-        try:
-            df_existing = pd.read_csv(output_file, keep_default_na=False)
-            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-            # Drop duplicates based on unique columns
-            df_updated = df_combined.drop_duplicates(subset=unique_columns, keep='last')
-            df_updated.to_csv(output_file, mode='w', header=True, index=False)
-        except Exception as e:
-            print(f"Error updating file '{output_file}': {e}")
+        df_new.to_csv(output_file, mode='a', header=False, index=False)
     else:
-        # If the file doesn't exist, simply create it with the new data
+        # If the file doesn't exist, create it and write the new data
         df_new.to_csv(output_file, mode='w', header=True, index=False)
-        print(f"Created new file: {output_file}")
 
-    update_metadata(os.path.basename(output_file))
     print(f"Progress saved to {output_file}")
 
 def Parallel_processing(items_to_process, batch_size, output_file, function, **kwargs):
@@ -102,7 +88,7 @@ def Parallel_processing(items_to_process, batch_size, output_file, function, **k
             processed_count += 1
             print(f"Processed {processed_count} items.")
     
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_band_id = {executor.submit(function, band_id, **kwargs): band_id for band_id in items_to_process}
 
         for future in as_completed(future_to_band_id):
@@ -112,13 +98,15 @@ def Parallel_processing(items_to_process, batch_size, output_file, function, **k
                 update_processed_count()
                 if not band_data.empty:  # Check if the DataFrame is not empty
                     all_band_data.append(band_data)  # Append DataFrame
-                    if processed_count % batch_size == 0:
-                        save_progress(pd.concat(all_band_data, ignore_index=True), output_file)  # Concatenate and save
-                        all_band_data.clear()  # Clear data after saving
+
+                if processed_count % batch_size == 0:
+                    save_progress(pd.concat(all_band_data, ignore_index=True), output_file)  # Concatenate and save
+                    all_band_data.clear()  # Clear data after saving
             except Exception as e:
                 print(f"Error processing band ID {band_id}: {e}")
+
     if all_band_data:
-        save_progress(pd.concat(all_band_data, ignore_index=True), output_file)  # Final save
+        save_progress(pd.concat(all_band_data, ignore_index=True), output_file)
 
 def update_metadata(data_filename):
     new_entry = pd.DataFrame([{
@@ -127,7 +115,7 @@ def update_metadata(data_filename):
     }])
     
     try:
-        metadata_df = pd.read_csv(metadata_path)
+        metadata_df = pd.read_csv(env.meta)
         
         # Drop any rows where 'Filename' matches data_filename to avoid duplicates
         metadata_df = metadata_df[metadata_df['Filename'] != data_filename]
@@ -136,13 +124,13 @@ def update_metadata(data_filename):
     except FileNotFoundError:
         metadata_df = new_entry
 
-    metadata_df.to_csv(metadata_path, index=False)
+    metadata_df.to_csv(env.meta, index=False)
 
     print('Metadata updated!')
     return metadata_df
 
 def remove_duplicates(file_path):
-    """Failsafe measure. Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary."""
+    """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
     filename = os.path.basename(file_path)
     
     if filename not in file_paths:
