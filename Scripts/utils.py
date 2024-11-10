@@ -76,9 +76,14 @@ def save_progress(new_data, output_file):
 
     print(f"Progress saved to {output_file}")
 
-def Parallel_processing(items_to_process, batch_size, output_file, function, **kwargs):
-    print(f"Total bands to process: {len(items_to_process)}")
-    all_band_data = []  # This will now hold DataFrames
+def Parallel_processing(items_to_process, batch_size, output_files, function, **kwargs):
+    """Wrapping function for multithreading, supports functions that have multiple dataframe outputs as long as multiple output_files are provided in order of returned dataframes."""
+    # Ensure `output_files` is a list, even if only one file is passed
+    if not isinstance(output_files, list):
+        output_files = [output_files]
+    
+    # Initialize a list of lists, each one to collect data for an output file
+    all_data = [[] for _ in output_files]
     processed_count = 0
     lock = Lock()
 
@@ -94,19 +99,32 @@ def Parallel_processing(items_to_process, batch_size, output_file, function, **k
         for future in as_completed(future_to_band_id):
             band_id = future_to_band_id[future]
             try:
-                band_data = future.result()
+                result = future.result()  # Get result(s) from the function
+                
                 update_processed_count()
-                if not band_data.empty:  # Check if the DataFrame is not empty
-                    all_band_data.append(band_data)  # Append DataFrame
+                
+                # If function returns a single DataFrame, wrap it in a tuple for consistency
+                if isinstance(result, pd.DataFrame):
+                    result = (result,)
+                
+                # Append each result DataFrame to the corresponding list in all_data
+                for i, df in enumerate(result):
+                    if not df.empty:
+                        all_data[i].append(df)
 
+                # Intermediate saving for each batch
                 if processed_count % batch_size == 0:
-                    save_progress(pd.concat(all_band_data, ignore_index=True), output_file)  # Concatenate and save
-                    all_band_data.clear()  # Clear data after saving
+                    for i, data_list in enumerate(all_data):
+                        if data_list:
+                            save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
+                            data_list.clear()  # Clear data after saving
             except Exception as e:
                 print(f"Error processing band ID {band_id}: {e}")
 
-    if all_band_data:
-        save_progress(pd.concat(all_band_data, ignore_index=True), output_file)
+    # Final save for any remaining data
+    for i, data_list in enumerate(all_data):
+        if data_list:
+            save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
 
 def update_metadata(data_filename):
     new_entry = pd.DataFrame([{
