@@ -1,0 +1,19 @@
+paths:
+  MA_BANDS: "Datasets/MA_Bands.csv"
+  METADATA: "Datasets/metadata.csv"
+  MA_SIMILAR: "Datasets/MA_Similar.csv"
+  MA_DISCOG: "Datasets/MA_Discog.csv"
+  MA_DETAILS: "Datasets/MA_Details.csv"
+  MA_MEMBER: "Datasets/MA_Member.csv"
+  CONFIG: "Config.json"
+
+urls:
+  MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
+  BANDS: "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
+
+python:
+  PYTHONPATH: "."
+  
+scraper:
+  RETRIES: 10
+  DELAY: 0.3
