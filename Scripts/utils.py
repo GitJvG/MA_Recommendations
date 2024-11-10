@@ -18,15 +18,6 @@ def get_last_scraped_date(file_path, filename):
         print(f"Error: {e}")
     return None
 
-file_paths = {
-    'MA_Bands.csv': ['Band ID'],
-    'MA_Similar.csv': ['Band ID', 'Similar Artist ID'],
-    'MA_Discog.csv': ['Album Name', 'Type', 'Year', 'Band ID'],
-    'MA_Details.csv': ['Band ID'],
-    'MA_Member.csv':['Band ID', 'Member ID'],
-    'metadata.csv': ['Filename']
-}
-
 def extract_url_id(url):
     return url.split('/')[-1]
 
@@ -91,7 +82,8 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
         if data_list:
             save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
 
-def update_metadata(data_filename):
+def update_metadata(file_path):
+    data_filename = os.path.basename(file_path)
     new_entry = pd.DataFrame([{
         'Filename': data_filename,
         'Date': pd.Timestamp.now().strftime('%Y-%m-%d')
@@ -119,18 +111,18 @@ def list_to_delete(target_path):
     band_ids_to_delete = list(existing_set-all_band_ids)
     return band_ids_to_delete
 
+def unique_columns(path):
+    attribute_name = next(key for key, value in vars(env).items() if value == path)
+    unique_columns = getattr(env, f"{attribute_name}_key")
+    return unique_columns
+
 def remove_dupes_and_deletions(file_path):
     """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
     filename = os.path.basename(file_path)
-    
-    if filename not in file_paths:
-        print(f"No unique columns defined for {filename}. Skipping.")
-        return
+    unique_cols = unique_columns(file_path)
 
     df = pd.read_csv(file_path)
-    
-    unique_columns = file_paths[filename]
-    df_updated = df.drop_duplicates(subset=unique_columns, keep='last')
+    df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
 
     ids_to_delete = list_to_delete(file_path)
     df_updated = df_updated[~df_updated['Band ID'].isin(ids_to_delete)]

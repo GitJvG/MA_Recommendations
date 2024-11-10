@@ -45,9 +45,15 @@ class Env:
         self.band = yaml_conf['paths']['MA_BANDS']
         self.deta = yaml_conf['paths']['MA_DETAILS']
         self.memb = yaml_conf['paths']['MA_MEMBER']
+
+        self.meta_key = yaml_conf['keys'][self.meta]
+        self.simi_key = yaml_conf['keys'][self.simi]
+        self.disc_key = yaml_conf['keys'][self.disc]
+        self.band_key = yaml_conf['keys'][self.band]
+        self.deta_key = yaml_conf['keys'][self.deta]
+        self.memb_key = yaml_conf['keys'][self.memb]
+
         self.url_modi= yaml_conf['urls']['MODIFIED']
         self.url_band= yaml_conf['urls']['BANDS']
         self.retries = yaml_conf['scraper']['RETRIES']
         self.delay = yaml_conf['scraper']['DELAY']
-
-env = Env.get_instance()
