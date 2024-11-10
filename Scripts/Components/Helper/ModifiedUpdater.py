@@ -1,10 +1,8 @@
 from Scripts.utils import extract_url_id, get_last_scraped_date
 from Env import Env
-env = Env.get_instance()
 from bs4 import BeautifulSoup
 import time
 from datetime import datetime, timedelta
-from Scripts.utils import Env
 import requests
 import os
 import pandas as pd
@@ -93,7 +91,6 @@ def Update_list(output_path):
     return list(bands_ids)
 
 def Modified_based_list(target_path, complete = False):
-    env = Env.get_instance()
     band_ids_to_process = Update_list(target_path)
 
     if complete:
