@@ -147,7 +147,7 @@ def update_metadata(data_filename):
     print('Metadata updated!')
     return metadata_df
 
-def remove_duplicates(file_path):
+def remove_dupes_and_deletions(file_path):
     """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
     filename = os.path.basename(file_path)
     
@@ -156,8 +156,12 @@ def remove_duplicates(file_path):
         return
 
     df = pd.read_csv(file_path)
+    
     unique_columns = file_paths[filename]
     df_updated = df.drop_duplicates(subset=unique_columns, keep='last')
+
+    ids_to_delete = ids_to_delete(file_path)
+    df_updated = df_updated[~df_updated['Band ID'].isin(ids_to_delete)]
     df_updated.to_csv(file_path, mode='w', header=True, index=False)
     
     print(f"Duplicates removed and progress saved for {filename}.")
@@ -169,10 +173,12 @@ def Main_based_scrape(target_path):
     processed_set = set(pd.read_csv(target_path)['Band ID'])
 
     band_ids_to_process = list(all_band_ids - processed_set)
-    band_ids_to_delete = list(processed_set-all_band_ids)
-
-    target_df = pd.read_csv(target_path)
-    updated_df = target_df[~target_df['Band ID'].isin(band_ids_to_delete)]
-    updated_df.to_csv(target_path, index=False)
 
     return band_ids_to_process
+
+def ids_to_delete(target_path):
+    all_band_ids = set(pd.read_csv(env.band)['Band ID'])
+    existing_set = set(pd.read_csv(target_path)['Band ID'])
+
+    band_ids_to_delete = list(existing_set-all_band_ids)
+    return band_ids_to_delete

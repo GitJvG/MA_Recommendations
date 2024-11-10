@@ -1,5 +1,5 @@
 """Incremental updater is only based on day number as of now, this will be updated later. Should work fine for the rest of the current month."""
-from utils import remove_duplicates, Env
+from utils import remove_dupes_and_deletions, Env
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,9 +17,9 @@ def refresh():
     ReDet()
 
 def remove_dupes():
-    csv_files = [env.band, env.simi, env.disc, env.deta, env.meta]
+    csv_files = [env.band, env.simi, env.disc, env.deta, env.meta, env.memb]
     for csv in csv_files:
-        remove_duplicates(csv)
+        remove_dupes_and_deletions(csv)
 
 if __name__ == "__main__":
     refresh()

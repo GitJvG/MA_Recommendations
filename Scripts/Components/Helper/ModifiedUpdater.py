@@ -1,4 +1,4 @@
-from Scripts.utils import Env, extract_url_id, get_last_scraped_date, Parallel_processing
+from Scripts.utils import Env, extract_url_id, get_last_scraped_date
 env = Env.get_instance()
 from bs4 import BeautifulSoup
 import time
@@ -118,6 +118,3 @@ def Modified_based_list(target_path, complete = False):
     # Proceed with parallel processing on the final list of IDs
     print(f"Total bands to refresh for {target_path}: {len(band_ids_to_process)}")
     return band_ids_to_process
-
-if __name__ == "__main__":
-    print(len(Modified_Set(env.url_modi, 6, True)))
