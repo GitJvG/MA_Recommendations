@@ -1,4 +1,5 @@
-from Scripts.utils import Env, extract_url_id, get_last_scraped_date
+from Scripts.utils import extract_url_id, get_last_scraped_date
+from Env import Env
 env = Env.get_instance()
 from bs4 import BeautifulSoup
 import time
@@ -93,27 +94,13 @@ def Update_list(output_path):
 
 def Modified_based_list(target_path, complete = False):
     env = Env.get_instance()
-    last_scraped_main = get_last_scraped_date(env.band, os.path.basename(target_path))
-    today = datetime.today().date()
     band_ids_to_process = Update_list(target_path)
 
-    # If main was scraped recently, remove ids that exist in the target but not in main. 
-    # This occurs when metallum deletes a band from their database, happens more often than you might think.
-    # If complete is true, it also scrapes all bands that are in main but not in target, only makes sense to use on datasets that should have entries for all bands.
-
-    if last_scraped_main in {today, today - timedelta(days=1)}:
+    if complete:
         all_band_ids = set(pd.read_csv(env.band)['Band ID'])
         processed_set = set(pd.read_csv(target_path)['Band ID'])
-
-        band_ids_to_delete = list(processed_set - all_band_ids)
-
-        target_df = pd.read_csv(target_path)
-        updated_df = target_df[~target_df['Band ID'].isin(band_ids_to_delete)]
-        updated_df.to_csv(target_path, mode='w', index=False)
-    
-        if complete:
-            missing_ids = all_band_ids - processed_set
-            band_ids_to_process = list(set(band_ids_to_process).union(missing_ids))
+        missing_ids = all_band_ids - processed_set
+        band_ids_to_process = list(set(band_ids_to_process).union(missing_ids))
 
     # Proceed with parallel processing on the final list of IDs
     print(f"Total bands to refresh for {target_path}: {len(band_ids_to_process)}")

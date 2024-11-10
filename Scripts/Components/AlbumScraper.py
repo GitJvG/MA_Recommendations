@@ -1,6 +1,7 @@
 #Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
 import pandas as pd
-from Scripts.utils import Parallel_processing, Env, Main_based_scrape
+from Scripts.utils import Parallel_processing, Main_based_scrape
+from Env import Env
 from Scripts.Components.Helper.HTML_Scraper import fetch, parse_table, extract_text
 from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
 env = Env.get_instance()

@@ -1,19 +1,11 @@
 import pandas as pd
 import os
-import json
-from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 from datetime import datetime
+from Env import Env
 
-load_dotenv()
-
-def load_config(attribute):
-    """Attribute as Cookies or Headers"""
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-        
-    return config.get(attribute)
+env = Env.get_instance()
 
 def get_last_scraped_date(file_path, filename):
     try:
@@ -26,33 +18,6 @@ def get_last_scraped_date(file_path, filename):
         print(f"Error: {e}")
     return None
 
-class Env:
-    _instance = None
-    
-    @staticmethod
-    def get_instance():
-        if Env._instance is None:
-            Env._instance = Env()
-        return Env._instance
-
-    def __init__(self):
-        if Env._instance is not None:
-            raise Exception("This is a singleton!")
-        self.cook = load_config('Cookies')
-        self.head = load_config('Headers')
-        self.meta = os.getenv('METADATA')
-        self.simi = os.getenv('SIMBAN')
-        self.disc = os.getenv('BANDIS')
-        self.band = os.getenv('BANDPAR')
-        self.deta = os.getenv('DETAIL')
-        self.memb = os.getenv('MEMBER')
-        self.url_modi= os.getenv('URLMODIFIED')
-        self.url_band= os.getenv('URLBANDS')
-        self.retries = load_config('Retries')
-        self.delay = load_config('Delay')
-
-env = Env.get_instance()
-  
 file_paths = {
     'MA_Bands.csv': ['Band ID'],
     'MA_Similar.csv': ['Band ID', 'Similar Artist ID'],
@@ -147,6 +112,13 @@ def update_metadata(data_filename):
     print('Metadata updated!')
     return metadata_df
 
+def list_to_delete(target_path):
+    all_band_ids = set(pd.read_csv(env.band)['Band ID'])
+    existing_set = set(pd.read_csv(target_path)['Band ID'])
+
+    band_ids_to_delete = list(existing_set-all_band_ids)
+    return band_ids_to_delete
+
 def remove_dupes_and_deletions(file_path):
     """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
     filename = os.path.basename(file_path)
@@ -160,7 +132,7 @@ def remove_dupes_and_deletions(file_path):
     unique_columns = file_paths[filename]
     df_updated = df.drop_duplicates(subset=unique_columns, keep='last')
 
-    ids_to_delete = ids_to_delete(file_path)
+    ids_to_delete = list_to_delete(file_path)
     df_updated = df_updated[~df_updated['Band ID'].isin(ids_to_delete)]
     df_updated.to_csv(file_path, mode='w', header=True, index=False)
     
@@ -168,17 +140,9 @@ def remove_dupes_and_deletions(file_path):
 
 def Main_based_scrape(target_path):
     """Scrapes all ids existing in the main MA_bands, not in the target file"""
-    env = Env.get_instance()
     all_band_ids = set(pd.read_csv(env.band)['Band ID'])
     processed_set = set(pd.read_csv(target_path)['Band ID'])
 
     band_ids_to_process = list(all_band_ids - processed_set)
 
     return band_ids_to_process
-
-def ids_to_delete(target_path):
-    all_band_ids = set(pd.read_csv(env.band)['Band ID'])
-    existing_set = set(pd.read_csv(target_path)['Band ID'])
-
-    band_ids_to_delete = list(existing_set-all_band_ids)
-    return band_ids_to_delete

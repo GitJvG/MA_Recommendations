@@ -1,5 +1,8 @@
-"""Incremental updater is only based on day number as of now, this will be updated later. Should work fine for the rest of the current month."""
-from utils import remove_dupes_and_deletions, Env
+"""Incremental updater scrapes based on year, month and day. It re-scrapes the last scraped day to ensure no modifications are missed. 
+Because of this, it is recommended to only run this script periodically to reduce the % of scraping data you've already scraped.
+This will be faster for you and less resource intensive for Metallum servers."""
+from utils import remove_dupes_and_deletions
+from Env import Env
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,6 +20,8 @@ def refresh():
     ReDet()
 
 def remove_dupes():
+    # Removes dupes, keeping last, and entries that have been deleted since last scrape. 
+    # (all modified entries are appended to the original file) 
     csv_files = [env.band, env.simi, env.disc, env.deta, env.meta, env.memb]
     for csv in csv_files:
         remove_dupes_and_deletions(csv)

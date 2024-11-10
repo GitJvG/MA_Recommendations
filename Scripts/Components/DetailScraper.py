@@ -1,7 +1,8 @@
 # Incrementally updates MA_Bands & MA_Lyrics
 import pandas as pd
 from Scripts.Components.Helper.HTML_Scraper import fetch
-from Scripts.utils import Parallel_processing, Env, Main_based_scrape
+from Scripts.utils import Parallel_processing, Main_based_scrape
+from Env import Env
 from bs4 import BeautifulSoup
 from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
 

@@ -4,7 +4,8 @@ import requests
 from pandas import DataFrame
 import json
 import pandas as pd
-from Scripts.utils import Env, extract_url_id, update_metadata
+from Scripts.utils import extract_url_id, update_metadata
+from Env import Env
 from Scripts.Components.Helper.HTML_Scraper import extract_href, extract_text
 from bs4 import BeautifulSoup
 
