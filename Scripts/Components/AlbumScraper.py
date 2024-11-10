@@ -38,6 +38,11 @@ def fetch_album_data(band_id):
 def refresh():
     # Complete false because many bands don't have any discog entries.
     band_ids_to_process = Modified_based_list(env.disc, complete=False)
+    # Because discog currently doesn't have a reliable unique id combination (that could be de-duplicated afterwards), all to be processed ids are first deleted.
+    df = pd.read_csv(env.disc)
+    df = df[~df["Band ID"].isin(band_ids_to_process)]
+    df.to_csv(env.disc)
+
     Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
     
 def main():
