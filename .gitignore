@@ -7,7 +7,6 @@ app/
 migrations/
 run.py
 Model/
-Temp/MA_Changes.csv
 model_folder_path/
 Preprocessed_sets/
 .venv/
