@@ -33,7 +33,7 @@ class Env:
         self.memb = os.getenv('MEMBER')
         self.url_modi= os.getenv('URLMODIFIED')
         self.url_band= os.getenv('URLBANDS')
-        self.retries = load_config('Retries')
-        self.delay = load_config('Delay')
+        self.retries = os.getenv('RETRIES')
+        self.delay = os.getenv('DELAY')
 
 env = Env.get_instance()
