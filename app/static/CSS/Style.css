@@ -1,0 +1,51 @@
+body {
+    background-color: white; /* Light background color */
+    color: #343a40; /* Dark text color */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    padding-left: 10px; /* Padding for the body */
+}
+
+#sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 200px;
+    background-color: #f8f9fa;
+}
+
+.navbar-nav {
+    width: 100%; /* Full width for the nav links */
+    position: absolute; /* Positioning to keep it fixed within the sidebar */
+    top: 0; /* Align to the top */
+    padding-top:50px;
+}
+
+.nav-item {
+    margin: 5px;
+    display: fixed; /* Flex display for nav items */
+    justify-content: flex-start; /* Align items to the left */
+}
+
+.alert {
+    margin-bottom: 20px; /* Space below alerts */
+}
+
+/* Add this CSS to your stylesheet */
+#discographyFilter {
+    width: 100%; /* Full width */
+    height: auto; /* Auto height */
+    padding: 0.5rem; /* Padding for spacing */
+    border: 1px solid #ced4da; /* Border color */
+    border-radius: 0.25rem; /* Rounded corners */
+    background-color: #ffffff; /* White background */
+}
+
+/* Style for the options */
+#discographyFilter option {
+    padding: 0.5rem; /* Padding for options */
+}
+
+/* Hover effect for options */
+#discographyFilter option:hover {
+    background-color: #e9ecef; /* Light grey background on hover */
+}

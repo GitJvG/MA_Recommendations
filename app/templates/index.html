@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Band Recommendation System{% endblock %}
+
+{% block content %}
+<h1>Band Recommendation System</h1>
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul class="alert alert-dismissible fade show">
+            {% for message in messages %}
+                <li class="alert alert-warning">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+{% if current_user.is_authenticated %}
+    <h3>Welcome, {{ current_user.username }}!</h3>
+{% else %}
+{% endif %}
+{% endblock %}

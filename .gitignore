@@ -3,7 +3,7 @@ __pycache__
 Datasets/
 M_Datasets/
 Development/
-app/
 migrations/
 run.py
 .venv/
+app/schemas/

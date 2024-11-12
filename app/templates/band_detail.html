@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">{{ band.Band_Name }}</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Band Information</h5>
+            <p class="card-text"><strong>Genres:</strong> {{ band.Genre }}</p>
+            <p class="card-text"><strong>Country:</strong> {{ band.Country }}</p>
+            <p class="card-text"><strong>Status:</strong> {{ band.Status }}</p>
+        </div>
+    </div>
+
+    <h3>Discography</h3>
+
+    <!-- Filter Dropdown -->
+    <div class="mb-3">
+        <label for="discographyFilter" class="form-label">Filter by Type:</label>
+        <select id="discographyFilter" class="selectpicker" multiple data-live-search="true" title="Select Types">
+            <option value="all">All</option>
+            {% for type in types %}
+                <option value="{{ type }}" 
+                    {% if type == 'EP' or type == 'Full-length' %}selected{% endif %}>
+                    {{ type }}
+                </option>
+            {% endfor %}
+        </select>        
+    </div>
+
+    {% if albums %}
+    <table class="table" id="discographyTable">
+        <thead>
+            <tr>
+                <th>Album Name</th>
+                <th>Type</th>
+                <th>Year</th>
+                <th>Reviews</th>
+                <th>Video</th> <!-- New column for video -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for album in albums %}
+            <tr data-type="{{ album.type }}">
+                <td>{{ album.album_name }}</td>
+                <td>{{ album.type }}</td> 
+                <td>{{ album.year }}</td>  
+                <td>{{ album.reviews }}</td>  
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="fetchVideo('{{ album.album_name }}', '{{ band.Band_Name }}')">Watch</button>
+                    <div id="video-placeholder-{{ album.album_name|replace(' ', '_') }}"></div> <!-- Placeholder for the video -->
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No discography available for this band.</p>
+    {% endif %}
+
+    <a href="{{ url_for('main.popular_bands') }}" class="btn btn-primary mt-4">Back to Popular Bands</a>
+</div>
+
+<script>
+    function fetchVideo(albumName, bandName) {
+        const videoPlaceholder = document.getElementById(`video-placeholder-${albumName.replace(/\s/g, '_')}`);
+
+        // If the video is already loaded, skip the fetch
+        if (videoPlaceholder.innerHTML.trim()) {
+            return;
+        }
+
+        // Fetch the video data via AJAX
+        fetch(`/fetch_video?album_name=${encodeURIComponent(albumName)}&band_name=${encodeURIComponent(bandName)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.video_url) {
+                    videoPlaceholder.innerHTML = `
+                        <iframe width="200" height="113" src="${data.video_url}" frameborder="0" allowfullscreen></iframe>
+                    `;
+                } else {
+                    videoPlaceholder.innerHTML = '<p>No video found for this album.</p>';
+                }
+            })
+            .catch(error => {
+                videoPlaceholder.innerHTML = `<p>Error loading video: ${error}</p>`;
+            });
+    }
+</script>
+
+{% endblock %}
