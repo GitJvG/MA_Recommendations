@@ -1,0 +1,9 @@
+Config.json
+__pycache__
+Datasets/
+M_Datasets/
+Development/
+app/
+migrations/
+run.py
+.venv/
