@@ -126,9 +126,9 @@ def part_exceptions(split_parts):
 def extract_primal(genre):
     """Extracts the primal genre, checking for hybrid and non-hybrid genres."""
     genre = re.sub(r"\s?'n'\s?roll", '', genre)
-    genre = re.sub(rf'(?<!-)\s?\b{'with'}\b(?!-)', '', genre)
-    parts = [part.strip() for part in genre.split(',')]  # Split by commas to create a list of separate genre entities
-    
+    # Split by comma and for each part only keep what is before 'with'
+    parts = [part.split('with')[0].strip() for part in genre.split(',')]
+
     primal_genres = set()  # To store the primal genres
     prefixes = set()
     # Handling hybrids and single genres
@@ -155,7 +155,7 @@ def extract_primal(genre):
             # Process as a single non-hybrid genre
             count = part_exceptions(part.split())
             primal_genre = ' '.join(part.split()[-count:])
-            prefix = ', '.join(part.split()[:-1])
+            prefix = ', '.join(part.split()[:-count])
 
         primal_genres.add(primal_genre)
         prefixes.add(prefix)
@@ -192,8 +192,4 @@ def advanced_clean(genres):
     return single_primals, primal, prefixes if prefixes else None
 
 if __name__ == "__main__":
-    genre = "Metal/Melodic reggea/pils (later); dansen (early)"
-    genre = basic_processing(genre)
-    print(f"{genre} genre")
-    print(genre)
-    print(extract_primal(genre))
+    pass
