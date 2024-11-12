@@ -1,7 +1,7 @@
 import sys
 import os
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.append(project_root)
 
 import pandas as pd
@@ -58,12 +58,13 @@ def handle_prefix_and_hybrids(genre):
 
 def basic_processing(genre):
     genres = genre.lower()
+    genres = re.sub(r'\(.*?\)', '', genres) # removes anything between aprenthesis
     genres = re.sub(r'\s?/\s?', '/', genres) # Removes spaces before and after '/'
-    genres = re.sub(r'\s+', ' ', genres) # Reduces more than one spaces to one space 
+    genres = re.sub(r'\s+', ' ', genres) # Reduces more than one spaces to one space
     genres = re.sub(r'[^\x20-\x7E]', '', genres) # Removes non-ASCII
-    genres = re.sub(r'\(\s*\d{4}\s*\)', '', genres) # Removes (<4 numbers>)
-    genres = re.sub(r'\(\s*[\w/-]+\s*\)', '', genres) # Removes text in parenthesis
+    genres = re.sub(r';', ',', genres) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
     genres = re.sub(r'[()]+', '', genres).strip() # Removes remaining parenthesis
+
     # Remove 'Metal' (or ' Metal' if followed by '/' to create new hybrids, i.e. death metal/black metal-> death/black)
     genres = re.sub(r'(?<!-)\s?/?\bmetal\b(?!-)', '', genres).strip() 
     # Finally remove any remaining common unwanted words
@@ -143,7 +144,7 @@ def extract_primal(genre):
             # Extract the relevant parts from the original part
             # Get the first part before '/', and take the appropriate number of words from the start
             part_before = ' '.join(subparts[0].split()[-count_before:])
-        
+
             # Get the second part after '/', and take the appropriate number of words from the end
             part_after = ' '.join(subparts[1].split()[-count_after:])
 
@@ -152,9 +153,9 @@ def extract_primal(genre):
             prefix = ', '.join(subparts[0].split()[:-count_before]) # part before what was kept
         else:
             # Process as a single non-hybrid genre
-            count = part_exceptions(part.strip().split())
+            count = part_exceptions(part.split())
             primal_genre = ' '.join(part.split()[-count:])
-            prefix = ' '.join(part.split()[:-count])
+            prefix = ', '.join(part.split()[:-1])
 
         primal_genres.add(primal_genre)
         prefixes.add(prefix)
@@ -167,7 +168,8 @@ def extract_primal(genre):
 
     split_hybrid = set()
     for part in split_parts:
-        split_hybrid_parts = part.split('/')
+        # Splits on / and strips and filters out empty parts
+        split_hybrid_parts = [x.strip() for x in part.split('/') if x.strip()]
         for x in split_hybrid_parts: split_hybrid.add(x)
     split_primal_genres = ', '.join(sorted(split_hybrid))
 
@@ -175,21 +177,23 @@ def extract_primal(genre):
 
     hybrid_prefix = set()
     for prefixes in split_prefixes:
-        split_prefix_parts = prefixes.split('/')
-        for x in split_prefix_parts: hybrid_prefix.add(x)
+        split_prefix_parts = [x.strip() for x in prefixes.split('/') if x.strip()]  
+        for x in split_prefix_parts:
+            hybrid_prefix.add(x)
 
     split_prefixes = ', '.join(sorted(hybrid_prefix))
 
     return primal_genre, split_primal_genres, split_prefixes
     
 def advanced_clean(genres):
-    """Clean genre, returning primal, descriptive_genres"""
-    genre = basic_processing(genres) # removes unwanted words and non-ASCII
-    genre, element = elements(genre) # genre and influences
-    primal, single_primals, prefixes = extract_primal(genre) # determines primal genre (i.e. "death" in "technical death metal with jazz influences")
-    # descriptive genre, also crossjoins with hybrid genres (technical death/doom -> technical death, technical doom, technical death/doom)
-    Descriptive_genres = handle_prefix_and_hybrids(genre) 
-    return single_primals, primal, prefixes, Descriptive_genres
+    """single_primals, primal, prefixes"""
+    genre = basic_processing(genres)
+    primal, single_primals, prefixes = extract_primal(genre)
+    return single_primals, primal, prefixes if prefixes else None
 
 if __name__ == "__main__":
-    pass
+    genre = "Metal/Melodic reggea/pils (later); dansen (early)"
+    genre = basic_processing(genre)
+    print(f"{genre} genre")
+    print(genre)
+    print(extract_primal(genre))
