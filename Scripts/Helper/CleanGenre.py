@@ -56,11 +56,21 @@ def handle_prefix_and_hybrids(genre):
     # Now, return the combination of prefix and genre
     return f"{prefix} {mod_genre}".strip() if prefix else mod_genre
 
+def replace_wrong_comma(genre):
+    """Replaces element comma with 'and' to prevent unintended splitting."""
+    # Match and replace commas inside the smallest 'with ... and' range
+    def replace_with_and(match):
+        return match.group(0).replace(',', ' and')
+
+    # pattern matches smallest 'with ... and' ranges
+    genre = re.sub(r'with(.*?)(and)', replace_with_and, genre)
+    return genre
+
 def basic_processing(genre):
     genres = genre.lower()
-    genres = re.sub(r'\(.*?\)', '', genres) # removes anything between aprenthesis
+    genres = re.sub(r'\(.*?\)', '', genres) # removes anything between parenthesis
     genres = re.sub(r'\s?/\s?', '/', genres) # Removes spaces before and after '/'
-    genres = re.sub(r'\s+', ' ', genres) # Reduces more than one spaces to one space
+    genres = re.sub(r'\s+', ' ', genres) # Reduce consecutive spaces to one space
     genres = re.sub(r'[^\x20-\x7E]', '', genres) # Removes non-ASCII
     genres = re.sub(r';', ',', genres) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
     genres = re.sub(r'[()]+', '', genres).strip() # Removes remaining parenthesis
@@ -70,6 +80,9 @@ def basic_processing(genre):
     # Finally remove any remaining common unwanted words
     for word in env.unwanted:
         genres = re.sub(rf'(?<!-)\s?\b{word}\b(?!-)', '', genres)
+
+    genres = replace_wrong_comma(genres)
+
     return genres
 
 def elements(genre):
@@ -192,4 +205,10 @@ def advanced_clean(genres):
     return single_primals, primal, prefixes if prefixes else None
 
 if __name__ == "__main__":
-    pass
+    genres = [
+        'Heavy Metal with Thrash, Death and Punk elements', 
+        'Melodic/Experimental bluegrass/blues with rock, dance and thrash influences']
+    for genre in genres: 
+        single_primals, primal, prefixes = advanced_clean(genre)
+        print(f"Input: {genre}\nPrimary genre: {single_primals}\nPrefixes: {prefixes}")
+    

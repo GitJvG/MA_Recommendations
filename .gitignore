@@ -7,3 +7,4 @@ migrations/
 run.py
 .venv/
 app/schemas/
+comp/
