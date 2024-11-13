@@ -28,17 +28,15 @@ def items_to_set(genre_series):
     return genre_set
 
 # Get all unique genres from Primal_genre column
-
-def dim_genre_to_csv():
-    all_items = items_to_set(df['Split_Primary_Genres'])
-    dfsingle = pd.DataFrame(all_items, columns=['Name'])
-    dfsingle.to_csv(env.dim_genre, index=False)
-
-def dim_prefix_to_csv():
-    all_items = items_to_set(df['Prefix'])
-    dfsingle = pd.DataFrame(all_items, columns=['Name'])
-    dfsingle.to_csv(env.dim_prefix, index=False)
+def create_dim_csv(df, type, output_path):
+    all_items = items_to_set(df)
+    dfsingle = pd.DataFrame(all_items, columns=['name'])
+    # Add ID and type columns
+    dfsingle['id'] = range(1, len(dfsingle) + 1)  # Incremental ID
+    dfsingle['type'] = type
+    dfsingle = dfsingle[['id', 'name', 'type']]
+    dfsingle.to_csv(output_path, index=False)
 
 if __name__ == "__main__":
-    dim_genre_to_csv()
-    dim_prefix_to_csv()
+    create_dim_csv(df['Split_Primary_Genres'], 'genre', env.dim_genre)
+    create_dim_csv(df['Prefix'], 'prefix', env.dim_prefix)
