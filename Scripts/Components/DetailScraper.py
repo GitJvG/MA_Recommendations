@@ -41,15 +41,22 @@ def fetch_band_members(soup, band_id):
         
         if section:
             for row in section.select('tr.lineupRow'):
+                member_link = row.find('a')
                 member_name = row.find('a').text.strip()
                 role = row.find_all('td')[1].text.strip()
                 
+                member_url = member_link['href']
+                member_id = member_url.split('/')[-1]  # Get the last part of the URL
+                    
+                role = row.find_all('td')[1].text.strip()
+                    
                 # Clean up the role text
                 role = ' '.join(role.split())
-                
-                # Add the member details to the list
+                    
+                    # Add the member details to the list
                 members.append({
                     'Band ID': band_id,
+                    'Member ID': member_id,
                     'Name': member_name,
                     'Role': role,
                     'Category': category  # Store category as per section
