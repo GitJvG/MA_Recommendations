@@ -64,30 +64,21 @@ class UserBandPreference(db.Model):
     liked = db.Column(db.Boolean, nullable=True)
     remind_me = db.Column(db.Boolean, nullable=True)
 
-class Item(db.Model):
-    __tablename__ = 'item'
-    
-    item = db.Column(db.BigInteger, primary_key=True)
-    band_name = db.Column(db.Text, nullable=True)
-    country = db.Column(db.Text, nullable=True)
-    status = db.Column(db.Text, nullable=True)
-    genre1 = db.Column(db.Text, nullable=True)
-    genre2 = db.Column(db.Text, nullable=True)
-    genre3 = db.Column(db.Text, nullable=True)
-    genre4 = db.Column(db.Text, nullable=True)
-    theme1 = db.Column(db.Text, nullable=True)
-    theme2 = db.Column(db.Text, nullable=True)
-    theme3 = db.Column(db.Text, nullable=True)
-    theme4 = db.Column(db.Text, nullable=True)
-    score = db.Column(db.Integer, nullable=True, index=True)
+class DIM_Genre(db.Model):
+    __tablename__ = 'DIM_genre'
+    genre_id = db.Column("id", db.BigInteger, primary_key=True, autoincrement=True)
+    name = db.Column("name", db.Text, unique=True, nullable=False)
+    type = db.Column("type", db.String(10), nullable=False)
 
-    """__table_args__ = (
-        db.UniqueConstraint("item", name="unique_item_entry"),
-    )"""
+class DIM_Prefix(db.Model):
+    __tablename__ = 'DIM_prefix'
+    prefix_id = db.Column("id", db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column("name", db.Text, unique=True, nullable=False)
+    type = db.Column("type", db.String(10), nullable=False)
 
-class UserCandidateRecommendation(db.Model):
-    __tablename__ = 'user_candidate_recommendation'
-
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, primary_key=True)
-    item_id = db.Column(db.BigInteger, db.ForeignKey('item.item'), nullable=False, primary_key=True)
-
+class Bandgenre(db.Model):
+    __tablename__ = 'Bandgenre'
+    bridge_id = db.Column("Bridge ID", db.BigInteger, primary_key=True, autoincrement=True)
+    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), nullable=False)
+    item_id = db.Column("item_id", db.Integer, nullable=False)
+    type = db.Column("type", db.String(10), nullable=False)

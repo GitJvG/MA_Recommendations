@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user  # Import necessary functions
 from sqlalchemy import func, desc
 from sqlalchemy.orm import aliased
-from .models import users, DIM_Band, UserBandPreference, DIM_Discography, Item, UserCandidateRecommendation, DIM_Similar_Band, db  # Import your User model and db instance
+from .models import users, DIM_Band, UserBandPreference, DIM_Discography, DIM_Similar_Band, DIM_Details, DIM_Genre, DIM_Member, DIM_Prefix, db  # Import your User model and db instance
 from flask import jsonify
 from urllib.parse import quote
 
@@ -24,7 +24,7 @@ def update_preferences():
         flash('Preferences updated successfully!', 'success')  # Flash a success message
         return redirect(url_for('main.index'))  # Redirect back to the index
     
-@main.route('/popular_bands', methods=['GET'])
+"""@main.route('/popular_bands', methods=['GET'])
 def popular_bands():
     # Get the selected genre from the request arguments
     selected_genre = request.args.get('genre')
@@ -53,7 +53,7 @@ def popular_bands():
     # Fetch distinct genres to populate the dropdown
     genres = db.session.query(Item.genre1).distinct().all()
 
-    return render_template('popular_bands.html', bands=bands, genres=genres, selected_genre=selected_genre)
+    return render_template('popular_bands.html', bands=bands, genres=genres, selected_genre=selected_genre)"""
 
 @main.route('/like_band', methods=['POST'])
 def like_band():
@@ -126,11 +126,11 @@ from .auth import auth as auth_blueprint
 # Register the auth blueprint
 main.register_blueprint(auth_blueprint)
 
-@main.route('/get_genres', methods=['GET'])
+"""@main.route('/get_genres', methods=['GET'])
 def get_genres():
     genres = db.session.query(Item.genre1).distinct().all()
     distinct_genres = [genre[0] for genre in genres]
-    return jsonify(distinct_genres)
+    return jsonify(distinct_genres)"""
 
 import requests
 from flask import render_template
@@ -159,7 +159,7 @@ def band_detail(band_id):
 
     return render_template('band_detail.html', band=band, albums=albums_without_links, types=types)
 
-@main.route('/discovery')
+"""@main.route('/discovery')
 @login_required
 def discovery():
     # Get the user's ID
@@ -242,7 +242,7 @@ def discovery():
         })
 
     # Step 5: Pass similar bands to the template
-    return render_template('discovery.html', similar_bands=result)
+    return render_template('discovery.html', similar_bands=result)"""
 
 @main.route('/fetch_video/<album_id>', methods=['GET'])
 def fetch_video():

@@ -39,6 +39,8 @@ class Env:
             self.unwanted = load_config('Unwanted_genre_words')
             self.dim_genre = load_config('DIM_Genre')
             self.dim_prefix = load_config('DIM_Prefix')
+            self.band_genre = load_config('BandGenre')
+            self.dim_themes = load_config('DIM_Themes')
         except ValueError as e:
             print(f"Error: {e}")
             raise

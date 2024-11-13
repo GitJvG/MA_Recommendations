@@ -5,6 +5,5 @@ M_Datasets/
 Development/
 migrations/
 run.py
-.venv/
 app/schemas/
 comp/
