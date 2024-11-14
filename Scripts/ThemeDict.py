@@ -55,7 +55,7 @@ def group_themes(themes, theme_count, threshold=85):
 
 # Function to create and save the grouped themes to a CSV file
 def create_pickle():
-    df = pd.read_csv(env.deta)['Themes']
+    df = pd.read_csv(env.deta)['themes']
     df = df.dropna().apply(basic_processing)
     output_path = env.dim_theme_dict
 
