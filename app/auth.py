@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import users, db
+from .models import user, db
 
 # Create a blueprint for authentication routes
 auth = Blueprint('auth', __name__)
@@ -12,7 +12,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        user = users.query.filter_by(username=username).first()
+        cuser = user.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
             login_user(user)
@@ -52,7 +52,7 @@ def register():
             return redirect(url_for('auth.register'))  # Redirect back to the registration form if validation fails
 
         # Create new user entry
-        new_user = users(
+        new_user = user(
             username=username, 
             email=email, 
             password=password, 

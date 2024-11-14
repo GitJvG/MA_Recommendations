@@ -37,12 +37,12 @@ class Env:
             self.binary = load_config('binary_exception')
             self.ternary = load_config('ternary_exception')
             self.unwanted = load_config('Unwanted_genre_words')
-            self.dim_genre = load_config('DIM_Genre')
-            self.dim_prefix = load_config('DIM_Prefix')
-            self.band_genre = load_config('BandGenre')
-            self.dim_theme = load_config('DIM_Theme')
+            self.genre = load_config('genre')
+            self.prefix = load_config('prefix')
+            self.genres = load_config('genres')
+            self.theme = load_config('theme')
             self.dim_theme_dict = load_config("DIM_Theme_Dict")
-            self.band_theme = load_config("BandTheme")
+            self.themes = load_config("themes")
         except ValueError as e:
             print(f"Error: {e}")
             raise

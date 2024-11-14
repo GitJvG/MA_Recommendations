@@ -33,18 +33,18 @@ def create_app(test_config=None):
     def create_database():
         with run_once_lock:
             inspector = inspect(db.engine)
-            if not inspector.has_table('users'): 
+            if not inspector.has_table('user'): 
                 db.create_all()
                 print("Database tables created.")
 
     # Import models here to avoid circular imports
     with app.app_context():
-        from .models import users, DIM_Band, DIM_Similar_Band, DIM_Discography, DIM_Details, UserBandPreference, DIM_Member, DIM_Genre, DIM_Prefix, Bandgenre, DIM_Theme, Bandtheme
+        from .models import user, band, similar_band, discography, details, users, member, genre, prefix, genres, theme, themes
 
         # User Loader function for Flask-Login
         @login_manager.user_loader
         def load_user(user_id):
-            return users.query.get(int(user_id))
+            return user.query.get(int(user_id))
 
     # Import routes
     from .routes import main as main

@@ -38,5 +38,5 @@ def create_dim_csv(df, type, output_path):
     dfsingle.to_csv(output_path, index=False)
 
 if __name__ == "__main__":
-    create_dim_csv(df['Split_Primary_Genres'], 'genre', env.dim_genre)
-    create_dim_csv(df['Prefix'], 'prefix', env.dim_prefix)
+    create_dim_csv(df['Split_Primary_Genres'], 'genre', env.genre)
+    create_dim_csv(df['Prefix'], 'prefix', env.prefix)

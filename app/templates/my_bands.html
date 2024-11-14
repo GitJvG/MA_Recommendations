@@ -20,12 +20,12 @@
                     </div>
                     <div>
                         <form action="{{ url_for('main.like_band') }}" method="POST" style="display: inline;">
-                            <input type="hidden" name="band_id" value="{{ band.Band_ID }}">
+                            <input type="hidden" name="band_id" value="{{ band.band_id }}">
                             <button type="submit" name="action" value="like" class="btn btn-success btn-sm 
                             {% if liked %}disabled{% endif %}">Like</button>
                         </form>
                         <form action="{{ url_for('main.like_band') }}" method="POST" style="display: inline;">
-                            <input type="hidden" name="band_id" value="{{ band.Band_ID }}">
+                            <input type="hidden" name="band_id" value="{{ band.band_id }}">
                             <button type="submit" name="action" value="dislike" class="btn btn-danger btn-sm 
                             {% if not liked %}disabled{% endif %}">Dislike</button>
                         </form>

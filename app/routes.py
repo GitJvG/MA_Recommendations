@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user  # Import necessary functions
 from sqlalchemy import func, desc
 from sqlalchemy.orm import aliased
-from .models import users, DIM_Band, UserBandPreference, DIM_Discography, DIM_Similar_Band, DIM_Details, DIM_Genre, DIM_Member, DIM_Prefix, db  # Import your User model and db instance
+from .models import user, band, users, discography, similar_band, details, genre, member, prefix, db  # Import your User model and db instance
 from flask import jsonify
 from urllib.parse import quote
 
@@ -30,7 +30,7 @@ def popular_bands():
     selected_genre = request.args.get('genre')
 
     if current_user.is_authenticated:
-        interacted_band_ids = db.session.query(UserBandPreference.band_id).filter_by(user_id=current_user.id).all()
+        interacted_band_ids = db.session.query(users.band_id).filter_by(user_id=current_user.id).all()
         # Convert list of tuples into a flat list
         interacted_band_ids = [band_id for (band_id,) in interacted_band_ids]
     else:
@@ -65,7 +65,7 @@ def like_band():
     action = request.form['action']  # Use 'action' to determine like, dislike, or remind me
 
     # Check if the user has already interacted with this band
-    existing_preference = UserBandPreference.query.filter_by(user_id=current_user.id, band_id=band_id).first()
+    existing_preference = users.query.filter_by(user_id=current_user.id, band_id=band_id).first()
 
     if existing_preference:
         # If the user has already interacted, update based on action
@@ -80,11 +80,11 @@ def like_band():
     else:
         # If no previous interaction, create a new preference
         if action == 'like':
-            new_preference = UserBandPreference(user_id=current_user.id, band_id=band_id, liked=True, remind_me=False)
+            new_preference = users(user_id=current_user.id, band_id=band_id, liked=True, remind_me=False)
         elif action == 'dislike':
-            new_preference = UserBandPreference(user_id=current_user.id, band_id=band_id, liked=False, remind_me=False)
+            new_preference = users(user_id=current_user.id, band_id=band_id, liked=False, remind_me=False)
         elif action == 'remind':
-            new_preference = UserBandPreference(user_id=current_user.id, band_id=band_id, liked=None, remind_me=True)
+            new_preference = users(user_id=current_user.id, band_id=band_id, liked=None, remind_me=True)
 
         db.session.add(new_preference)
 
@@ -103,11 +103,11 @@ def my_bands():
     # Query for the bands the user has liked or disliked
     user_interactions = (
         db.session.query(
-            DIM_Band,
-            UserBandPreference.liked
+            band,
+            users.liked
         )
-        .join(UserBandPreference, UserBandPreference.band_id == DIM_Band.Band_ID)
-        .filter(UserBandPreference.user_id == user_id)
+        .join(users, users.band_id == band.band_id)
+        .filter(users.user_id == user_id)
         .all()
     )
 
@@ -142,22 +142,22 @@ from urllib.parse import quote
 
 @main.route('/band/<int:band_id>')
 def band_detail(band_id):
-    band = DIM_Band.query.get(band_id)
-    discography = DIM_Discography.query.filter_by(Band_ID=band_id).all()
-    types = {album.Type for album in discography}
+    vband = band.query.get(band_id)
+    vdiscography = discography.query.filter_by(band_id=band_id).all()
+    types = {album.type for album in vdiscography}
 
     # Return albums without Invidious links for now
     albums_without_links = [
         {
-            'album_name': album.Album_Name,
-            'type': album.Type,
-            'year': album.Year,
-            'reviews': album.Reviews,
+            'album_name': album.name,
+            'type': album.type,
+            'year': album.year,
+            'reviews': album.reviews,
         }
-        for album in discography
+        for album in vdiscography
     ]
 
-    return render_template('band_detail.html', band=band, albums=albums_without_links, types=types)
+    return render_template('band_detail.html', band=vband, albums=albums_without_links, types=types)
 
 """@main.route('/discovery')
 @login_required
@@ -167,17 +167,17 @@ def discovery():
 
     # Step 1: Subquery to get the band IDs the user has interacted with
     interacted_band_ids = (
-        db.session.query(UserBandPreference.band_id)
-        .filter(UserBandPreference.user_id == user_id)
-        .filter(UserBandPreference.liked == True)
+        db.session.query(users.band_id)
+        .filter(users.user_id == user_id)
+        .filter(users.liked == True)
         .order_by(func.random())  # Randomly order the bands
         .limit(10)  # Limit to 10 random bands
         .subquery()
     )
 
     all_interacted_band_ids = (
-        db.session.query(UserBandPreference.band_id)
-        .filter(UserBandPreference.user_id == user_id)
+        db.session.query(users.band_id)
+        .filter(users.user_id == user_id)
         .subquery()
     )
 
@@ -188,17 +188,17 @@ def discovery():
     # Step 2: Query for similar bands along with the actual liked band name
     similar_bands_query = (
         db.session.query(
-            DIM_Similar_Band.Band_ID.label('liked_band_id'),
+            similar_band.band_id.label('liked_band_id'),
             liked_band_alias.band_name.label('liked_band_name'),  # Get the name of the liked band
-            DIM_Similar_Band.Similar_Artist_ID.label('similar_band_id'),
+            similar_band.similar_id.label('similar_band_id'),
             similar_band_alias.band_name.label('similar_band_name'),  # Get the name of the similar band
-            DIM_Similar_Band.Score
+            similar_band.Score
         )
-        .filter(DIM_Similar_Band.Similar_Artist_ID.notin_(all_interacted_band_ids))
-        .join(liked_band_alias, DIM_Similar_Band.Band_ID == liked_band_alias.item)  # Join to get the liked band's name
-        .join(similar_band_alias, DIM_Similar_Band.Similar_Artist_ID == similar_band_alias.item)  # Join to get similar band's name
-        .filter(DIM_Similar_Band.Band_ID.in_(interacted_band_ids))  # Include only those similar to interacted bands
-        .order_by(desc(DIM_Similar_Band.Score))
+        .filter(similar_band.similar_id.notin_(all_interacted_band_ids))
+        .join(liked_band_alias, similar_band.band_id == liked_band_alias.item)  # Join to get the liked band's name
+        .join(similar_band_alias, similar_band.similar_id == similar_band_alias.item)  # Join to get similar band's name
+        .filter(similar_band.band_id.in_(interacted_band_ids))  # Include only those similar to interacted bands
+        .order_by(desc(similar_band.Score))
     )
 
     # Step 3: Create a subquery from similar_bands_query
