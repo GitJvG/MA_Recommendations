@@ -17,7 +17,7 @@ def raise_advanced_clean(genre):
         print(f"Error processing genre: {genre} - {e}")
         raise
 
-df[['Split_Primary_Genres', 'Complex_Primary_Genres', 'Prefix']] = df['Genre'].apply(raise_advanced_clean)
+df[['Split_Primary_Genres', 'Complex_Primary_Genres', 'Prefix']] = df['genre'].apply(raise_advanced_clean)
 
 def items_to_set(genre_series):
     genre_set = set()

@@ -18,34 +18,34 @@ anchors = list(groups.keys())  # List of anchor words
 
 # Create a DataFrame for anchors and assign anchor IDs
 anchor_df = pd.DataFrame({
-    'anchor_id': range(1, len(anchors) + 1),
-    'anchor': anchors
+    'theme_id': range(1, len(anchors) + 1),
+    'name': anchors
 })
 
 # Save the anchor CSV
-anchor_df.to_csv('anchor.csv', index=False)
+anchor_df.to_csv(env.dim_theme, index=False)
 
 bridge_data = []
 
 # For each band, get the themes and their corresponding anchors
 df = pd.read_csv(env.deta)
-df['Themes'] = df['Themes'].dropna().apply(basic_processing)
-df = df.dropna(subset='Themes')
+df['themes'] = df['themes'].dropna().apply(basic_processing)
+df = df.dropna(subset='themes')
 
-for band_id, themes in zip(df['Band ID'], df['Themes']):
+for band_id, themes in zip(df['band_id'], df['themes']):
     for theme in themes.split(','):  # Split themes if they are comma-separated
         theme = theme.strip()
         # Find the anchor word by checking which anchor group the theme belongs to
         for anchor, theme_list in groups.items():
             if theme in theme_list:
                 # Append the band_id and the corresponding anchor_id to the bridge data
-                anchor_id = anchor_df[anchor_df['anchor'] == anchor].iloc[0]['anchor_id']
+                anchor_id = anchor_df[anchor_df['name'] == anchor].iloc[0]['theme_id']
                 bridge_data.append([band_id, anchor_id])
 
 # Convert the bridge data to a DataFrame
-bridge_df = pd.DataFrame(bridge_data, columns=['band_id', 'anchor_id'])
+bridge_df = pd.DataFrame(bridge_data, columns=['band_id', 'theme_id'])
 
 # Save the bridge CSV
-bridge_df.to_csv('bridge.csv', index=False)
+bridge_df.to_csv(env.band_theme, index=False)
 
 print("Anchor and Bridge CSVs created successfully.")

@@ -40,7 +40,9 @@ class Env:
             self.dim_genre = load_config('DIM_Genre')
             self.dim_prefix = load_config('DIM_Prefix')
             self.band_genre = load_config('BandGenre')
-            self.dim_themes = load_config('DIM_Themes')
+            self.dim_theme = load_config('DIM_Theme')
+            self.dim_theme_dict = load_config("DIM_Theme_Dict")
+            self.band_theme = load_config("BandTheme")
         except ValueError as e:
             print(f"Error: {e}")
             raise

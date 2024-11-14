@@ -3,46 +3,45 @@ from flask_login import UserMixin
 
 class DIM_Band(db.Model):
     __tablename__ = 'DIM_Band'
-    Band_ID = db.Column("Band ID", db.BigInteger, primary_key=True)
-    Band_URL = db.Column("Band URL", db.Text, nullable=True)
-    Band_Name = db.Column("Band Name", db.Text, nullable=True)
-    Country = db.Column("Country", db.Text, nullable=True)
-    Genre = db.Column("Genre", db.Text, nullable=True)
+    band_id = db.Column("band_id", db.BigInteger, primary_key=True)
+    url = db.Column("url", db.Text, nullable=True)
+    name = db.Column("name", db.Text, nullable=True)
+    country = db.Column("country", db.Text, nullable=True)
+    genre = db.Column("genre", db.Text, nullable=True)
 
 class DIM_Discography(db.Model):
     __tablename__ = 'DIM_Discography'
-    Band_ID = db.Column("Band ID", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), primary_key=True, nullable=False)
-    Album_Name = db.Column("Album Name", db.Text, primary_key=True, nullable=False)
-    Type = db.Column("Type", db.Text, primary_key=True, nullable=False)
-    Year = db.Column("Year", db.Integer, primary_key=True, nullable=False)
-    Reviews = db.Column("Reviews", db.Text, nullable=True)
+    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), primary_key=True, nullable=False)
+    name = db.Column("name", db.Text, primary_key=True, nullable=False)
+    type = db.Column("type", db.Text, primary_key=True, nullable=False)
+    year = db.Column("year", db.Integer, primary_key=True, nullable=False)
+    reviews = db.Column("reviews", db.Text, nullable=True)
 
 class DIM_Similar_Band(db.Model):
     __tablename__ = 'DIM_Similar_Band'
-    Band_ID = db.Column("Band ID", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), primary_key=True, nullable=False)
-    Similar_Artist_ID = db.Column("Similar Artist ID", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), primary_key=True, nullable=False)
-    Score = db.Column("Score", db.Integer, nullable=True)
+    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), primary_key=True, nullable=False)
+    similar_id = db.Column("similar_id", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), primary_key=True, nullable=False)
+    score = db.Column("Score", db.Integer, nullable=True)
 
 class DIM_Details(db.Model):
     __tablename__ = 'DIM_Details'
-    Band_ID = db.Column("Band ID", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), primary_key=True, nullable=False)
-    Country_of_origin = db.Column("Country of origin", db.Text, nullable=True)
-    Location = db.Column("Location", db.Text, nullable=True)
-    Status = db.Column("Status", db.Text, nullable=True)
-    Formed_in = db.Column("Formed in", db.Text, nullable=True)
-    Genre = db.Column("Genre", db.Text, nullable=True)
-    Themes = db.Column("Themes", db.Text, nullable=True)
-    Current_label = db.Column("Current label", db.Text, nullable=True)
-    Years_active = db.Column("Years active", db.Text, nullable=True)
-    Last_label = db.Column("Last label", db.Text, nullable=True)
+    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), primary_key=True, nullable=False)
+    country = db.Column("country", db.Text, nullable=True)
+    location = db.Column("location", db.Text, nullable=True)
+    status = db.Column("status", db.Text, nullable=True)
+    year_formed = db.Column("year_formed", db.Text, nullable=True)
+    genre = db.Column("genre", db.Text, nullable=True)
+    themes = db.Column("themes", db.Text, nullable=True)
+    label = db.Column("label", db.Text, nullable=True)
+    years_active = db.Column("years_active", db.Text, nullable=True)
 
 class DIM_Member(db.Model):
     __tablename__ = 'DIM_Member'
-    Band_ID = db.Column("Band ID", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), primary_key=True, nullable=False)
-    Member_ID = db.Column("Member ID", db.BigInteger, primary_key=True, nullable=False)
-    Name = db.Column("Name", db.Text, nullable=True)
-    Role = db.Column("Role", db.Text, nullable=True)
-    Category = db.Column("Category", db.Text, nullable=False)
+    band_id = db.Column("band ID", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), primary_key=True, nullable=False)
+    member_id = db.Column("member ID", db.BigInteger, primary_key=True, nullable=False)
+    name = db.Column("name", db.Text, nullable=True)
+    role = db.Column("role", db.Text, nullable=True)
+    category = db.Column("category", db.Text, nullable=False)
 
 class users(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -78,7 +77,18 @@ class DIM_Prefix(db.Model):
 
 class Bandgenre(db.Model):
     __tablename__ = 'Bandgenre'
-    bridge_id = db.Column("Bridge ID", db.BigInteger, primary_key=True, autoincrement=True)
-    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.Band ID'), nullable=False)
+    bridge_id = db.Column("bridge_id", db.BigInteger, primary_key=True, autoincrement=True)
+    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), nullable=False)
     item_id = db.Column("item_id", db.Integer, nullable=False)
     type = db.Column("type", db.String(10), nullable=False)
+
+class Bandtheme(db.Model):
+    __tablename__ = 'Bandtheme'
+    bridge_id = db.Column("bridge_id", db.BigInteger, primary_key=True, autoincrement=True)
+    band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('DIM_Band.band_id'), nullable=False)
+    theme_id = db.Column("theme_id", db.Integer, db.ForeignKey('DIM_Theme.theme_id'), nullable=False)
+
+class DIM_Theme(db.Model):
+    __tablename__ = 'DIM_Theme'
+    theme_id = db.Column("theme_id", db.Integer, primary_key=True, nullable=False)
+    name = db.Column('name', db.Text, unique=True, nullable=False)

@@ -39,7 +39,7 @@ def create_app(test_config=None):
 
     # Import models here to avoid circular imports
     with app.app_context():
-        from .models import users, DIM_Band, DIM_Similar_Band, DIM_Discography, DIM_Details, UserBandPreference, DIM_Member, DIM_Genre, DIM_Prefix, Bandgenre
+        from .models import users, DIM_Band, DIM_Similar_Band, DIM_Discography, DIM_Details, UserBandPreference, DIM_Member, DIM_Genre, DIM_Prefix, Bandgenre, DIM_Theme, Bandtheme
 
         # User Loader function for Flask-Login
         @login_manager.user_loader
