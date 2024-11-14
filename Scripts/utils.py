@@ -10,7 +10,7 @@ env = Env.get_instance()
 def get_last_scraped_date(file_path, filename):
     try:
         df = pd.read_csv(file_path)
-        file_info = df[df['Filename'] == filename]
+        file_info = df[df['name'] == filename]
         if not file_info.empty:
             date_str = file_info.iloc[0]['Date']
             return datetime.strptime(date_str, '%Y-%m-%d')
@@ -85,15 +85,15 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
 def update_metadata(file_path):
     data_filename = os.path.basename(file_path)
     new_entry = pd.DataFrame([{
-        'Filename': data_filename,
-        'Date': pd.Timestamp.now().strftime('%Y-%m-%d')
+        'name': data_filename,
+        'date': pd.Timestamp.now().strftime('%Y-%m-%d')
     }])
     
     try:
         metadata_df = pd.read_csv(env.meta)
         
-        # Drop any rows where 'Filename' matches data_filename to avoid duplicates
-        metadata_df = metadata_df[metadata_df['Filename'] != data_filename]
+        # Drop any rows where 'name' matches data_filename to avoid duplicates
+        metadata_df = metadata_df[metadata_df['name'] != data_filename]
         metadata_df = pd.concat([metadata_df, new_entry], ignore_index=True)
         
     except FileNotFoundError:
@@ -105,8 +105,8 @@ def update_metadata(file_path):
     return metadata_df
 
 def list_to_delete(target_path):
-    all_band_ids = set(pd.read_csv(env.band)['Band ID'])
-    existing_set = set(pd.read_csv(target_path)['Band ID'])
+    all_band_ids = set(pd.read_csv(env.band)['band_id'])
+    existing_set = set(pd.read_csv(target_path)['band_id'])
 
     band_ids_to_delete = list(existing_set-all_band_ids)
     return band_ids_to_delete
@@ -125,15 +125,15 @@ def remove_dupes_and_deletions(file_path):
     df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
 
     ids_to_delete = list_to_delete(file_path)
-    df_updated = df_updated[~df_updated['Band ID'].isin(ids_to_delete)]
+    df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete)]
     df_updated.to_csv(file_path, mode='w', header=True, index=False)
     
     print(f"Duplicates removed and progress saved for {filename}.")
 
 def Main_based_scrape(target_path):
     """Scrapes all ids existing in the main MA_bands, not in the target file"""
-    all_band_ids = set(pd.read_csv(env.band)['Band ID'])
-    processed_set = set(pd.read_csv(target_path)['Band ID'])
+    all_band_ids = set(pd.read_csv(env.band)['band_id'])
+    processed_set = set(pd.read_csv(target_path)['band_id'])
 
     band_ids_to_process = list(all_band_ids - processed_set)
 
