@@ -21,7 +21,7 @@ class similar_band(db.Model):
     __tablename__ = 'similar_band'
     band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
     similar_id = db.Column("similar_id", db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
-    score = db.Column("Score", db.Integer, nullable=True)
+    score = db.Column("score", db.Integer, nullable=True)
 
 class details(db.Model):
     __tablename__ = 'details'
