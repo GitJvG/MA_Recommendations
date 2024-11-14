@@ -53,7 +53,7 @@ def Modified_Set(url, last_scraped_day=None, is_final_month=False):
             print(f"No more records found on page {page}.")
             break
 
-        # Extract Band IDs with minimal processing
+        # Extract band_ids with minimal processing
         for record in records:
             month_day, band_html = record[0], record[1]
             band_url = BeautifulSoup(band_html, 'html.parser').a['href']
@@ -94,8 +94,8 @@ def Modified_based_list(target_path, complete = False):
     band_ids_to_process = Update_list(target_path)
 
     if complete:
-        all_band_ids = set(pd.read_csv(env.band)['Band ID'])
-        processed_set = set(pd.read_csv(target_path)['Band ID'])
+        all_band_ids = set(pd.read_csv(env.band)['band_id'])
+        processed_set = set(pd.read_csv(target_path)['band_id'])
         missing_ids = all_band_ids - processed_set
         band_ids_to_process = list(set(band_ids_to_process).union(missing_ids))
 

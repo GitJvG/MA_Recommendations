@@ -8,12 +8,12 @@ paths:
   CONFIG: "Config.json"
 
 keys:
-  *MA_BANDS: ['Band ID']
-  *MA_SIMILAR: ['Band ID', 'Similar Artist ID']
-  *MA_DISCOG: ['Album Name', 'Type', 'Year', 'Band ID']
-  *MA_DETAILS: ['Band ID']
-  *MA_MEMBER: ['Band ID', 'Member ID']
-  *METADATA: ['Filename']
+  *MA_BANDS: ['band_id']
+  *MA_SIMILAR: ['band_id', 'similar_id']
+  *MA_DISCOG: ['name', 'type', 'year', 'band_id']
+  *MA_DETAILS: ['band_id']
+  *MA_MEMBER: ['band_id', 'member_id']
+  *METADATA: ['name']
 
 urls:
   MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"

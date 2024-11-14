@@ -26,7 +26,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
         }
         return make_request(env.url_band + letter, params=payload)
 
-    column_names = ['NameLink', 'Country', 'Genre', 'Status']
+    column_names = ['NameLink', 'country', 'genre', 'status']
     data = DataFrame()
     # Retrieve the data
     for letter in letters:
@@ -70,10 +70,10 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
     if not data.empty:
         print('Parsing')
         data['NameLink'] = data['NameLink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
-        data['Band URL'] = data['NameLink'].apply(extract_href)
-        data['Band Name'] = data['NameLink'].apply(extract_text)
-        data['Band ID'] = data['Band URL'].apply(extract_url_id)
-        data = data[['Band URL','Band Name','Country','Genre','Band ID']]
+        data['url'] = data['NameLink'].apply(extract_href)
+        data['name'] = data['NameLink'].apply(extract_text)
+        data['band_id'] = data['url'].apply(extract_url_id)
+        data = data[['url','name','country','genre','band_id']]
         return data
     else:
         print("No data retrieved.")

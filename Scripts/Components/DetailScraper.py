@@ -23,7 +23,10 @@ def fetch_band_stats(soup, band_id):
         results[key] = value  # Store the result in the dictionary
     
     # Add the band ID to the results dictionary
-    results['Band ID'] = band_id
+    results['band_id'] = band_id
+    results = pd.DataFrame([results])
+    results.columns = ['country','location','status','year_formed','genre','themes',
+                       'label','years_active','band_id']
     return results
 
 def fetch_band_members(soup, band_id):
@@ -55,11 +58,11 @@ def fetch_band_members(soup, band_id):
                     
                     # Add the member details to the list
                 members.append({
-                    'Band ID': band_id,
-                    'Member ID': member_id,
-                    'Name': member_name,
-                    'Role': role,
-                    'Category': category  # Store category as per section
+                    'band_id': band_id,
+                    'member_id': member_id,
+                    'name': member_name,
+                    'role': role,
+                    'category': category  # Store category as per section
                 })
 
     # Convert the list of members to a DataFrame
@@ -77,8 +80,7 @@ def get_band_data(band_id):
         
         soup = BeautifulSoup(html_content, 'html.parser')
 
-        band_stats = fetch_band_stats(soup, band_id)
-        band_df = pd.DataFrame([band_stats])
+        band_df = fetch_band_stats(soup, band_id)
         members_df = fetch_band_members(soup, band_id)
 
         return band_df, members_df
@@ -95,3 +97,6 @@ def refresh():
     # Complete = true because all band ids in main should at least have a profile
     band_ids_to_process = Modified_based_list(env.deta, complete=True)
     Parallel_processing(band_ids_to_process, 500, [env.deta, env.memb], get_band_data)
+
+if __name__ == "__main__":
+    print(get_band_data(1))

@@ -10,14 +10,14 @@ env = Env.get_instance()
 def parse_similar_artists(html, band_id):
     """Parses similar artists from the provided HTML."""
     column_extractors = [
-        (0, extract_href),  # First column Similar Artist ID
-        (3, extract_text),  # Fourth column (Score)
+        (0, extract_href),  # First column similar_id
+        (3, extract_text),  # Fourth column (score)
     ]
     results = parse_table(html, table_id='artist_list', row_selector='tr', column_extractors=column_extractors)
     for result in results:
-        if result[0]:  # Accessing the first column which is 'Similar Artist ID'
+        if result[0]:  # Accessing the first column which is 'similar_id'
             result[0] = result[0].split('/')[-1]  # Extracting the ID from the URL
-        result['Band ID'] = band_id
+        result['band_id'] = band_id
 
     return results
 
@@ -27,13 +27,13 @@ def scrape_band_data(band_id):
 
     if html_content:
         if "No similar artist has been recommended yet" in html_content:
-            return pd.DataFrame(columns=['Similar Artist ID', 'Score', 'Band ID'])  # Return an empty DataFrame with the correct columns
+            return pd.DataFrame(columns=['similar_id', 'score', 'band_id'])  # Return an empty DataFrame with the correct columns
         similar_artists = parse_similar_artists(html_content, band_id)
 
         df = pd.DataFrame(similar_artists)
-        df.columns = ['Similar Artist ID', 'Score', 'Band ID']
+        df.columns = ['similar_id', 'score', 'band_id']
         return df
-    return pd.DataFrame(columns=['Similar Artist ID', 'Score', 'Band ID'])
+    return pd.DataFrame(columns=['similar_id', 'score', 'band_id'])
 
 def refresh():
     band_ids_to_process = Modified_based_list(env.simi, complete=False)

@@ -19,9 +19,9 @@ def parse_html(html, band_id):
     ]
     albums = parse_table(html, table_class='display discog', row_selector='tr', column_extractors=column_extractors)
 
-    # Convert to DataFrame and add Band ID
+    # Convert to DataFrame and add band_id
     df_albums = pd.DataFrame(albums)
-    df_albums['Band ID'] = band_id
+    df_albums['band_id'] = band_id
     return df_albums
 
 def fetch_album_data(band_id):
@@ -31,16 +31,16 @@ def fetch_album_data(band_id):
 
     if html_content:
         df = parse_html(html_content, band_id)
-        df.columns = ['Album Name', 'Type', 'Year', 'Reviews', 'Band ID']
+        df.columns = ['name', 'type', 'year', 'reviews', 'band_id']
         return df
-    return pd.DataFrame(columns=['Album Name', 'Type', 'Year', 'Reviews', 'Band ID'])
+    return pd.DataFrame(columns=['name', 'type', 'year', 'reviews', 'band_id'])
 
 def refresh():
     # Complete false because many bands don't have any discog entries.
     band_ids_to_process = Modified_based_list(env.disc, complete=False)
     # Because discog currently doesn't have a reliable unique id combination (that could be de-duplicated afterwards), all to be processed ids are first deleted.
     df = pd.read_csv(env.disc)
-    df = df[~df["Band ID"].isin(band_ids_to_process)]
+    df = df[~df["band_id"].isin(band_ids_to_process)]
     df.to_csv(env.disc)
 
     Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
