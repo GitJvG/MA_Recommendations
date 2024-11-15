@@ -67,6 +67,57 @@ def create_pickle():
     with open(output_path, 'wb') as pickle_file:
         pickle.dump(groups, pickle_file)
 
+def load_existing_dict(pickle_path):
+    if os.path.exists(pickle_path):
+        with open(pickle_path, 'rb') as pickle_file:
+            return pickle.load(pickle_file)
+    else:
+        return defaultdict(list)
+
+def find_new_themes(all_items, existing_dict):
+    existing_themes = set(existing_dict.keys()).union(
+        {theme for themes in existing_dict.values() for theme in themes}
+    )
+    new_themes = [theme for theme in all_items if theme not in existing_themes]
+    return new_themes
+
+def update_theme_dict(new_themes, theme_count, existing_dict, threshold=85):
+    # Sort new themes by frequency
+    sorted_themes = sorted(new_themes, key=lambda theme: theme_count[theme], reverse=True)
+    
+    for theme in sorted_themes:
+        found_group = False
+        
+        # Try to add the theme to an existing group
+        for anchor_word in existing_dict.keys():
+            if any(fuzz.partial_ratio(anchor_word, item) >= threshold for item in existing_dict[anchor_word]):
+                if anchor_word in theme:
+                    existing_dict[anchor_word].append(theme)
+                    found_group = True
+                    break
+
+        # If no suitable group found, create a new entry
+        if not found_group:
+            anchor_word = max(theme.split(), key=len)
+            existing_dict[anchor_word].append(theme)
+
+    return existing_dict
+
+def update_pickle():
+    df = pd.read_csv(env.deta)['themes']
+    df = df.dropna().apply(basic_processing)
+    output_path = env.dim_theme_dict
+    
+    all_items, theme_count = items_to_set(df)
+    existing_dict = load_existing_dict(output_path)
+    
+    new_themes = find_new_themes(all_items, existing_dict)
+    
+    updated_dict = update_theme_dict(new_themes, theme_count, existing_dict)
+    
+    with open(output_path, 'wb') as pickle_file:
+        pickle.dump(updated_dict, pickle_file)
+
 # Main execution
 if __name__ == "__main__":
-    create_pickle()
+    update_pickle()
