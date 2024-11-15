@@ -10,14 +10,12 @@ env= Env.get_instance()
 lemmatizer = WordNetLemmatizer()
 
 def normalize_to_ascii(theme):
-    # Convert accented characters to their ASCII equivalents
     normalized = unicodedata.normalize('NFD', theme)
     ascii_text = ''.join(char for char in normalized if unicodedata.category(char) != 'Mn')
         
     return ascii_text
 
 def lemmatize_string(theme):
-    # Lemmatize strings to simplify matching
     return ' '.join([lemmatizer.lemmatize(word) for word in theme.split()])
 
 

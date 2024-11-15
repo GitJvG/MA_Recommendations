@@ -123,7 +123,7 @@ def elements(genre):
 
 def part_exceptions(split_parts):
     # Last word except for when it is an exception ('age' in 'new age' then take last 2)
-    # Added super_special_cases for three-part entities such as 'black 'n' roll'
+    # Added ternary for three-part entities such as 'black 'n' roll'
     last_part = split_parts[-1]
 
     if last_part in env.binary:
@@ -198,9 +198,13 @@ def extract_primal(genre):
     
 def advanced_clean(genres):
     """single_primals, primal, prefixes"""
-    genre = basic_processing(genres)
-    primal, single_primals, prefixes = extract_primal(genre)
-    return single_primals, primal, prefixes if prefixes else None
+    try:
+        genre = basic_processing(genres)
+        primal, single_primals, prefixes = extract_primal(genre)
+        return single_primals, primal, prefixes if prefixes else None
+    except Exception as e:
+        print(f"Error processing genre: {genres} - {e}")
+        raise
 
 if __name__ == "__main__":
     genres = [

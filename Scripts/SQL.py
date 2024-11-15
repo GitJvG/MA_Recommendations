@@ -22,21 +22,20 @@ dataframes = {
 }
 
 def refresh_tables():
+    """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     app = create_app()
     with app.app_context():
         models = [member, details, similar_band, discography, band, genre, prefix, genres, theme, themes]
-        # Verify each model has a corresponding non-empty df
+
         for model in models:
             df = dataframes.get(model.__name__)()
             if not df:
                 raise ValueError(f"DataFrame for model '{model.__name__}' is empty or None.")
 
-        # Drop tables and relations if they exist
         for model in models:
             db.session.execute(text(f'DROP TABLE IF EXISTS "{model.__tablename__}" CASCADE;'))
         db.session.commit()
 
-        # Recreate tables based on model definitions
         db.create_all()
 
         for model in models:

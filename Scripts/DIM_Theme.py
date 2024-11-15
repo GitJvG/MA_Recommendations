@@ -9,16 +9,13 @@ env = Env.get_instance()
 from Helper.CleanThemes import basic_processing
 import pickle
 
-# Load your dictionary (anchor-value pairs) from the pickle file
 def save_DIM_themes(groups):
-    anchors = list(groups.keys())  # List of anchor words
+    anchors = list(groups.keys())
 
-    # Create a DataFrame for anchors and assign anchor IDs
     theme = pd.DataFrame({
         'theme_id': range(1, len(anchors) + 1),
         'name': anchors
     })
-    # Save the anchor CSV
     theme.to_csv(env.theme, index=False)
 
 def save_Bandthemes(groups, theme):
@@ -30,19 +27,15 @@ def save_Bandthemes(groups, theme):
     df = df.dropna(subset='themes')
 
     for band_id, themes in zip(df['band_id'], df['themes']):
-        for theme in themes.split(','):  # Split themes if they are comma-separated
+        for theme in themes.split(','):
             theme = theme.strip()
             # Find the anchor word by checking which anchor group the theme belongs to
             for anchor, theme_list in groups.items():
                 if theme in theme_list:
-                    # Append the band_id and the corresponding anchor_id to the bridge data
                     anchor_id = theme[theme['name'] == anchor].iloc[0]['theme_id']
                     bridge_data.append([band_id, anchor_id])
 
-    # Convert the bridge data to a DataFrame
     bridge_df = pd.DataFrame(bridge_data, columns=['band_id', 'theme_id'])
-
-    # Save the bridge CSV
     bridge_df.to_csv(env.themes, index=False)
 
 def main():
