@@ -10,14 +10,7 @@ from Helper.CleanGenre import advanced_clean
 env = Env.get_instance()
 
 df = pd.read_csv(env.band)
-def raise_advanced_clean(genre):
-    try:
-        return pd.Series(advanced_clean(genre))
-    except Exception as e:
-        print(f"Error processing genre: {genre} - {e}")
-        raise
-
-df[['Split_Primary_Genres', 'Complex_Primary_Genres', 'Prefix']] = df['genre'].apply(raise_advanced_clean)
+df[['Split_Primary_Genres', 'Complex_Primary_Genres', 'Prefix']] = df['genre'].apply(advanced_clean)
 
 def items_to_set(genre_series):
     genre_set = set()
