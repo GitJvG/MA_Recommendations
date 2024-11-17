@@ -111,4 +111,4 @@ def profile():
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render_template('partials/profile.html')
-    return render_template('base.html', content='profile.html')
+    return render_template('profile.html')

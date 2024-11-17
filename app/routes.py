@@ -105,17 +105,25 @@ def my_bands():
     # Query for the bands the user has liked or disliked
     user_interactions = (
         db.session.query(
-            band,
+            band.band_id,
+            band.name,
             users.liked
         )
         .join(users, users.band_id == band.band_id)
         .filter(users.user_id == user_id)
         .all()
     )
+
+    band_data = [
+        {'band_id': band_id, 'name': name, 'liked': liked}
+        for band_id, name, liked in user_interactions
+    ]
+    
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('partials/my_bands.html', user_interactions=user_interactions)
-    return render_template('my_bands.html', user_interactions=user_interactions)
+        return render_template('partials/my_bands.html', band_data=band_data)
+    
+    return render_template('my_bands.html', band_data=band_data)
 
 @main.route('/recommend_bands', methods=['GET'])
 @login_required
