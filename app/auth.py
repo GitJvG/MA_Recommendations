@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import user, db
-
+from app.utils import render_with_base
 # Create a blueprint for authentication routes
 auth = Blueprint('auth', __name__)
 
@@ -18,7 +18,7 @@ def login():
             login_user(queried_user)
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                sidebar_html = render_template('partials/sidebar.html')
+                sidebar_html = render_template('sidebar.html')
                 return jsonify({'success': True, 'sidebar_html': sidebar_html, 'redirect_url': url_for('main.index')})
             else:
                 return redirect(url_for('main.index'))
@@ -27,16 +27,14 @@ def login():
                 return jsonify({'error': 'Invalid username or password'}), 401
             flash('Login Unsuccessful. Please check username and password', 'danger')
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('partials/login.html')
-    return render_template('base.html', content='login.html')
+    return render_with_base('login.html')
 
 @auth.route('/logout', methods=['GET'])
 def logout():
     logout_user()
-    sidebar_html = render_template('partials/sidebar.html')
+    sidebar_html = render_template('sidebar.html')
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        index_html = render_template('partials/index.html')
+        index_html = render_template('index.html')
         return jsonify({
             'success': True,
             'sidebar_html': sidebar_html,
@@ -83,9 +81,9 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))  # Redirect to login after successful registration
+        return render_with_base(('auth.login'))  # Redirect to login after successful registration
 
-    return render_template('register.html')
+    return render_with_base('register.html')
 
 @auth.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -109,6 +107,4 @@ def profile():
         flash('Profile updated successfully.', 'success')
         return redirect(url_for('main.index'))
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('partials/profile.html')
-    return render_template('profile.html')
+    return render_with_base('profile.html')

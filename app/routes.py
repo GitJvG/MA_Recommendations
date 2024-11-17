@@ -5,15 +5,14 @@ from sqlalchemy.orm import aliased
 from .models import user, band, users, discography, similar_band, details, genre, member, prefix, db  # Import your User model and db instance
 from flask import jsonify
 from urllib.parse import quote
-
+import requests
+from app.utils import render_with_base
 # Create a blueprint for main routes
 main = Blueprint('main', __name__)
 
 @main.route('/', methods=['GET'])
 def index():
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('partials/index.html', recommendations=None)
-    return render_template('base.html', content='index.html',recommendations=None)
+    return render_with_base('index.html', recommendations=None)
 
 @main.route('/update_preferences', methods=['POST'])
 @login_required  # Ensure the user is logged in
@@ -119,11 +118,7 @@ def my_bands():
         for band_id, name, liked in user_interactions
     ]
     
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('partials/my_bands.html', band_data=band_data)
-    
-    return render_template('my_bands.html', band_data=band_data)
+    return render_with_base('my_bands.html', band_data=band_data)
 
 @main.route('/recommend_bands', methods=['GET'])
 @login_required
@@ -143,8 +138,6 @@ def get_genres():
     distinct_genres = [genre[0] for genre in genres]
     return jsonify(distinct_genres)"""
 
-import requests
-from flask import render_template
 from urllib.parse import quote
 
 @main.route('/band/<int:band_id>')
@@ -164,7 +157,7 @@ def band_detail(band_id):
         for album in vdiscography
     ]
 
-    return render_template('partials/band_detail.html', band=vband, albums=albums_without_links, types=types)
+    return render_with_base('band_detail.html', band=vband, albums=albums_without_links, types=types)
 
 """@main.route('/discovery')
 @login_required

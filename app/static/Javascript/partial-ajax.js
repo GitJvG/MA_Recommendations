@@ -12,7 +12,6 @@ $(document).on('click', '.ajax-link', function (e) {
                 $('#sidebar').html(response.sidebar_html);
                 $('#main-content').html(response.main_content_html);
             } else {
-                // Otherwise, replace the main content with the response
                 $('#main-content').html(response);
 
                 // Optionally, update the document title (if the response has a title tag)

@@ -42,7 +42,7 @@
                         <a class="nav-link ajax-link" href="{{ url_for('auth.login') }}">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                        <a class="nav-link ajax-link" href="{{ url_for('auth.register') }}">Register</a>
                     </li>
                 {% else %}
                     <li class="nav-item">
@@ -59,6 +59,11 @@
         </nav>   
 
         <div id="main-content" class="container mt-5 flex-grow-1">
+            <!-- Full render -->
+            {% if content_template %}
+                {% include content_template %}
+            {% endif %}
+            <!-- Partial render -->
             {% block content %}
             {% endblock %}
         </div>

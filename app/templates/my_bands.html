@@ -1,34 +1,13 @@
-{% extends "base.html" %}
+<div class="container mt-5">
+    <h1>My Bands</h1>
+    <ul class="list-group" id="band-list"></ul>
+</div>
 
-{% block content %}
+<!-- Pass the band data from Flask to JS -->
+<script type="text/javascript">
+    window.bandData = {{ band_data | tojson | safe }};
+    console.log(bandData);
+</script>
 
-<body>
-    <div class="container mt-5">
-        <h1>My Bands</h1>
-        <ul class="list-group">
-            {% for band, liked in user_interactions %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>{{ band.name }}</strong>
-                        <p>Status: {{ 'Liked' if liked else 'Disliked' }}</p>
-                    </div>
-                    <div>
-                        <form action="{{ url_for('main.like_band') }}" method="POST" style="display: inline;">
-                            <input type="hidden" name="band_id" value="{{ band.band_id }}">
-                            <button type="submit" name="action" value="like" class="btn btn-success btn-sm 
-                            {% if liked %}disabled{% endif %}">Like</button>
-                        </form>
-                        <form action="{{ url_for('main.like_band') }}" method="POST" style="display: inline;">
-                            <input type="hidden" name="band_id" value="{{ band.band_id }}">
-                            <button type="submit" name="action" value="dislike" class="btn btn-danger btn-sm 
-                            {% if not liked %}disabled{% endif %}">Dislike</button>
-                        </form>
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
-
-</body>
-</html>
-{% endblock %}
+<!-- External JS File -->
+<script src="{{ url_for('static', filename='Javascript/my_bands.js') }}"></script>
