@@ -2,12 +2,41 @@ body {
     background-color: white; /* Light background color */
     color: #343a40; /* Dark text color */
     overflow-x: hidden; /* Prevent horizontal scrolling */
-    padding-left: 10px; /* Padding for the body */
+}
+
+header.navbar {
+    max-height: 100px;
+    height: auto;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+/* Style the logo */
+header.navbar .navbar-brand img {
+    max-height: 80px;
+    object-fit: contain;
+}
+
+/* Style the search box */
+header.navbar .form-inline {
+    flex-grow: 1;
+    justify-content: right;
+}
+
+header.navbar .form-inline input {
+    max-width: 400px;
+}
+
+header.navbar .form-inline button {
+    padding: 10px 15px;
+    color: black;
+    border-color: black;
+    border-width: 2px;
 }
 
 #sidebar {
     position: fixed;
-    top: 0;
+    top: 50px;
     bottom: 0;
     width: 200px;
     background-color: #f8f9fa;
@@ -17,6 +46,7 @@ body {
     width: 100%; /* Full width for the nav links */
     position: absolute; /* Positioning to keep it fixed within the sidebar */
     top: 0; /* Align to the top */
+    padding-left: 40px;
     padding-top:50px;
 }
 

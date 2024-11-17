@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import user, db
@@ -12,20 +12,36 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        cuser = user.query.filter_by(username=username).first()
+        queried_user = user.query.filter_by(username=username).first()  # Ensure 'User' is correctly imported
 
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('main.index'))  # Redirect to index after login
+        if queried_user and check_password_hash(queried_user.password, password):
+            login_user(queried_user)
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                sidebar_html = render_template('partials/sidebar.html')
+                return jsonify({'success': True, 'sidebar_html': sidebar_html, 'redirect_url': url_for('main.index')})
+            else:
+                return redirect(url_for('main.index'))
         else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': 'Invalid username or password'}), 401
             flash('Login Unsuccessful. Please check username and password', 'danger')
 
-    return render_template('login.html')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('partials/login.html')
+    return render_template('base.html', content='login.html')
 
-@auth.route('/logout')
-@login_required
+@auth.route('/logout', methods=['GET'])
 def logout():
     logout_user()
+    sidebar_html = render_template('partials/sidebar.html')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        index_html = render_template('partials/index.html')
+        return jsonify({
+            'success': True,
+            'sidebar_html': sidebar_html,
+            'main_content_html': index_html
+        })
     return redirect(url_for('main.index'))
 
 @auth.route('/register', methods=['GET', 'POST'])
@@ -93,4 +109,6 @@ def profile():
         flash('Profile updated successfully.', 'success')
         return redirect(url_for('main.index'))
 
-    return render_template('profile.html')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('partials/profile.html')
+    return render_template('base.html', content='profile.html')

@@ -11,7 +11,9 @@ main = Blueprint('main', __name__)
 
 @main.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', recommendations=None)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('partials/index.html', recommendations=None)
+    return render_template('base.html', content='index.html',recommendations=None)
 
 @main.route('/update_preferences', methods=['POST'])
 @login_required  # Ensure the user is logged in
@@ -110,8 +112,9 @@ def my_bands():
         .filter(users.user_id == user_id)
         .all()
     )
-
-    # Render the template with the list of user interactions
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('partials/my_bands.html', user_interactions=user_interactions)
     return render_template('my_bands.html', user_interactions=user_interactions)
 
 @main.route('/recommend_bands', methods=['GET'])
@@ -136,10 +139,6 @@ import requests
 from flask import render_template
 from urllib.parse import quote
 
-from flask import render_template
-import requests
-from urllib.parse import quote
-
 @main.route('/band/<int:band_id>')
 def band_detail(band_id):
     vband = band.query.get(band_id)
@@ -157,7 +156,7 @@ def band_detail(band_id):
         for album in vdiscography
     ]
 
-    return render_template('band_detail.html', band=vband, albums=albums_without_links, types=types)
+    return render_template('partials/band_detail.html', band=vband, albums=albums_without_links, types=types)
 
 """@main.route('/discovery')
 @login_required

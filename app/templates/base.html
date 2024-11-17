@@ -3,51 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My Site{% endblock %}</title>
+    <title>{% block title %}Metallum_Recommender{% endblock %}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/Style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.1/dist/css/bootstrap-select.min.css">
+
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/favicon/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='images/favicon/site.webmanifest') }}">
+    
+    
 </head>
 <body>
-    <div class="d-flex"> 
+    <!-- Top Banner -->
+    <header class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='images/logo.png') }}">
+            </a>
+            <!-- Search Box -->
+            <form class="form-inline my-2 my-lg-0 d-flex w-50">
+                <input class="form-control mr-sm-2 flex-grow-1" type="search" placeholder="Search bands..." aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="d-flex">
         <!-- Sidebar -->
         <nav class="navbar navbar-light bg-light flex-column" id="sidebar" style="min-width: 200px;">
             <ul class="navbar-nav flex-column">
                 {% if not current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        <a class="nav-link ajax-link" href="{{ url_for('auth.login') }}">Login</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.popular_bands') }}">Popular Bands</a>
+                        <a class="nav-link ajax-link" href="{{ url_for('main.my_bands') }}">My Bands</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.my_bands') }}">My Bands</a>
+                        <a class="nav-link ajax-link" href="{{ url_for('auth.profile') }}">Profile</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.profile') }}">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        <a class="nav-link ajax-link" href="{{ url_for('auth.logout') }}" id="logout-link">Logout</a>
                     </li>
                 {% endif %}
             </ul>
-        </nav>
+        </nav>   
 
-        <!-- Main content -->
-        <div class="container mt-5 flex-grow-1" style="margin-left: 200px;"> <!-- Adjust margin for sidebar -->
+        <div id="main-content" class="container mt-5 flex-grow-1">
             {% block content %}
             {% endblock %}
         </div>
-    </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.1/dist/js/bootstrap-select.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.1/dist/js/bootstrap-select.min.js"></script>
     <script src="{{ url_for('static', filename='Javascript/discography_filter.js') }}"></script>
-    
+    <script src="{{ url_for('static', filename='Javascript/partial-ajax.js') }}"></script>
+    <script src="{{ url_for('static', filename='Javascript/ajax-form.js') }}"></script>
 </body>
 </html>
