@@ -1,0 +1,8 @@
+{
+    "profile.html": [
+        "/static/Javascript/genreselection.js"
+    ],
+    "register.html": [
+        "/static/Javascript/genreselection.js"
+    ]
+}

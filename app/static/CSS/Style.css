@@ -79,3 +79,24 @@ header.navbar .form-inline button {
 #discographyFilter option:hover {
     background-color: #e9ecef; /* Light grey background on hover */
 }
+
+/* Add to your CSS file */
+#notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#notification.show {
+    opacity: 1;
+    visibility: visible;
+}

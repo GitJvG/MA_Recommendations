@@ -49,7 +49,7 @@ class user(db.Model, UserMixin):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
-    Birthyear = db.Column(db.Integer, nullable=False)
+    birthyear = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String(10), nullable=False)
     nationality = db.Column(db.String(50), nullable=False)
     genre1 = db.Column(db.String(50), nullable=False)

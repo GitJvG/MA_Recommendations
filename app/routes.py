@@ -123,7 +123,6 @@ def my_bands():
 @main.route('/recommend_bands', methods=['GET'])
 @login_required
 def recommend_bands():
-    # Get the current user's ID
     return
 
 # Import your auth blueprint
@@ -132,11 +131,12 @@ from .auth import auth as auth_blueprint
 # Register the auth blueprint
 main.register_blueprint(auth_blueprint)
 
-"""@main.route('/get_genres', methods=['GET'])
+@main.route('/get_genres', methods=['GET'])
 def get_genres():
-    genres = db.session.query(Item.genre1).distinct().all()
+    genres = db.session.query(genre.name).distinct().all()
+
     distinct_genres = [genre[0] for genre in genres]
-    return jsonify(distinct_genres)"""
+    return jsonify(distinct_genres)
 
 from urllib.parse import quote
 

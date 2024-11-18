@@ -1,65 +1,52 @@
 <div class="container mt-5">
     <h2>Profile</h2>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul class="alert alert-dismissible fade show">
-            {% for category, message in messages %}
-                <li class="alert alert-{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
     <form action="{{ url_for('auth.profile') }}" method="POST">
-        <!-- Age -->
+
         <div class="form-group">
-            <label for="Birthyear">Birthyear:</label>
-            <input type="number" class="form-control" name="Birthyear" id="Birthyear" required>
+            <label for="birthyear">Birthyear:</label>
+            <input type="number" class="form-control" name="birthyear" id="birthyear" value="{{ user.birthyear }}" required>
         </div>
 
-        <!-- Gender -->
         <div class="form-group">
             <label for="gender">Gender:</label>
             <select class="form-control" name="gender" id="gender" required>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
             </select>
         </div>
 
-        <!-- Nationality -->
         <div class="form-group">
             <label for="nationality">Nationality:</label>
-            <input type="text" class="form-control" name="nationality" id="nationality" required>
+            <input type="text" class="form-control" name="nationality" id="nationality" value="{{ user.nationality }}" required>
         </div>
 
-        <!-- Genre 1 -->
         <div class="form-group">
             <label for="genre1">Favorite Genre 1:</label>
-            <select class="form-control" name="genre1" id="genre1" required>
+            <select class="form-control" name="genre1" id="genre1" required data-selected="{{ user.genre1 }}">
                 <option value="">Select a Genre</option>
             </select>
         </div>
 
-        <!-- Genre 2 -->
         <div class="form-group">
             <label for="genre2">Favorite Genre 2:</label>
-            <select class="form-control" name="genre2" id="genre2" required>
+            <select class="form-control" name="genre2" id="genre2" required data-selected="{{ user.genre2 }}">
                 <option value="">Select a Genre</option>
             </select>
         </div>
 
-        <!-- Genre 3 -->
         <div class="form-group">
             <label for="genre3">Favorite Genre 3:</label>
-            <select class="form-control" name="genre3" id="genre3" required>
+            <select class="form-control" name="genre3" id="genre3" required data-selected="{{ user.genre3 }}">
                 <option value="">Select a Genre</option>
             </select>
         </div>
 
-        <!-- Update Button -->
         <button type="submit" class="btn btn-primary">Update Profile</button>
     </form>
 </div>
-
-<script src="{{ url_for('static', filename='Javascript/genreselection.js') }}"></script>
-</body>
+{% block js %}
+    {% if ajax %}
+        <script src="/static/Javascript/genreselection.js"></script>
+    {% endif %}
+{% endblock %}

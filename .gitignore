@@ -8,3 +8,4 @@ run.py
 app/schemas/
 comp/
 app/static/images/
+app/run.bat

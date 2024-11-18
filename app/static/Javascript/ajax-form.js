@@ -1,36 +1,45 @@
-// Handle login form submission via AJAX
 $(document).on('submit', 'form', function (e) {
     e.preventDefault(); // Prevent default form submission
     var form = $(this);
     var url = form.attr('action') || window.location.href;
     var method = form.attr('method') || 'POST';
 
-    // Submit the form via AJAX
     $.ajax({
-        url: url,  // This points to the /login route
-        method: method,  // POST method
-        data: form.serialize(),  // Send form data
+        url: url,
+        method: method,
+        data: form.serialize(),
         success: function(response) {
             if (response.success) {
-                // On successful login, refresh the sidebar
-                $('#sidebar').html(response.sidebar_html);  // Replace the sidebar content
+                if (response.pop_up) {
+                    $('#notification').text(response.pop_up).addClass('show');
+                    
+                    setTimeout(function() {
+                        $('#notification').removeClass('show');
+                    }, 3000);  // 3 seconds
+                }
 
-                // Optionally, replace the main content or other parts of the page
-                $.get(response.redirect_url, function(partialContent) {
-                    $('#main-content').html(partialContent);
+                if (response.redirect_url) {
+                    $('#sidebar').html(response.sidebar_html);
+                }
+                if (response.redirect_url) {
+                    // Only try to load partial content if a redirect URL is provided
+                    $.get(response.redirect_url, function(partialContent) {
+                        $('#main-content').html(partialContent);
 
-                    // Optionally update the document title (e.g., to match the new page)
-                    var newTitle = $(partialContent).filter('title').text();
-                    if (newTitle) {
-                        document.title = newTitle;
-                    }
-                });
+                        var newTitle = $(partialContent).filter('title').text();
+                        if (newTitle) {
+                            document.title = newTitle;
+                        }
+                    });
+                }
             } else {
-                alert('Login failed: ' + (response.error || 'Unknown error'));
+                // Handle error message returned from the server
+                alert('Error: ' + response.error);
             }
         },
-        error: function(xhr) {
-            alert('An error occurred during login.');
+        error: function(xhr, status, error) {
+            // Handle AJAX error (network issues, etc.)
+            alert('An error occurred during the request.');
         }
     });
 });

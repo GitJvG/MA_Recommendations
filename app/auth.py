@@ -25,7 +25,6 @@ def login():
         else:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'error': 'Invalid username or password'}), 401
-            flash('Login Unsuccessful. Please check username and password', 'danger')
 
     return render_with_base('login.html')
 
@@ -90,7 +89,7 @@ def register():
 def profile():
     if request.method == 'POST':
         # Fetch current user from session
-        current_user.Birthyear = request.form['Birthyear']
+        current_user.birthyear = request.form['birthyear']
         current_user.gender = request.form['gender']
         current_user.nationality = request.form['nationality']
         current_user.genre1 = request.form['genre1']
@@ -99,12 +98,10 @@ def profile():
 
         # Ensure all genres are different
         if current_user.genre1 == current_user.genre2 or current_user.genre2 == current_user.genre3 or current_user.genre1 == current_user.genre3:
-            flash('Please select three different genres.', 'error')
-            return redirect(url_for('auth.profile'))
+            return jsonify({'error': 'Please select three different genres'})
 
         # Commit the changes to the database
         db.session.commit()
-        flash('Profile updated successfully.', 'success')
-        return redirect(url_for('main.index'))
+        return jsonify({'success': True, 'pop_up': 'Profile updated successfully.'})
 
-    return render_with_base('profile.html')
+    return render_with_base('profile.html', user=current_user)
