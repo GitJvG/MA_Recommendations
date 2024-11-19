@@ -23,4 +23,4 @@ def JSON(attribute, path='app/Javascript.json'):
         return value if value else None
 
 def Title(content_template):
-     return f"{content_template[:-5].replace("_", " ").title()} - Metallum Recommender`"
+     return f"{content_template[:-5].replace("_", " ").title()} - Metallum Recommender"
