@@ -1,46 +1,81 @@
-$(document).on('click', '.ajax-link', function (e) {
-    e.preventDefault(); // Prevent default browser navigation
-    var url = $(this).attr('href'); // Get the URL from the link's href attribute
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('ajax-link')) {
+        e.preventDefault();
+        var url = e.target.getAttribute('href');
 
-    // Make an AJAX request to the server
-    $.ajax({
-        url: url,
-        method: 'GET',
-        success: function(response) {
-            // Check if the response includes 'logout' in the URL or some identifier
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(response => {
+            // Replace sidebar and main-content based on URL content
             if (url.includes("logout")) {
-                $('#sidebar').html(response.sidebar_html);
-                $('#main-content').html(response.main_content_html);
+                document.getElementById('sidebar').innerHTML = extractHtml(response, '#sidebar');
+                document.getElementById('main-content').innerHTML = extractHtml(response, '#main-content');
             } else {
-                $('#main-content').html(response);
+                const mainContent = document.getElementById('main-content');
+                // Make sure to check if the content was successfully extracted before assigning it
+                const newContent = response
+                if (newContent) {
+                    mainContent.innerHTML = newContent;
+                } else {
+                    console.error('Main content not found in the response.');
+                }
 
-                // Optionally, update the document title (if the response has a title tag)
-                var newTitle = $(response).filter('title').text();
+                var newTitle = extractTitle(response);
                 if (newTitle) {
                     document.title = newTitle;
                 }
+                
+                executeScripts(response);
             }
-
-            // Update the browser's URL without reloading the page
+            
+            // Push the new URL into the history state
             history.pushState({ path: url }, '', url);
-        },
-        error: function(xhr, status, error) {
+        })
+        .catch(error => {
             console.error('Failed to load page: ', error);
             alert('An error occurred while loading the page.');
-        }
-    });
+        });
+    }
 });
 
-function updateSidebar() {
-    $.ajax({
-        url: '/get_sidebar', // URL to fetch updated sidebar
-        method: 'GET',
-        success: function(response) {
-            $('#sidebar').html($(response).find('#sidebar').html());
-        },
-        error: function(xhr, status, error) {
-            console.error('Failed to load sidebar: ', error);
-        }
-    });
+function extractHtml(response, selector) {
+    const doc = new DOMParser().parseFromString(response, 'text/html');
+    const element = doc.querySelector(selector);
+    
+    // Return the innerHTML of the element, or null if it doesn't exist
+    if (element) {
+        return element.innerHTML;
+    } else {
+        return null;
+    }
 }
 
+function extractTitle(response) {
+    const doc = new DOMParser().parseFromString(response, 'text/html');
+    const titleElement = doc.querySelector('title');
+    return titleElement ? titleElement.textContent : null;
+}
+
+function executeScripts(response) {
+    const doc = new DOMParser().parseFromString(response, 'text/html');
+    const scripts = doc.querySelectorAll('script');
+    scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        if (script.src) {
+            newScript.src = script;
+        } else {
+            newScript.innerHTML = script.innerHTML;
+        }
+        document.body.appendChild(newScript);
+    });
+}

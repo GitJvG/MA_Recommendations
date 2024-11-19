@@ -4,5 +4,11 @@
     ],
     "register.html": [
         "/static/Javascript/genreselection.js"
+    ],
+    "band_detail.html": [
+        "static/Javascript/discography_filter.js"
+    ],
+    "my_bands.html": [
+        "static/Javascript/my_bands.js"
     ]
 }

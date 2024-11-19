@@ -1,45 +1,73 @@
-$(document).on('submit', 'form', function (e) {
-    e.preventDefault(); // Prevent default form submission
-    var form = $(this);
-    var url = form.attr('action') || window.location.href;
-    var method = form.attr('method') || 'POST';
+document.addEventListener('submit', function (e) {
+    if (e.target.tagName === 'FORM') {
+        e.preventDefault();
 
-    $.ajax({
-        url: url,
-        method: method,
-        data: form.serialize(),
-        success: function(response) {
+        var form = e.target;
+        var url = form.action || window.location.href;
+        var method = form.method || 'POST';
+
+        var formData = new FormData(form);
+
+        fetch(url, {
+            method: method,
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(response => {
             if (response.success) {
                 if (response.pop_up) {
-                    $('#notification').text(response.pop_up).addClass('show');
-                    
-                    setTimeout(function() {
-                        $('#notification').removeClass('show');
-                    }, 3000);  // 3 seconds
+
+                    var notification = document.getElementById('notification');
+                    notification.textContent = response.pop_up;
+                    notification.classList.add('show');
+
+                    // Hide notification after 3 seconds
+                    setTimeout(function () {
+                        notification.classList.remove('show');
+                    }, 3000); // 3 seconds
                 }
 
                 if (response.redirect_url) {
-                    $('#sidebar').html(response.sidebar_html);
-                }
-                if (response.redirect_url) {
-                    // Only try to load partial content if a redirect URL is provided
-                    $.get(response.redirect_url, function(partialContent) {
-                        $('#main-content').html(partialContent);
+                    if (response.sidebar_html) {
+                        document.getElementById('sidebar').innerHTML = response.sidebar_html;
+                    }
 
-                        var newTitle = $(partialContent).filter('title').text();
-                        if (newTitle) {
-                            document.title = newTitle;
+                    fetch(response.redirect_url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
-                    });
+                    })
+                        .then(partialResponse => {
+                            if (!partialResponse.ok) {
+                                throw new Error(`HTTP error! status: ${partialResponse.status}`);
+                            }
+                            return partialResponse.text();
+                        })
+                        .then(partialContent => {
+                            document.getElementById('main-content').innerHTML = partialContent;
+
+                            var parser = new DOMParser();
+                            var doc = parser.parseFromString(partialContent, 'text/html');
+                            var newTitle = doc.querySelector('title');
+                            if (newTitle) {
+                                document.title = newTitle.textContent;
+                            }
+                        });
                 }
             } else {
-                // Handle error message returned from the server
                 alert('Error: ' + response.error);
             }
-        },
-        error: function(xhr, status, error) {
-            // Handle AJAX error (network issues, etc.)
-            alert('An error occurred during the request.');
-        }
-    });
+        })
+        .catch(error => {
+            alert('An error occurred during the request: ' + error.message);
+        });
+    }
 });

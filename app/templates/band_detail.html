@@ -84,3 +84,8 @@
             });
     }
 </script>
+{% block js %}
+    {% if ajax %}
+    <script src="static/Javascript/discography_filter.js"></script>
+    {% endif %}
+{% endblock %}

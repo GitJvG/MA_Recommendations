@@ -3,11 +3,8 @@
     <ul class="list-group" id="band-list"></ul>
 </div>
 
-<!-- Pass the band data from Flask to JS -->
-<script type="text/javascript">
-    window.bandData = {{ band_data | tojson | safe }};
-    console.log(bandData);
-</script>
-
-<!-- External JS File -->
-<script src="static/Javascript/my_bands.js"></script>
+{% block js %}
+    {% if ajax %}
+        <script src="/static/Javascript/my_bands.js"></script>
+    {% endif %}
+{% endblock %}

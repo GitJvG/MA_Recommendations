@@ -95,7 +95,6 @@ def like_band():
 @main.route('/my_bands')
 def my_bands():
     if not current_user.is_authenticated:
-        flash('You need to log in to view your liked/disliked bands.')
         return redirect(url_for('login'))
 
     # Get the current user's ID
@@ -119,6 +118,27 @@ def my_bands():
     ]
     
     return render_with_base('my_bands.html', band_data=band_data)
+
+@main.route('/my_bands/ajax')
+def get_bands():
+    user_id = current_user.id
+    # Query for the bands the user has liked or disliked
+    user_interactions = (
+        db.session.query(
+            band.band_id,
+            band.name,
+            users.liked
+        )
+        .join(users, users.band_id == band.band_id)
+        .filter(users.user_id == user_id)
+        .all()
+    )
+
+    band_data = [
+        {'band_id': band_id, 'name': name, 'liked': liked}
+        for band_id, name, liked in user_interactions
+    ]
+    return jsonify(band_data)
 
 @main.route('/recommend_bands', methods=['GET'])
 @login_required
