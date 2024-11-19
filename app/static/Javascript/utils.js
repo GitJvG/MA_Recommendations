@@ -36,8 +36,12 @@ function updatePageContent(url, response) {
         executeScripts(response.js_files);
     }
 
-    // Push the new URL into the history state
-    history.pushState({ path: url }, '', url);
+    if (response.sidebar) {
+        document.getElementById('sidebar').innerHTML = response.sidebar;
+    }
+
+    const targetUrl = response.target || url;
+    history.pushState({ path: targetUrl }, '', targetUrl);
 }
 
 function executeScripts(jsFiles) {
