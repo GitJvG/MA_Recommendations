@@ -26,9 +26,8 @@ function updatePageContent(url, response) {
         document.getElementById('sidebar').innerHTML = extractHtml(response.html, '#sidebar');
         document.getElementById('main-content').innerHTML = extractHtml(response.html, '#main-content');
     } else {
-        const mainContent = document.getElementById('main-content');
-        // Ensure that the content is not empty
         if (response.html) {
+            const mainContent = document.getElementById('main-content');
             mainContent.innerHTML = response.html;
         } else {
             console.error('Main content not found in the response.');

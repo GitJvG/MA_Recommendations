@@ -7,7 +7,6 @@ document.addEventListener('submit', function (e) {
         var form = e.target;
         var url = form.action || window.location.href;
         var method = form.method || 'POST';
-
         var formData = new FormData(form);
 
         fetch(url, {
