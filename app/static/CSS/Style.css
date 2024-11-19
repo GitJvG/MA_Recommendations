@@ -1,5 +1,5 @@
 body {
-    background-color: white; /* Light background color */
+    background-color: white !important; /* Light background color */
     color: #343a40; /* Dark text color */
     overflow-x: hidden; /* Prevent horizontal scrolling */
 }
@@ -9,6 +9,7 @@ header.navbar {
     height: auto;
     padding-left: 40px;
     padding-right: 40px;
+    background-color: #e9ecef !important;
 }
 
 /* Style the logo */
@@ -39,7 +40,7 @@ header.navbar .form-inline button {
     top: 50px;
     bottom: 0;
     width: 200px;
-    background-color: #f8f9fa;
+    background-color: #e9ecef !important;
 }
 
 .navbar-nav {

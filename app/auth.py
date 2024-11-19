@@ -50,7 +50,7 @@ def register():
         password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
         
         # Additional fields
-        Birthyear = request.form['Birthyear']
+        birthyear = request.form['birthyear']
         gender = request.form['gender']
         nationality = request.form['nationality']
         
@@ -69,7 +69,7 @@ def register():
             username=username, 
             email=email, 
             password=password, 
-            Birthyear=Birthyear, 
+            birthyear=birthyear, 
             gender=gender, 
             nationality=nationality, 
             genre1=genre1, 
@@ -79,8 +79,11 @@ def register():
         
         db.session.add(new_user)
         db.session.commit()
-        flash('Registration successful! Please log in.', 'success')
-        return render_with_base(('auth.login'))  # Redirect to login after successful registration
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'redirect_url': url_for('auth.login')})
+        else:
+            return redirect(url_for('auth.login'))
 
     return render_with_base('register.html')
 
