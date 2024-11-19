@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify
 import json
 
-def render_with_base(content_template, **variables):
+def render_with_base(content_template, sidebar_html=None, **variables):
     js_files = JSON(content_template)
     page_title = Title(content_template)
     # This is triggered when someone accesses a page through ajax (sidebar links all are intercepted and turned into ajax requests)
@@ -10,11 +10,12 @@ def render_with_base(content_template, **variables):
         return jsonify({
             'html': html_content,
             'js_files': js_files,
-            'title': page_title
+            'title': page_title,
+            'sidebar': sidebar_html,
+            'target': f"/{content_template[:-5]}" if not '/index' else '/'
         })
     # Regular requests directly append the required javascript scripts as a parameter which is interpret by jinja.
-    return render_template('base.html', content_template=content_template, **variables, js_files = js_files, page_title=page_title)
-
+    return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=page_title)
 
 def JSON(attribute, path='app/Javascript.json'):
         with open(path, 'r') as file:

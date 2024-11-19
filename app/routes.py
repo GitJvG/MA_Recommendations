@@ -12,18 +12,7 @@ main = Blueprint('main', __name__)
 
 @main.route('/', methods=['GET'])
 def index():
-    return render_with_base('index.html', recommendations=None)
-
-@main.route('/update_preferences', methods=['POST'])
-@login_required  # Ensure the user is logged in
-def update_preferences():
-    if request.method == 'POST':
-        # Get the favorite bands from the form
-        favorite_bands = request.form.get('favorite_bands')
-        current_user.favorite_bands = favorite_bands  # Update the user's preferences
-        db.session.commit()  # Commit the changes to the database
-        flash('Preferences updated successfully!', 'success')  # Flash a success message
-        return redirect(url_for('main.index'))  # Redirect back to the index
+    return render_with_base('index.html')
     
 """@main.route('/popular_bands', methods=['GET'])
 def popular_bands():

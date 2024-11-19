@@ -33,8 +33,7 @@ def logout():
     logout_user()
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         sidebar_html = render_template('sidebar.html')
-        index_html = render_template('index.html')
-        return jsonify({'success': True, 'sidebar_html': sidebar_html, 'main_content_html': index_html})
+        return render_with_base('index.html', sidebar_html=sidebar_html)
     return redirect(url_for('main.index'))
 
 @auth.route('/register', methods=['GET', 'POST'])
