@@ -1,3 +1,5 @@
+import { fetchContent } from "./utils.js";
+
 document.addEventListener('submit', function (e) {
     if (e.target.tagName === 'FORM') {
         e.preventDefault();
@@ -21,6 +23,7 @@ document.addEventListener('submit', function (e) {
             }
             return response.json();
         })
+        // If a pop-up was passed, show it temporarily upon submitting
         .then(response => {
             if (response.success) {
                 if (response.pop_up) {
@@ -29,38 +32,17 @@ document.addEventListener('submit', function (e) {
                     notification.textContent = response.pop_up;
                     notification.classList.add('show');
 
-                    // Hide notification after 3 seconds
                     setTimeout(function () {
                         notification.classList.remove('show');
-                    }, 3000); // 3 seconds
+                    }, 3000);
                 }
-
+                // If a redirect url was passed, redirect using ajax and refresh sidebar.
                 if (response.redirect_url) {
                     if (response.sidebar_html) {
                         document.getElementById('sidebar').innerHTML = response.sidebar_html;
                     }
 
-                    fetch(response.redirect_url, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                        .then(partialResponse => {
-                            if (!partialResponse.ok) {
-                                throw new Error(`HTTP error! status: ${partialResponse.status}`);
-                            }
-                            return partialResponse.text();
-                        })
-                        .then(partialContent => {
-                            document.getElementById('main-content').innerHTML = partialContent;
-
-                            var parser = new DOMParser();
-                            var doc = parser.parseFromString(partialContent, 'text/html');
-                            var newTitle = doc.querySelector('title');
-                            if (newTitle) {
-                                document.title = newTitle.textContent;
-                            }
-                        });
+                    fetchContent(response.redirect_url)
                 }
             } else {
                 alert('Error: ' + response.error);
