@@ -22,7 +22,7 @@
         <!-- Birthyear -->
         <div class="form-group">
             <label for="Birthyear">Birthyear:</label>
-            <input type="number" class="form-control" name="Birthyear" id="Birthyear" required>
+            <input type="number" class="form-control" name="birthyear" id="birthyear" required>
         </div>
 
         <!-- Gender -->
@@ -70,10 +70,5 @@
     </form>
 
     <!-- Link to login if user has an account -->
-    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>.</p>
+    <p>Already have an account? <a class="nav-link ajax-link" href="{{ url_for('auth.login') }}">Login here</a>.</p>
 </div>
-{% block js %}
-    {% if ajax %}
-        <script src="/static/Javascript/genreselection.js"></script>
-    {% endif %}
-{% endblock %}
