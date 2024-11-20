@@ -10,5 +10,8 @@
     ],
     "my_bands.html": [
         "/static/Javascript/my_bands.js"
+    ],
+    "search.html": [
+        "/static/Javascript/search_results.js"
     ]
 }

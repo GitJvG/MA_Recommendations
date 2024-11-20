@@ -22,10 +22,10 @@
                 <img src="{{ url_for('static', filename='images/logo.png') }}">
             </a>
             <!-- Search Box -->
-            <form class="form-inline my-2 my-lg-0 d-flex w-50">
-                <input class="form-control mr-sm-2 flex-grow-1" type="search" placeholder="Search bands..." aria-label="Search">
+            <form class="form-inline my-2 my-lg-0 d-flex w-50" method="POST" action="{{ url_for('main.search') }}">
+                <input class="form-control mr-sm-2 flex-grow-1" type="search" name="q" placeholder="Search bands..." aria-label="Search">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-            </form>
+            </form>            
         </div>
     </header>
 

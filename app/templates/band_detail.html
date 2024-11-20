@@ -1,11 +1,11 @@
 <div class="container mt-5">
-    <h1 class="mb-4">{{ band.Band_Name }}</h1>
+    <h1 class="mb-4">{{ name }}</h1>
     <div class="card mb-4">
         <div class="card-body">
             <h5 class="card-title">Band Information</h5>
-            <p class="card-text"><strong>Genres:</strong> {{ band.Genre }}</p>
-            <p class="card-text"><strong>Country:</strong> {{ band.Country }}</p>
-            <p class="card-text"><strong>Status:</strong> {{ band.Status }}</p>
+            <p class="card-text"><strong>Genres:</strong> {{ band.genre }}</p>
+            <p class="card-text"><strong>Country:</strong> {{ band.country }}</p>
+            <p class="card-text"><strong>Status:</strong> {{ band.status }}</p>
         </div>
     </div>
 
@@ -54,8 +54,6 @@
     {% else %}
     <p>No discography available for this band.</p>
     {% endif %}
-
-    <a href="{{ url_for('main.popular_bands') }}" class="btn btn-primary mt-4">Back to Popular Bands</a>
 </div>
 
 <script>
@@ -84,8 +82,3 @@
             });
     }
 </script>
-{% block js %}
-    {% if ajax %}
-    <script src="static/Javascript/discography_filter.js"></script>
-    {% endif %}
-{% endblock %}

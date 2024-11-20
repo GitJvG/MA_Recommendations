@@ -149,9 +149,44 @@ def get_genres():
 
 from urllib.parse import quote
 
+from flask import jsonify, request
+
+@main.route('/search', methods=['POST', 'GET'])
+def search():
+    if request.method == 'POST':
+        query = request.form.get('q', '').strip()
+        exact_matches = (
+            db.session.query(band.band_id, band.name)
+            .filter(db.func.lower(band.name) == query).all()
+            )
+        print(len(exact_matches))
+        if len(exact_matches) == 1:
+            match = exact_matches[0]
+            return jsonify({
+                'success': True,
+                'redirect_url': url_for('main.band_detail', band_id=match.band_id)
+            })
+
+        return jsonify({
+                'success': True,
+                'redirect_url': url_for('main.search', query=query),
+            })
+    query = request.args.get('query', '').strip().lower()
+    return render_with_base('search.html', query=query)
+
+@main.route('/search_results')
+def query():
+    query = request.args.get('query', '').strip().lower()
+    print(query)
+    partial_matches = db.session.query(band.band_id, band.name).filter(band.name.ilike(f'%{query}%')).all()
+    print(partial_matches)
+    return jsonify(results = [{'name': band.name, 'band_id': band.band_id} for band in partial_matches])
+
+
 @main.route('/band/<int:band_id>')
 def band_detail(band_id):
-    vband = band.query.get(band_id)
+    vdetail = db.session.get(details, band_id)
+    name = db.session.get(band, band_id).name
     vdiscography = discography.query.filter_by(band_id=band_id).all()
     types = {album.type for album in vdiscography}
 
@@ -166,7 +201,7 @@ def band_detail(band_id):
         for album in vdiscography
     ]
 
-    return render_with_base('band_detail.html', band=vband, albums=albums_without_links, types=types)
+    return render_with_base('band_detail.html', band=vdetail, name=name, albums=albums_without_links, types=types, title=name)
 
 """@main.route('/discovery')
 @login_required
