@@ -1,29 +1,33 @@
-<div class="container mt-5">
-    <h1 class="mb-4">{{ name }}</h1>
-    <div class="card mb-4">
+<div class="container">
+    <h1 class="title">{{ name }}</h1>
+    <div class="card">
         <div class="card-body">
-            <h5 class="card-title">Band Information</h5>
-            <p class="card-text"><strong>Genres:</strong> {{ band.genre }}</p>
-            <p class="card-text"><strong>Country:</strong> {{ band.country }}</p>
-            <p class="card-text"><strong>Status:</strong> {{ band.status }}</p>
+            <!-- Left Content -->
+            <div class="card-body-left">
+                <p class="card-text"><strong>Country:</strong> {{ band.country }}</p>
+                <p class="card-text"><strong>Location:</strong> {{ band.location }}</p>
+                <p class="card-text"><strong>Status:</strong> {{ band.status }}</p>
+                <p class="card-text"><strong>Formed in:</strong> {{ band.year_formed }}</p>
+            </div>
+            
+            <!-- Right Content -->
+            <div class="card-body-right">
+                <p class="card-text"><strong>Genres:</strong> {{ band.genre }}</p>
+                <p class="card-text"><strong>Themes:</strong> {{ band.themes }}</p>
+                <p class="card-text"><strong>Label:</strong> {{ band.label }}</p>
+            </div>
         </div>
     </div>
-
-    <h3>Discography</h3>
-
-    <!-- Filter Dropdown -->
-    <div class="mb-3">
-        <label for="discographyFilter" class="form-label">Filter by Type:</label>
-        <select id="discographyFilter" class="selectpicker" multiple data-live-search="true" title="Select Types">
-            <option value="all">All</option>
-            {% for type in types %}
-                <option value="{{ type }}" 
-                    {% if type == 'EP' or type == 'Full-length' %}selected{% endif %}>
-                    {{ type }}
-                </option>
-            {% endfor %}
-        </select>        
-    </div>
+</div>
+<select id="discographyFilter" class="filter-dropdown">
+    <option value="all">All</option>
+    {% for type in types %}
+        <option value="{{ type }}" 
+            {% if type == 'EP' or type == 'Full-length' %}selected{% endif %}>
+            {{ type }}
+        </option>
+    {% endfor %}
+</select>
 
     {% if albums %}
     <table class="table" id="discographyTable">
@@ -33,7 +37,7 @@
                 <th>Type</th>
                 <th>Year</th>
                 <th>Reviews</th>
-                <th>Video</th> <!-- New column for video -->
+                <th>Video</th>
             </tr>
         </thead>
         <tbody>

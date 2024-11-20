@@ -1,7 +1,7 @@
 body {
-    background-color: white !important; /* Light background color */
-    color: #343a40; /* Dark text color */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    background-color: white !important;
+    color: #343a40;
+    overflow-x: hidden;
 }
 
 header.navbar {
@@ -12,13 +12,11 @@ header.navbar {
     background-color: #e9ecef !important;
 }
 
-/* Style the logo */
 header.navbar .navbar-brand img {
     max-height: 80px;
     object-fit: contain;
 }
 
-/* Style the search box */
 header.navbar .form-inline {
     flex-grow: 1;
     justify-content: right;
@@ -44,41 +42,38 @@ header.navbar .form-inline button {
 }
 
 .navbar-nav {
-    width: 100%; /* Full width for the nav links */
-    position: absolute; /* Positioning to keep it fixed within the sidebar */
-    top: 0; /* Align to the top */
+    width: 100%;
+    position: absolute;
+    top: 0;
     padding-left: 40px;
     padding-top:50px;
 }
 
 .nav-item {
     margin: 5px;
-    display: fixed; /* Flex display for nav items */
-    justify-content: flex-start; /* Align items to the left */
+    display: fixed;
+    justify-content: flex-start;
 }
 
 .alert {
-    margin-bottom: 20px; /* Space below alerts */
+    margin-bottom: 20px;
 }
 
-/* Add this CSS to your stylesheet */
 #discographyFilter {
-    width: 100%; /* Full width */
-    height: auto; /* Auto height */
-    padding: 0.5rem; /* Padding for spacing */
-    border: 1px solid #ced4da; /* Border color */
-    border-radius: 0.25rem; /* Rounded corners */
-    background-color: #ffffff; /* White background */
+    width: 100%;
+    height: auto;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: #ffffff;
 }
 
-/* Style for the options */
 #discographyFilter option {
-    padding: 0.5rem; /* Padding for options */
+    padding: 0.5rem;
 }
 
-/* Hover effect for options */
 #discographyFilter option:hover {
-    background-color: #e9ecef; /* Light grey background on hover */
+    background-color: #e9ecef;
 }
 
 /* Add to your CSS file */
@@ -100,4 +95,31 @@ header.navbar .form-inline button {
 #notification.show {
     opacity: 1;
     visibility: visible;
+}
+
+.card {
+    border-radius: 5px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    padding-bottom: 10px;
+}
+
+.card-body {
+    display: flex;
+    padding: 0;
+}
+
+.card-body-left,
+.card-body-right {
+    flex: 1;
+}
+
+.card-text {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.container {
+    padding: 0;
 }
