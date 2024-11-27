@@ -19,7 +19,7 @@ fetch('/my_bands/ajax')
             
             li.innerHTML = `
                 <div>
-                    <a href="/band/${band.band_id}"><strong>${band.name}</strong></a>
+                    <a class="nav-link ajax-link" href="/band/${band.band_id}">${band.name}</a>
                     <p>Status: ${band.liked === true ? 'Liked' : 'Not Liked'}</p>
                 </div>
                 <div>

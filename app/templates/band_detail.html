@@ -19,15 +19,20 @@
         </div>
     </div>
 </div>
-<select id="discographyFilter" class="filter-dropdown">
-    <option value="all">All</option>
-    {% for type in types %}
-        <option value="{{ type }}" 
-            {% if type == 'EP' or type == 'Full-length' %}selected{% endif %}>
-            {{ type }}
-        </option>
-    {% endfor %}
-</select>
+<div class="custom-dropdown">
+    <button id="discographyFilterBtn" class="filter-btn">Select Discography Types</button>
+    <div id="dropdownMenu" class="dropdown-menu">
+        <div>
+            <label><input type="checkbox" value="all" checked> All</label>
+        </div>
+        {% for type in types %}
+            <div>
+                <label><input type="checkbox" value="{{ type }}" {% if type == 'EP' or type == 'Full-length' %}checked{% endif %}> {{ type }}</label>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
 
     {% if albums %}
     <table class="table" id="discographyTable">

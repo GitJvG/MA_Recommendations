@@ -1,19 +1,27 @@
 function filter() {
-    const discographyFilter = document.getElementById('discographyFilter');
+    const discographyFilterBtn = document.getElementById('discographyFilterBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
 
+    // Function to toggle the dropdown visibility
+    discographyFilterBtn.addEventListener('click', function() {
+        dropdownMenu.classList.toggle('show');  // Toggle dropdown visibility
+    });
+
+    // Function to filter discography based on selected types
     function filterDiscography() {
-        const selectedTypes = Array.from(discographyFilter.selectedOptions).map(option => option.value) || [];
+        const selectedTypes = Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
         if (selectedTypes.length === 0) {
             // Ensure 'all' is selected by default if neither of the two types is selected
-            const allOption = discographyFilter.querySelector('option[value="all"]');
-            if (allOption) {
-                allOption.selected = true;
-            }
-            selectedTypes.push('all');  // Add 'all' to the selectedTypes array for filtering
+            selectedTypes.push('all');
         }
+
         const rows = document.querySelectorAll('#discographyTable tbody tr');
         
-        rows.forEach(function (row) {
+        rows.forEach(function(row) {
             const rowType = row.getAttribute('data-type');
             if (selectedTypes.includes('all') || selectedTypes.includes(rowType)) {
                 row.style.display = '';
@@ -23,11 +31,19 @@ function filter() {
         });
     }
 
-    discographyFilter.addEventListener('change', function () {
-        filterDiscography();
+    // Add event listener to each checkbox for filtering
+    checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', filterDiscography);
     });
 
-    filterDiscography();
-};
+    // Close dropdown if clicked outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.custom-dropdown')) {
+            dropdownMenu.classList.remove('show');
+        }
+    });
 
-filter()
+    filterDiscography();  // Apply the filter on load
+}
+
+filter();

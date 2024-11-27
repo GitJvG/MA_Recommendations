@@ -7,12 +7,38 @@ from flask import jsonify
 from urllib.parse import quote
 import requests
 from app.utils import render_with_base
+import random
+from datetime import datetime
 # Create a blueprint for main routes
 main = Blueprint('main', __name__)
 
 @main.route('/', methods=['GET'])
 def index():
     return render_with_base('index.html')
+
+@main.route('/ajax/featured')
+def featured():
+    bands_2024 = db.session.query(band.band_id, band.name).join(discography).filter(discography.year == 2024).all()
+    band_ids_2024 = [band[0] for band in bands_2024]
+
+    bands_with_scores = db.session.query(
+        band.band_id,
+        band.name,
+        func.sum(similar_band.score).label('total_score')
+    ).join(similar_band, band.band_id == similar_band.band_id).filter(band.band_id.in_(band_ids_2024)) \
+        .group_by(band.band_id).order_by(func.sum(similar_band.score).desc()).all()
+    
+    top_bands = bands_with_scores[:min(len(bands_with_scores), 200)]
+
+    today = datetime.now().day  # You can use `datetime.now().date()` for more granularity
+    random.seed(today)
+    selected_bands = random.sample(top_bands, min(5, len(top_bands)))  # Avoid sampling more than available
+
+    result = [
+        {"band_id": band.band_id, "name": band.name, "score": band.total_score} for band in selected_bands
+    ]
+
+    return jsonify(result)
     
 """@main.route('/popular_bands', methods=['GET'])
 def popular_bands():
@@ -188,6 +214,7 @@ def band_detail(band_id):
     vdetail = db.session.get(details, band_id)
     name = db.session.get(band, band_id).name
     vdiscography = discography.query.filter_by(band_id=band_id).all()
+    vdiscography.reverse()
     types = {album.type for album in vdiscography}
 
     # Return albums without Invidious links for now

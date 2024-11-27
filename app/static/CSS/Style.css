@@ -4,6 +4,29 @@ body {
     overflow-x: hidden;
 }
 
+#main-content {
+    margin-left: 250px;
+    margin-right: 250px;
+    padding-left: 40px;
+    padding-right: 40px;
+    width: calc(100% - 500px);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.rightside {
+    position: fixed;
+    right: 0;
+    top: 50px;
+    bottom: 0;
+    width: 200px;
+    background-color: white !important;
+}
+
+.container-fluid {
+    padding: 0;
+}
+
 header.navbar {
     max-height: 100px;
     height: auto;
@@ -59,24 +82,6 @@ header.navbar .form-inline button {
     margin-bottom: 20px;
 }
 
-#discographyFilter {
-    width: 100%;
-    height: auto;
-    padding: 0.5rem;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    background-color: #ffffff;
-}
-
-#discographyFilter option {
-    padding: 0.5rem;
-}
-
-#discographyFilter option:hover {
-    background-color: #e9ecef;
-}
-
-/* Add to your CSS file */
 #notification {
     position: fixed;
     bottom: 20px;
@@ -122,4 +127,99 @@ header.navbar .form-inline button {
 
 .container {
     padding: 0;
+    margin-left: 0;
+}
+
+.band-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: space-between;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.band-card {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    text-align: center;
+    flex: 1 1 calc(20% - 15px);
+    max-width: 300px;
+    transition: transform 0.2s ease;
+}
+
+.band-card:hover {
+    transform: scale(1.05);
+}
+
+.band-card h3 {
+    font-size: 1.2em;
+    margin: 10px 0;
+}
+
+.band-card p {
+    font-size: 0.9em;
+    color: #555;
+    margin: 0;
+}
+
+/* Container for the custom dropdown, ensuring it scales well */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Style the dropdown button */
+.filter-btn {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover,
+.filter-btn:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+}
+
+/* Style the dropdown menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+}
+
+/* Style for the checkbox labels */
+.dropdown-menu label {
+    display: block;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #495057;
+    transition: background-color 0.3s ease;
 }

@@ -30,7 +30,7 @@ function renderSearchResults(data, query) {
     data.results.forEach((result) => {
         var li = document.createElement('li');
         li.classList.add('list-group-item');
-        li.innerHTML = `<a href="/band/${result.band_id}">${result.name}</a>`;
+        li.innerHTML = `<a class="nav-link ajax-link" href="/band/${result.band_id}">${result.name}</a>`;
         RESULTCONTAINER.appendChild(li);
     });
 }
