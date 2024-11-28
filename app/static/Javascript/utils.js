@@ -1,4 +1,6 @@
-export function fetchContent(url) {
+import { checkAndUpdateBands } from './rightside.js'
+
+export function fetchContent(url, isPopState = false) {
     fetch(url, {
         method: 'GET',
         headers: {
@@ -12,7 +14,7 @@ export function fetchContent(url) {
         return response.json();
     })
     .then(response => {
-        updatePageContent(url, response);
+        updatePageContent(url, response, isPopState);
     })
     .catch(error => {
         console.error('Failed to load page: ', error);
@@ -20,8 +22,7 @@ export function fetchContent(url) {
     });
 }
 
-function updatePageContent(url, response) {
-    // Replace sidebar and main-content based on URL content
+function updatePageContent(url, response, isPopState) {
     if (response.html) {
         const mainContent = document.getElementById('main-content');
         mainContent.innerHTML = response.html;
@@ -40,23 +41,25 @@ function updatePageContent(url, response) {
         document.getElementById('sidebar').innerHTML = response.sidebar;
     }
 
-    const targetUrl = response.target || url;
-    history.pushState({ path: targetUrl }, '', targetUrl);
+    if (!isPopState && window.location.href !== url) {
+        history.pushState({ path: url }, '', url);
+        console.log('pushed', url)
+        checkAndUpdateBands(url);
+    };
 }
 
 function executeScripts(jsFiles) {
-    // Remove previously appended script tags with matching sources
     const existingScripts = document.querySelectorAll('script[data-dynamic-script]');
     existingScripts.forEach(script => script.remove());
 
-    // Append new script tags
     jsFiles.forEach(scriptSrc => {
         const script = document.createElement('script');
         script.src = scriptSrc;
         script.type = 'text/javascript';
-        script.async = true; // Optional: Load scripts asynchronously
-        script.setAttribute('data-dynamic-script', 'true'); // Tag it for easy identification
+        script.async = true;
+        script.setAttribute('data-dynamic-script', 'true');
         document.body.appendChild(script);
     });
 }
 
+window.addEventListener('DOMContentLoaded', checkAndUpdateBands());

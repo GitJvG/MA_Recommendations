@@ -14,19 +14,6 @@ body {
     box-sizing: border-box;
 }
 
-.rightside {
-    position: fixed;
-    right: 0;
-    top: 50px;
-    bottom: 0;
-    width: 200px;
-    background-color: white !important;
-}
-
-.container-fluid {
-    padding: 0;
-}
-
 header.navbar {
     max-height: 100px;
     height: auto;
@@ -56,9 +43,58 @@ header.navbar .form-inline button {
     border-width: 2px;
 }
 
+.rightside {
+    position: fixed;
+    right: 0;
+    top: 100px;
+    bottom: 0;
+    width: 200px;
+    background-color: white !important;
+    overflow: hidden;
+    display: flex;
+}
+
+.band-container {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+    padding-left: 10px;
+    gap: 10px;
+    padding-right: 40px;
+}
+
+.band-box {
+    display: flex;
+    min-height: 100px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.band-box:hover {
+    transform: scale(1.05);
+}
+
+.band_name {
+    font-size: 20px;
+}
+
+.band-box a {
+    color: #333;
+    text-align: center;
+    font-size: 12px !important;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
 #sidebar {
     position: fixed;
-    top: 50px;
+    top: 100px;
     bottom: 0;
     width: 200px;
     background-color: #e9ecef !important;
@@ -69,7 +105,6 @@ header.navbar .form-inline button {
     position: absolute;
     top: 0;
     padding-left: 40px;
-    padding-top:50px;
 }
 
 .nav-item {
@@ -167,14 +202,12 @@ header.navbar .form-inline button {
     margin: 0;
 }
 
-/* Container for the custom dropdown, ensuring it scales well */
 .custom-dropdown {
     position: relative;
     display: inline-block;
     width: 100%;
 }
 
-/* Style the dropdown button */
 .filter-btn {
     width: 100%;
     padding: 0.5rem 1rem;
@@ -195,7 +228,6 @@ header.navbar .form-inline button {
     box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
 }
 
-/* Style the dropdown menu */
 .dropdown-menu {
     position: absolute;
     top: 100%;
@@ -213,7 +245,6 @@ header.navbar .form-inline button {
     padding: 0.5rem;
 }
 
-/* Style for the checkbox labels */
 .dropdown-menu label {
     display: block;
     margin-bottom: 10px;

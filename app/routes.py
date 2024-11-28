@@ -1,16 +1,19 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user  # Import necessary functions
 from sqlalchemy import func, desc
 from sqlalchemy.orm import aliased
-from .models import user, band, users, discography, similar_band, details, genre, member, prefix, db  # Import your User model and db instance
-from flask import jsonify
+from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, db  # Import your User model and db instance
 from urllib.parse import quote
 import requests
 from app.utils import render_with_base
 import random
 from datetime import datetime
-# Create a blueprint for main routes
+from urllib.parse import quote
+
 main = Blueprint('main', __name__)
+
+from .auth import auth as auth_blueprint
+main.register_blueprint(auth_blueprint)
 
 @main.route('/', methods=['GET'])
 def index():
@@ -18,6 +21,17 @@ def index():
 
 @main.route('/ajax/featured')
 def featured():
+    # Simulated in-route cache
+    if not hasattr(featured, "_cache"):
+        featured._cache = {"date": None, "data": None}
+
+    today = datetime.today()
+    random.seed(today.year * 10000 + today.month * 100 + today.day)
+
+    if featured._cache["date"] == today and featured._cache["data"]:
+        return jsonify(featured._cache["data"])
+
+    # Run the logic if the cache is outdated
     bands_2024 = db.session.query(band.band_id, band.name).join(discography).filter(discography.year == 2024).all()
     band_ids_2024 = [band[0] for band in bands_2024]
 
@@ -30,13 +44,14 @@ def featured():
     
     top_bands = bands_with_scores[:min(len(bands_with_scores), 200)]
 
-    today = datetime.now().day  # You can use `datetime.now().date()` for more granularity
-    random.seed(today)
-    selected_bands = random.sample(top_bands, min(5, len(top_bands)))  # Avoid sampling more than available
+    selected_bands = random.sample(top_bands, min(5, len(top_bands)))
 
     result = [
         {"band_id": band.band_id, "name": band.name, "score": band.total_score} for band in selected_bands
     ]
+
+    featured._cache["date"] = today
+    featured._cache["data"] = result
 
     return jsonify(result)
     
@@ -112,10 +127,8 @@ def my_bands():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    # Get the current user's ID
     user_id = current_user.id
 
-    # Query for the bands the user has liked or disliked
     user_interactions = (
         db.session.query(
             band.band_id,
@@ -137,7 +150,6 @@ def my_bands():
 @main.route('/my_bands/ajax')
 def get_bands():
     user_id = current_user.id
-    # Query for the bands the user has liked or disliked
     user_interactions = (
         db.session.query(
             band.band_id,
@@ -160,22 +172,12 @@ def get_bands():
 def recommend_bands():
     return
 
-# Import your auth blueprint
-from .auth import auth as auth_blueprint
-
-# Register the auth blueprint
-main.register_blueprint(auth_blueprint)
-
 @main.route('/get_genres', methods=['GET'])
 def get_genres():
     genres = db.session.query(genre.name).distinct().all()
 
     distinct_genres = [genre[0] for genre in genres]
     return jsonify(distinct_genres)
-
-from urllib.parse import quote
-
-from flask import jsonify, request
 
 @main.route('/search', methods=['POST', 'GET'])
 def search():
@@ -229,6 +231,42 @@ def band_detail(band_id):
     ]
 
     return render_with_base('band_detail.html', band=vdetail, name=name, albums=albums_without_links, types=types, title=name)
+
+@main.route('/ajax/similar_bands/<int:band_id>', methods=['GET'])
+def get_similar_bands(band_id):
+
+    similar_band_ids = db.session.query(
+        similar_band.similar_id,
+        similar_band.score
+    ).filter(similar_band.band_id == band_id) \
+     .order_by(similar_band.score.desc()) \
+     .limit(20).all()
+
+    similar_bands = []
+    for similar_band_id, score in similar_band_ids:
+        band_data = db.session.query(
+            band.band_id,
+            band.name.label('band_name'),
+            genre.name.label('genre_name')
+        ) \
+        .join(genres, genres.band_id == band.band_id) \
+        .filter(genres.type == 'genre') \
+        .join(genre, genres.item_id == genre.genre_id) \
+        .filter(band.band_id == similar_band_id) \
+        .all()
+
+        if band_data:
+            vgenres = [data.genre_name.title() for data in band_data]
+            vgenres_string = ', '.join(vgenres)
+
+            similar_bands.append({
+                "band_id": band_data[0].band_id,
+                "name": band_data[0].band_name,
+                "score": score,
+                "genre": vgenres_string
+            })
+
+    return jsonify(similar_bands)
 
 """@main.route('/discovery')
 @login_required

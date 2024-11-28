@@ -1,17 +1,17 @@
 import { fetchContent } from './utils.js'
 
 document.addEventListener('click', function (e) {
-    let url = null;
+    const link = e.target.closest('a.ajax-link');
 
-    if (e.target.classList.contains('ajax-link')) {
+    if (link) {
         e.preventDefault();
-        url = e.target.getAttribute('href');
-    } else if (e.target.tagName === 'IMG' && e.target.parentElement.classList.contains('ajax-link')) {
-        e.preventDefault();
-        url = e.target.parentElement.getAttribute('href');
-    }
-
-    if (url) {
+        const url = link.getAttribute('href');
         fetchContent(url);
+    }
+});
+
+window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.path) {
+        fetchContent(e.state.path, true);
     }
 });

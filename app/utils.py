@@ -13,7 +13,6 @@ def render_with_base(content_template, sidebar_html=None, title=None, **variable
             'js_files': js_files,
             'title': title,
             'sidebar': sidebar_html,
-            'target': f"/{content_template[:-5]}" if f"/{content_template[:-5]}" != '/index' else '/'
         })
     # Regular requests directly append the required javascript scripts as a parameter which is interpret by jinja.
     return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title)
