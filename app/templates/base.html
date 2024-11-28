@@ -12,12 +12,11 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon/favicon-16x16.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/favicon/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ url_for('static', filename='images/favicon/site.webmanifest') }}">
- 
+   
 </head>
 <body>
     <!-- Top Banner -->
     <header class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
-        <div class="container-fluid">
             <a class="navbar-brand ajax-link" href="{{ url_for('main.index') }}">
                 <img src="{{ url_for('static', filename='images/logo.png') }}">
             </a>
@@ -26,7 +25,6 @@
                 <input class="form-control mr-sm-2 flex-grow-1" type="search" name="q" placeholder="Search bands..." aria-label="Search">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>            
-        </div>
     </header>
 
     <div class="d-flex">
