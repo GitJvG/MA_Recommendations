@@ -13,5 +13,8 @@
     ],
     "search.html": [
         "/static/Javascript/search_results.js"
+    ],
+    "index.html": [
+        "/static/Javascript/index.js"
     ]
 }

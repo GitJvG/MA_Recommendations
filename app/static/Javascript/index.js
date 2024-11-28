@@ -15,11 +15,10 @@ fetch('/ajax/featured')
             data.forEach(band => {
                 const bandCard = document.createElement("a");
                 bandCard.href = `/band/${band.band_id}`;
-                bandCard.className = "band-card";
+                bandCard.className = "band-card ajax-link";
         
                 bandCard.innerHTML = `
                     <h3>${band.name}</h3>
-                    <p>Score: ${band.score}</p>
                 `;
         
                 container.appendChild(bandCard);
