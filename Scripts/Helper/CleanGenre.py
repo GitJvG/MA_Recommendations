@@ -56,11 +56,9 @@ def handle_prefix_and_hybrids(genre):
 
 def replace_wrong_comma(genre):
     """Replaces element comma with 'and' to prevent unintended splitting."""
-    # Match and replace commas inside the smallest 'with ... and' range
     def replace_with_and(match):
         return match.group(0).replace(',', ' and')
 
-    # pattern matches smallest 'with ... and' ranges
     genre = re.sub(r'with(.*?)(and)', replace_with_and, genre)
     return genre
 
