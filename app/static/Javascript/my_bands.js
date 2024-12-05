@@ -1,9 +1,9 @@
-fetch('/my_bands/ajax')
+fetch('/feedback/ajax')
     .then(response => {
         if (!response.ok) {
             throw new Error("Failed to fetch band data");
         }
-        return response.json();  // Parse the JSON response
+        return response.json();
     })
     .then(bandData => {
         if (!Array.isArray(bandData)) {
@@ -11,35 +11,46 @@ fetch('/my_bands/ajax')
             return;
         }
 
+        // Get today's date in the format "YYYY-MM-DD" for easy comparison
+        const today = new Date().toISOString().split('T')[0];
+
         const bandList = document.getElementById("band-list");
+        const todayBandList = document.getElementById("today-band-list");
+
+        bandList.innerHTML = "";
+        todayBandList.innerHTML = "";
+
+        let interactedToday = [];
+        let interactedBeforeToday = [];
 
         bandData.forEach(band => {
+            const likedDate = band.liked_date ? new Date(band.liked_date).toISOString().split('T')[0] : null;
+
             const li = document.createElement('li');
             li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-            
-            li.innerHTML = `
-                <div>
-                    <a class="nav-link ajax-link" href="/band/${band.band_id}">${band.name}</a>
-                    <p>Status: ${band.liked === true ? 'Liked' : 'Not Liked'}</p>
-                </div>
-                <div>
-                    <button class="btn btn-success btn-sm like-btn ${band.liked ? 'disabled' : ''}" 
-                            data-band-id="${band.band_id}" 
-                            data-action="like" ${band.liked ? 'disabled' : ''}>
-                        Like
-                    </button>
-                    <button class="btn btn-danger btn-sm like-btn ${!band.liked ? 'disabled' : ''}" 
-                            data-band-id="${band.band_id}" 
-                            data-action="dislike" ${!band.liked ? 'disabled' : ''}>
-                        Dislike
-                    </button>
-                </div>
-            `;
+            li.innerHTML = create_like_dislike(band);
 
-            bandList.appendChild(li);
+            if (likedDate === today) {
+                interactedToday.push(li);
+            } else {
+                interactedBeforeToday.push(li);
+            }
         });
 
-        // Add event listeners to like/dislike buttons
+        // Add the "interacted today" items first
+        if (interactedToday.length > 0) {
+            interactedToday.forEach(item => {
+                todayBandList.appendChild(item);
+            });
+        } else {
+            todayBandList.innerHTML = "<li class='list-group-item'>No interactions today.</li>";
+        }
+
+        // Add the "interacted before today" items
+        interactedBeforeToday.forEach(item => {
+            bandList.appendChild(item);
+        });
+
         const likeButtons = document.querySelectorAll('.like-btn');
         likeButtons.forEach(button => {
             button.addEventListener('click', function () {

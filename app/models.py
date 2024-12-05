@@ -58,10 +58,12 @@ class user(db.Model, UserMixin):
 
 class users(db.Model):
     __tablename__ = 'users'
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     band_id = db.Column(db.BigInteger, primary_key=True)
     liked = db.Column(db.Boolean, nullable=True)
+    liked_date = db.Column(db.DateTime, nullable=True)
     remind_me = db.Column(db.Boolean, nullable=True)
+    remind_me_date = db.Column(db.DateTime, nullable=True)
 
 class genre(db.Model):
     __tablename__ = 'genre'
@@ -92,3 +94,8 @@ class theme(db.Model):
     __tablename__ = 'theme'
     theme_id = db.Column("theme_id", db.Integer, primary_key=True, nullable=False)
     name = db.Column('name', db.Text, unique=True, nullable=False)
+
+class candidates(db.Model):
+    __tablename__ = 'candidates'
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)
+    band_id = db.Column('band_id', db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)

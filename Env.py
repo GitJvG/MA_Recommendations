@@ -43,6 +43,8 @@ class Env:
             self.theme = load_config('theme')
             self.dim_theme_dict = load_config("DIM_Theme_Dict")
             self.themes = load_config("themes")
+            self.candidates = load_config('candidates')
+            
         except ValueError as e:
             print(f"Error: {e}")
             raise

@@ -6,7 +6,8 @@
         "/static/Javascript/genreselection.js"
     ],
     "band_detail.html": [
-        "/static/Javascript/discography_filter.js"
+        "/static/Javascript/discography_filter.js",
+        "/static/Javascript/like_button.js"
     ],
     "my_bands.html": [
         "/static/Javascript/my_bands.js"

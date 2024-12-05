@@ -44,8 +44,8 @@ function updatePageContent(url, response, isPopState) {
     if (!isPopState && window.location.href !== url) {
         history.pushState({ path: url }, '', url);
         console.log('pushed', url)
-        checkAndUpdateBands(url);
     };
+    checkAndUpdateBands();
 }
 
 function executeScripts(jsFiles) {
@@ -62,4 +62,23 @@ function executeScripts(jsFiles) {
     });
 }
 
-window.addEventListener('DOMContentLoaded', checkAndUpdateBands());
+window.create_like_dislike = function create_like_dislike(band) {
+    return `
+        <div>
+            <a class="nav-link ajax-link" href="/band/${band.band_id}">${band.name}</a>
+            <p>Status: ${band.liked === true ? 'Liked' : 'Not Liked'}</p>
+        </div>
+        <div>
+            <button class="btn btn-success btn-sm like-btn ${band.liked ? 'disabled' : ''}" 
+                    data-band-id="${band.band_id}" 
+                    data-action="like" ${band.liked ? 'disabled' : ''}>
+                Like
+            </button>
+            <button class="btn btn-danger btn-sm like-btn ${!band.liked ? 'disabled' : ''}" 
+                    data-band-id="${band.band_id}" 
+                    data-action="dislike" ${!band.liked ? 'disabled' : ''}>
+                Dislike
+            </button>
+        </div>
+    `;
+}

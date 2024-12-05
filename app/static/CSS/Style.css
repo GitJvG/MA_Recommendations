@@ -165,11 +165,12 @@ header.navbar .form-inline button {
     margin-left: 0;
 }
 
-.band-cards {
+.band-cards, .recommendation-cards {
     display: flex;
-    flex-wrap: wrap;
+    overflow-x: auto;
     gap: 15px;
     justify-content: space-between;
+    white-space: nowrap;
     padding: 10px;
     width: 100%;
     box-sizing: border-box;
@@ -182,9 +183,10 @@ header.navbar .form-inline button {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 15px;
     text-align: center;
-    flex: 1 1 calc(20% - 15px);
+    flex: 1 0 calc(20% - 15px);
     max-width: 300px;
     transition: transform 0.2s ease;
+    white-space: nowrap;
 }
 
 .band-card:hover {
@@ -200,6 +202,7 @@ header.navbar .form-inline button {
     font-size: 0.9em;
     color: #555;
     margin: 0;
+    overflow: hidden;
 }
 
 .custom-dropdown {

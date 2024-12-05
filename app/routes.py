@@ -1,8 +1,8 @@
 from flask import Blueprint, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user  # Import necessary functions
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, and_
 from sqlalchemy.orm import aliased
-from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, db  # Import your User model and db instance
+from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db  # Import your User model and db instance
 from urllib.parse import quote
 import requests
 from app.utils import render_with_base
@@ -47,11 +47,36 @@ def featured():
     selected_bands = random.sample(top_bands, min(5, len(top_bands)))
 
     result = [
-        {"band_id": band.band_id, "name": band.name, "score": band.total_score} for band in selected_bands
+        {"band_id": band.band_id, "name": band.name} for band in selected_bands
     ]
 
     featured._cache["date"] = today
     featured._cache["data"] = result
+
+    return jsonify(result)
+
+@main.route('/ajax/recommended')
+def recommended():
+    if not hasattr(recommended, "_cache"):
+        recommended._cache = {"date": None, "data": None}
+
+    today = datetime.today()
+    random.seed(today.year * 10000 + today.month * 100 + today.day)
+
+    if featured._cache["date"] == today and recommended._cache["data"]:
+        return jsonify(recommended._cache["data"])
+
+    bands = db.session.query(candidates.band_id, band.name).filter(candidates.user_id == current_user.id) \
+    .join(band, band.band_id == candidates.band_id).all()
+
+    selected_bands = random.sample(bands, 50)
+
+    result = [
+        {"band_id": band.band_id, "name": band.name} for band in selected_bands
+    ]
+
+    recommended._cache["date"] = today
+    recommended._cache["data"] = result
 
     return jsonify(result)
     
@@ -89,34 +114,32 @@ def popular_bands():
 @main.route('/like_band', methods=['POST'])
 def like_band():
     if not current_user.is_authenticated:
-        flash('You need to log in to like/dislike bands.')
-        return redirect(url_for('auth.login'))
+        return jsonify({'status': 'error', 'message': 'You need to log in to like/dislike bands.'}), 401
 
-    band_id = request.form['band_id']
-    action = request.form['action']  # Use 'action' to determine like, dislike, or remind me
+    data = request.get_json()
+    band_id = data.get('band_id')
+    action = data.get('action')
 
-    # Check if the user has already interacted with this band
+    now = datetime.now().replace(microsecond=0)
     existing_preference = users.query.filter_by(user_id=current_user.id, band_id=band_id).first()
 
     if existing_preference:
-        # If the user has already interacted, update based on action
         if action == 'like':
             existing_preference.liked = True
-            existing_preference.remind_me = False  # Reset remind_me when liked
+            existing_preference.liked_date = now
         elif action == 'dislike':
             existing_preference.liked = False
-            existing_preference.remind_me = False  # Reset remind_me when disliked
+            existing_preference.liked_date = now
         elif action == 'remind':
             existing_preference.remind_me = True
+            existing_preference.remind_me_date = now
     else:
-        # If no previous interaction, create a new preference
         if action == 'like':
-            new_preference = users(user_id=current_user.id, band_id=band_id, liked=True, remind_me=False)
+            new_preference = users(user_id=current_user.id, band_id=band_id, liked=True, remind_me=False, liked_date=now)
         elif action == 'dislike':
-            new_preference = users(user_id=current_user.id, band_id=band_id, liked=False, remind_me=False)
+            new_preference = users(user_id=current_user.id, band_id=band_id, liked=False, remind_me=False, liked_date=now)
         elif action == 'remind':
-            new_preference = users(user_id=current_user.id, band_id=band_id, liked=None, remind_me=True)
-
+            new_preference = users(user_id=current_user.id, band_id=band_id, liked=False, remind_me=True, remind_me_date=now)
         db.session.add(new_preference)
 
     db.session.commit()
@@ -133,7 +156,8 @@ def my_bands():
         db.session.query(
             band.band_id,
             band.name,
-            users.liked
+            users.liked,
+            users.liked_date
         )
         .join(users, users.band_id == band.band_id)
         .filter(users.user_id == user_id)
@@ -141,20 +165,21 @@ def my_bands():
     )
 
     band_data = [
-        {'band_id': band_id, 'name': name, 'liked': liked}
-        for band_id, name, liked in user_interactions
+        {'band_id': band_id, 'name': name, 'liked': liked, 'liked_date': liked_date}
+        for band_id, name, liked, liked_date in user_interactions
     ]
     
     return render_with_base('my_bands.html', band_data=band_data)
 
-@main.route('/my_bands/ajax')
+@main.route('/feedback/ajax')
 def get_bands():
     user_id = current_user.id
     user_interactions = (
         db.session.query(
             band.band_id,
             band.name,
-            users.liked
+            users.liked,
+            users.liked_date
         )
         .join(users, users.band_id == band.band_id)
         .filter(users.user_id == user_id)
@@ -162,8 +187,8 @@ def get_bands():
     )
 
     band_data = [
-        {'band_id': band_id, 'name': name, 'liked': liked}
-        for band_id, name, liked in user_interactions
+        {'band_id': band_id, 'name': name, 'liked': liked, 'liked_date': liked_date}
+        for band_id, name, liked, liked_date in user_interactions
     ]
     return jsonify(band_data)
 
@@ -171,6 +196,10 @@ def get_bands():
 @login_required
 def recommend_bands():
     return
+
+@main.route('/import')
+def imports():
+    return render_with_base('import.html')
 
 @main.route('/get_genres', methods=['GET'])
 def get_genres():
@@ -215,12 +244,13 @@ def query():
 def band_detail(band_id):
     vdetail = db.session.get(details, band_id)
     name = db.session.get(band, band_id).name
+    feedback = db.session.query(users.liked, users.remind_me).filter(and_(users.user_id == current_user.id, users.band_id == band_id)).first()
     vdiscography = discography.query.filter_by(band_id=band_id).all()
     vdiscography.reverse()
     types = {album.type for album in vdiscography}
 
     # Return albums without Invidious links for now
-    albums_without_links = [
+    albums = [
         {
             'album_name': album.name,
             'type': album.type,
@@ -230,7 +260,7 @@ def band_detail(band_id):
         for album in vdiscography
     ]
 
-    return render_with_base('band_detail.html', band=vdetail, name=name, albums=albums_without_links, types=types, title=name)
+    return render_with_base('band_detail.html', band=vdetail, name=name, feedback=feedback, albums=albums, types=types, title=name)
 
 @main.route('/ajax/similar_bands/<int:band_id>', methods=['GET'])
 def get_similar_bands(band_id):
