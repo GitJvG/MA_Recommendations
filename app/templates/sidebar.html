@@ -15,6 +15,9 @@
                 <a class="nav-link ajax-link" href="{{ url_for('auth.profile') }}">Profile</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link ajax-link" href="{{ url_for('extension.youtube_import') }}">Import playlists</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link ajax-link" href="{{ url_for('auth.logout') }}">Logout</a>
             </li>
         {% endif %}
