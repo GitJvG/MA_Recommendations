@@ -1,11 +1,11 @@
 from flask import Blueprint, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user  # Import necessary functions
+from flask_login import login_required, current_user
 from sqlalchemy import func, desc, and_
 from sqlalchemy.orm import aliased
 from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db  # Import your User model and db instance
 from urllib.parse import quote
 import requests
-from app.utils import render_with_base
+from app.utils import render_with_base, Like_bands
 import random
 from datetime import datetime
 from urllib.parse import quote
@@ -13,7 +13,9 @@ from urllib.parse import quote
 main = Blueprint('main', __name__)
 
 from .auth import auth as auth_blueprint
+from .extension import extension as extension_blueprint
 main.register_blueprint(auth_blueprint)
+main.register_blueprint(extension_blueprint)
 
 @main.route('/', methods=['GET'])
 def index():
@@ -115,34 +117,12 @@ def popular_bands():
 def like_band():
     if not current_user.is_authenticated:
         return jsonify({'status': 'error', 'message': 'You need to log in to like/dislike bands.'}), 401
-
+    user_id = current_user.id
     data = request.get_json()
     band_id = data.get('band_id')
     action = data.get('action')
 
-    now = datetime.now().replace(microsecond=0)
-    existing_preference = users.query.filter_by(user_id=current_user.id, band_id=band_id).first()
-
-    if existing_preference:
-        if action == 'like':
-            existing_preference.liked = True
-            existing_preference.liked_date = now
-        elif action == 'dislike':
-            existing_preference.liked = False
-            existing_preference.liked_date = now
-        elif action == 'remind':
-            existing_preference.remind_me = True
-            existing_preference.remind_me_date = now
-    else:
-        if action == 'like':
-            new_preference = users(user_id=current_user.id, band_id=band_id, liked=True, remind_me=False, liked_date=now)
-        elif action == 'dislike':
-            new_preference = users(user_id=current_user.id, band_id=band_id, liked=False, remind_me=False, liked_date=now)
-        elif action == 'remind':
-            new_preference = users(user_id=current_user.id, band_id=band_id, liked=False, remind_me=True, remind_me_date=now)
-        db.session.add(new_preference)
-
-    db.session.commit()
+    Like_bands(user_id, band_id, action)
     return jsonify({'status': 'success'}), 200
 
 @main.route('/my_bands')
@@ -297,91 +277,6 @@ def get_similar_bands(band_id):
             })
 
     return jsonify(similar_bands)
-
-"""@main.route('/discovery')
-@login_required
-def discovery():
-    # Get the user's ID
-    user_id = current_user.id
-
-    # Step 1: Subquery to get the band IDs the user has interacted with
-    interacted_band_ids = (
-        db.session.query(users.band_id)
-        .filter(users.user_id == user_id)
-        .filter(users.liked == True)
-        .order_by(func.random())  # Randomly order the bands
-        .limit(10)  # Limit to 10 random bands
-        .subquery()
-    )
-
-    all_interacted_band_ids = (
-        db.session.query(users.band_id)
-        .filter(users.user_id == user_id)
-        .subquery()
-    )
-
-    # Create aliases for the Item table
-    liked_band_alias = aliased(Item)
-    similar_band_alias = aliased(Item)
-
-    # Step 2: Query for similar bands along with the actual liked band name
-    similar_bands_query = (
-        db.session.query(
-            similar_band.band_id.label('liked_band_id'),
-            liked_band_alias.band_name.label('liked_band_name'),  # Get the name of the liked band
-            similar_band.similar_id.label('similar_band_id'),
-            similar_band_alias.band_name.label('similar_band_name'),  # Get the name of the similar band
-            similar_band.Score
-        )
-        .filter(similar_band.similar_id.notin_(all_interacted_band_ids))
-        .join(liked_band_alias, similar_band.band_id == liked_band_alias.item)  # Join to get the liked band's name
-        .join(similar_band_alias, similar_band.similar_id == similar_band_alias.item)  # Join to get similar band's name
-        .filter(similar_band.band_id.in_(interacted_band_ids))  # Include only those similar to interacted bands
-        .order_by(desc(similar_band.Score))
-    )
-
-    # Step 3: Create a subquery from similar_bands_query
-    similar_bands_subquery = similar_bands_query.subquery()
-
-    # Final selection to limit to 2 similar bands per liked band
-    ranked_similar_bands = (
-        db.session.query(
-            similar_bands_subquery.c.liked_band_id,
-            similar_bands_subquery.c.liked_band_name,  # Use the actual liked band name here
-            similar_bands_subquery.c.similar_band_id,
-            similar_bands_subquery.c.similar_band_name,
-            similar_bands_subquery.c.Score,
-            func.row_number().over(partition_by=similar_bands_subquery.c.liked_band_id, order_by=desc(similar_bands_subquery.c.Score)).label('rank')
-        )
-    )
-
-    # Create the subquery from ranked_similar_bands to filter
-    ranked_similar_bands_subquery = ranked_similar_bands.subquery()
-
-    # Filter to keep only the top 2 similar bands per liked band
-    top_similar_bands = (
-        db.session.query(ranked_similar_bands_subquery)
-        .filter(ranked_similar_bands_subquery.c.rank <= 2)
-        .all()
-    )
-
-    # Step 4: Prepare the final result structure
-    result = {}
-    for row in top_similar_bands:
-        liked_band_id = row.liked_band_id
-        if liked_band_id not in result:
-            result[liked_band_id] = {
-                'liked_band_name': row.liked_band_name,  # Use the liked band's name
-                'similar_bands': []
-            }
-        result[liked_band_id]['similar_bands'].append({
-            'similar_band_id': row.similar_band_id,
-            'similar_band_name': row.similar_band_name,
-            'score': row.Score
-        })
-
-    # Step 5: Pass similar bands to the template
-    return render_template('discovery.html', similar_bands=result)"""
 
 @main.route('/fetch_video/<album_id>', methods=['GET'])
 def fetch_video():
