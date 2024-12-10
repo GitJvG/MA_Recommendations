@@ -22,11 +22,14 @@ document.addEventListener('submit', function (e) {
             }
             return response.json();
         })
-        // If a pop-up was passed, show it temporarily upon submitting
         .then(response => {
             if (response.success) {
-                if (response.pop_up) {
 
+                if (response.sidebar_html) {
+                        document.getElementById('sidebar').innerHTML = response.sidebar_html;
+                    }
+
+                if (response.pop_up) {
                     var notification = document.getElementById('notification');
                     notification.textContent = response.pop_up;
                     notification.classList.add('show');
@@ -35,16 +38,17 @@ document.addEventListener('submit', function (e) {
                         notification.classList.remove('show');
                     }, 3000);
                 }
-                // If a redirect url was passed, redirect using ajax and refresh sidebar.
-                if (response.redirect_url) {
-                    if (response.sidebar_html) {
-                        document.getElementById('sidebar').innerHTML = response.sidebar_html;
-                    }
 
-                    fetchContent(response.redirect_url)
+                if (response.redirect_url) {
+                    fetchContent(response.redirect_url);
                 }
+
+                if (response.action === "displayResults" && typeof displayResults === "function") {
+                    displayResults(response.results);
+                }
+
             } else {
-                alert('Error: ' + response.error);
+                alert('Error: response did not include success');
             }
         })
         .catch(error => {
