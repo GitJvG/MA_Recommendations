@@ -17,5 +17,8 @@
     ],
     "index.html": [
         "/static/Javascript/index.js"
+    ],
+    "import.html": [
+        "/static/Javascript/import.js"
     ]
 }
