@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import user, db
 from app.utils import render_with_base
-# Create a blueprint for authentication routes
+
 auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -86,7 +86,6 @@ def register():
 @login_required
 def profile():
     if request.method == 'POST':
-        # Fetch current user from session
         current_user.birthyear = request.form['birthyear']
         current_user.gender = request.form['gender']
         current_user.nationality = request.form['nationality']
@@ -94,11 +93,9 @@ def profile():
         current_user.genre2 = request.form['genre2']
         current_user.genre3 = request.form['genre3']
 
-        # Ensure all genres are different
         if current_user.genre1 == current_user.genre2 or current_user.genre2 == current_user.genre3 or current_user.genre1 == current_user.genre3:
             return jsonify({'error': 'Please select three different genres'})
 
-        # Commit the changes to the database
         db.session.commit()
         return jsonify({'success': True, 'pop_up': 'Profile updated successfully.'})
 
