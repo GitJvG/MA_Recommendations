@@ -81,6 +81,31 @@ def recommended():
     recommended._cache["data"] = result
 
     return jsonify(result)
+
+@main.route('/ajax/remind')
+def fetch_remind():
+    if not hasattr(fetch_remind, "_cache"):
+        fetch_remind._cache = {"date": None, "data": None}
+
+    today = datetime.today()
+    random.seed(today.year * 10000 + today.month * 100 + today.day)
+
+    if featured._cache["date"] == today and fetch_remind._cache["data"]:
+        return jsonify(fetch_remind._cache["data"])
+
+    bands = db.session.query(users.band_id, band.name).filter(and_(users.user_id == current_user.id, users.remind_me == True)) \
+    .join(band, band.band_id == users.band_id).all()
+
+    selected_bands = random.sample(bands, min(50, len(bands)))
+
+    result = [
+        {"band_id": band.band_id, "name": band.name} for band in selected_bands
+    ]
+
+    fetch_remind._cache["date"] = today
+    fetch_remind._cache["data"] = result
+
+    return jsonify(result)
     
 """@main.route('/popular_bands', methods=['GET'])
 def popular_bands():

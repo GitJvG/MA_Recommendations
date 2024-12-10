@@ -34,6 +34,7 @@ function loadBandData(route, containerSelector) {
 function refresh() {
     loadBandData('/ajax/featured', '.band-cards');
     loadBandData('/ajax/recommended', '.recommendation-cards');
+    loadBandData('/ajax/remind', '.reminder-cards');
 };
 
 refresh()

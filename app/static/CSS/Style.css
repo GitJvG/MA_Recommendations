@@ -165,7 +165,7 @@ header.navbar .form-inline button {
     margin-left: 0;
 }
 
-.band-cards, .recommendation-cards {
+.scrollable-container {
     display: flex;
     overflow-x: auto;
     gap: 15px;
