@@ -1,5 +1,9 @@
 from flask import render_template, request, jsonify
 import json
+from datetime import datetime
+from app import db
+from app.models import users
+
 
 def render_with_base(content_template, sidebar_html=None, title=None, **variables):
     js_files = JSON(content_template)
@@ -25,3 +29,28 @@ def JSON(attribute, path='app/Javascript.json'):
 
 def Title(content_template):
      return f"{content_template[:-5].replace("_", " ").title()} - Metallum Recommender"
+
+def Like_bands(user_id, band_id, action):
+    now = datetime.now().replace(microsecond=0)
+    existing_preference = users.query.filter_by(user_id=user_id, band_id=band_id).first()
+
+    if existing_preference:
+        if action == 'like':
+            existing_preference.liked = True
+            existing_preference.liked_date = now
+        elif action == 'dislike':
+            existing_preference.liked = False
+            existing_preference.liked_date = now
+        elif action == 'remind':
+            existing_preference.remind_me = True
+            existing_preference.remind_me_date = now
+    else:
+        if action == 'like':
+            new_preference = users(user_id=user_id, band_id=band_id, liked=True, remind_me=False, liked_date=now)
+        elif action == 'dislike':
+            new_preference = users(user_id=user_id, band_id=band_id, liked=False, remind_me=False, liked_date=now)
+        elif action == 'remind':
+            new_preference = users(user_id=user_id, band_id=band_id, liked=False, remind_me=True, remind_me_date=now)
+        db.session.add(new_preference)
+
+    db.session.commit()
