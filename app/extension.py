@@ -1,12 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app.models import discography, band, users
 from flask_login import login_required, current_user
-from app.utils import render_with_base, Like_bands
+from app.utils import render_with_base, Like_bands, liked_bands
 import re
 import unicodedata
 from sqlalchemy import and_, func
 from app import db, youtube_client
 from collections import defaultdict
+import requests
+from bs4 import BeautifulSoup
+
 
 extension = Blueprint('extension', __name__)
 
@@ -60,13 +63,6 @@ def get_playlist_videos(playlist_url):
             break
 
     return video_details
-
-def liked_bands(current_user_id):
-    liked_bands = db.session.query(users.band_id).filter(
-    users.user_id == current_user_id,
-    users.liked == True
-    ).all()
-    return set(band_id[0] for band_id in liked_bands)
 
 def main(playlist_url, current_user_id):
     videos = get_playlist_videos(playlist_url)
@@ -153,4 +149,47 @@ def youtube_import():
         })
 
     return render_with_base('import.html')
+
+def get_video_id_without_api(search_query):
+    """Manually scraped results seem better than those through api, even after tweaking parameters, it has similar performance."""
+    query = '+'.join(search_query.split())
+    url = f'https://www.youtube.com/results?search_query={query}'
+
+    response = requests.get(url)
+    if response.status_code != 200:
+        return None
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    video_id_match = re.search(r"\"videoId\":\"([^\"]+)\"", str(soup))
     
+    if video_id_match:
+        video_id = video_id_match.group(1)
+        return jsonify({
+            'video_url': f'https://www.youtube.com/embed/{video_id}'
+        })
+    else:
+        return jsonify({'error': 'No video found'}), 404
+
+def get_video_id_with_api(search_query):
+    try:
+        search_response = youtube.search().list(
+            part="snippet",
+            q=search_query,
+            type="video",
+            order="relevance",
+        ).execute()
+
+        if 'items' in search_response and len(search_response['items']) > 0:
+            video_id = search_response['items'][0]['id']['videoId']
+            return jsonify({
+                'video_url': f'https://www.youtube.com/embed/{video_id}'
+            })
+        else:
+            return jsonify({'error': 'No video found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@extension.route('/ajax/youtube_search', methods=['GET'])
+def youtube_search():
+    search_query = request.args.get('q')
+    return get_video_id_without_api(search_query)
