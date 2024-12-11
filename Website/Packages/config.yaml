@@ -1,0 +1,26 @@
+paths:
+  MA_BANDS: &MA_BANDS "Datasets/MA_Bands.csv"
+  METADATA: &METADATA "Datasets/metadata.csv"
+  MA_SIMILAR: &MA_SIMILAR "Datasets/MA_Similar.csv"
+  MA_DISCOG: &MA_DISCOG "Datasets/MA_Discog.csv"
+  MA_DETAILS: &MA_DETAILS "Datasets/MA_Details.csv"
+  MA_MEMBER: &MA_MEMBER "Datasets/MA_Member.csv"
+  GENRE: "M_Datasets/genre.csv"
+  PREFIX: "M_Datasets/prefix.csv"
+  GENRES: "M_Datasets/genres.csv"
+  THEME: "M_Datasets/theme.csv"
+  DIM_Theme_Dict: "M_Datasets/Temp/DIM_Theme_Dict.pkl"
+  THEMES: "M_Datasets/themes.csv"
+  CANDIDATES: "M_Datasets/candidates.csv"
+  CONFIG: "Config.json"
+
+keys:
+  *MA_BANDS: ['band_id']
+  *MA_SIMILAR: ['band_id', 'similar_id']
+  *MA_DISCOG: ['name', 'type', 'year', 'band_id']
+  *MA_DETAILS: ['band_id']
+  *MA_MEMBER: ['band_id', 'member_id']
+  *METADATA: ['name']
+
+python:
+  PYTHONPATH: "."

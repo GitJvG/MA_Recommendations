@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Discover New Bands</h2>
+
+    <!-- Bands List -->
+    {% if similar_bands %}
+        <ul class="list-group">
+            {% for liked_band_id, band_data in similar_bands.items() %}
+                <li class="list-group-item mb-3">  <!-- Add margin bottom for spacing -->
+                    <strong>{{ band_data.liked_band_name }}</strong>
+                    <ul class="list-unstyled mt-2">  <!-- Use list-unstyled for cleaner look -->
+                        {% for sim_band in band_data.similar_bands %}
+                            <li class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>
+                                        <a href="{{ url_for('main.band_detail', band_id=sim_band.similar_band_id) }}">{{ sim_band.similar_band_name }}</a>
+                                    </strong>
+                                    <br>
+                                    <small>Score: {{ sim_band.score }}</small>
+                                </div>
+                                <div>
+                                    <!-- Interaction Buttons -->
+                                    <button class="like-band btn btn-success btn-sm" data-band-id="{{ sim_band.similar_band_id }}" data-action="like">Like</button>
+                                    <button class="like-band btn btn-danger btn-sm" data-band-id="{{ sim_band.similar_band_id }}" data-action="dislike">Dislike</button>
+                                    <button class="like-band btn btn-warning btn-sm" data-band-id="{{ sim_band.similar_band_id }}" data-action="remind">Remind Me</button>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No similar bands found. Try interacting with more bands to discover new ones!</p>
+    {% endif %}
+
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-4">Back to Home</a>
+</div>
+
+<script src="{{ url_for('static', filename='Javascript/ajax.js') }}"></script>
+{% endblock %}

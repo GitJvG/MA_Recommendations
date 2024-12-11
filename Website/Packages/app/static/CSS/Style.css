@@ -1,0 +1,345 @@
+body {
+    background-color: white !important;
+    color: #343a40;
+    overflow-x: hidden;
+}
+
+#main-content {
+    margin-left: 250px;
+    margin-right: 250px;
+    padding-left: 40px;
+    padding-right: 40px;
+    width: calc(100% - 500px);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+header.navbar {
+    max-height: 100px;
+    height: auto;
+    padding-left: 40px;
+    padding-right: 40px;
+    background-color: #e9ecef !important;
+}
+
+header.navbar .navbar-brand img {
+    max-height: 80px;
+    object-fit: contain;
+}
+
+header.navbar .form-inline {
+    flex-grow: 1;
+    justify-content: right;
+}
+
+header.navbar .form-inline input {
+    max-width: 400px;
+}
+
+header.navbar .form-inline button {
+    padding: 10px 15px;
+    color: black;
+    border-color: black;
+    border-width: 2px;
+}
+
+.rightside {
+    position: fixed;
+    right: 0;
+    top: 100px;
+    bottom: 0;
+    width: 200px;
+    background-color: white !important;
+    overflow: hidden;
+    display: flex;
+}
+
+.band-container {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+    padding-left: 10px;
+    gap: 10px;
+    padding-right: 40px;
+}
+
+.band-box {
+    display: flex;
+    min-height: 100px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.band-box:hover {
+    transform: scale(1.05);
+}
+
+.band_name {
+    font-size: 20px;
+}
+
+.band-box a {
+    color: #333;
+    text-align: center;
+    font-size: 12px !important;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#sidebar {
+    position: fixed;
+    top: 100px;
+    bottom: 0;
+    width: 200px;
+    background-color: #e9ecef !important;
+}
+
+.navbar-nav {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    padding-left: 40px;
+}
+
+.nav-item {
+    margin: 5px;
+    display: fixed;
+    justify-content: flex-start;
+}
+
+.alert {
+    margin-bottom: 20px;
+}
+
+#notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#notification.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.card {
+    border-radius: 5px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    padding-bottom: 10px;
+}
+
+.card-body {
+    display: flex;
+    padding: 0;
+}
+
+.card-body-left,
+.card-body-right {
+    flex: 1;
+}
+
+.card-text {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.container {
+    padding: 0;
+    margin-left: 0;
+}
+
+.scrollable-container {
+    display: grid;
+    grid-template-rows: repeat(var(--rows-count, 1), 1fr);
+    grid-auto-flow: column;
+    gap: 15px;
+    justify-content: left;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px;
+    width: 100%;
+    padding-left: 0px;
+    box-sizing: border-box;
+    scroll-snap-type: x mandatory;
+}
+
+
+.band-card {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    text-align: center;
+    flex: 0 0 auto;
+    width: 250px;
+    transition: transform 0.2s ease;
+    scroll-snap-align: start;
+}
+
+.band-card:hover {
+    transform: scale(1.05);
+}
+
+.band-card h3 {
+    font-size: 1.2em;
+    margin: 10px 0;
+}
+
+.band-card p {
+    font-size: 0.9em;
+    color: #555;
+    margin: 0;
+    overflow: hidden;
+}
+
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.filter-btn {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover,
+.filter-btn:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+}
+
+.dropdown-menu label {
+    display: block;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #495057;
+    transition: background-color 0.3s ease;
+}
+
+.liked {
+    border-bottom: 5px solid green;
+}
+
+
+.floating-video {
+position: fixed;
+bottom: 20px;
+right: 20px;
+width: 560px;
+height: 315px;
+z-index: 9999;
+border: none;
+box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+}
+
+
+.close-btn {
+position: absolute;
+top: 5px;
+right: 5px;
+background-color: #ff0000;
+color: white;
+border: none;
+border-radius: 50%;
+font-size: 18px;
+width: 25px;
+height: 25px;
+cursor: pointer;
+}
+
+.close-btn:hover {
+background-color: #cc0000;
+}
+
+.floating-video-wrapper {
+position: fixed;
+bottom: 20px;
+right: 20px;
+z-index: 9999;
+border: 2px solid #ccc;
+border-radius: 10px;
+box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+background-color: white;
+}
+
+.floating-video-wrapper iframe {
+border: none;
+display: block;
+width: 100%;
+height: 100%;
+}
+
+.close-btn {
+position: absolute;
+top: 5px;
+right: 5px;
+background-color: #ff0000;
+color: white;
+border: none;
+border-radius: 50%;
+font-size: 18px;
+width: 25px;
+height: 25px;
+cursor: pointer;
+}
+
+.close-btn:hover {
+background-color: #cc0000;
+}
+
+.resizer {
+position: absolute;
+top: 0;
+left: 0;
+width: 15px;
+height: 15px;
+background-color: #888;
+cursor: se-resize;
+}

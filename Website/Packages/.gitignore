@@ -1,0 +1,11 @@
+Config.json
+__pycache__
+Datasets/
+M_Datasets/
+Development/
+migrations/
+run.py
+app/schemas/
+app/static/images/
+app/run.bat
+item.csv
