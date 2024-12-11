@@ -3,7 +3,10 @@ __pycache__
 Datasets/
 M_Datasets/
 Development/
+Analysis/
 migrations/
+.venv/
+Config.json
 run.py
 app/schemas/
 app/static/images/

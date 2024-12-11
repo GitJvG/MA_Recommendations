@@ -24,3 +24,11 @@ keys:
 
 python:
   PYTHONPATH: "."
+
+urls:
+  MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
+  BANDS: "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
+
+scraper:
+  RETRIES: 10
+  DELAY: 0.3

@@ -56,6 +56,11 @@ class Env:
         self.deta_key = yaml_conf['keys'][self.deta]
         self.memb_key = yaml_conf['keys'][self.memb]
 
+        self.url_modi= yaml_conf['urls']['MODIFIED']
+        self.url_band= yaml_conf['urls']['BANDS']
+        self.retries = yaml_conf['scraper']['RETRIES']
+        self.delay = yaml_conf['scraper']['DELAY']
+
         self.genre = yaml_conf['paths']['GENRE']
         self.prefix = yaml_conf['paths']['PREFIX']
         self.genres = yaml_conf['paths']['GENRES']
