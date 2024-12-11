@@ -54,3 +54,10 @@ def Like_bands(user_id, band_id, action):
         db.session.add(new_preference)
 
     db.session.commit()
+
+def liked_bands(current_user_id):
+    liked_bands = db.session.query(users.band_id).filter(
+    users.user_id == current_user_id,
+    users.liked == True
+    ).all()
+    return set(band_id[0] for band_id in liked_bands)

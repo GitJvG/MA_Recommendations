@@ -31,10 +31,14 @@ function displaySimilarBands(bands) {
         const bandBox = document.createElement('div');
         bandBox.className = 'band-box';
     
+        if (band.liked) {
+            bandBox.classList.add("liked");
+        }
+
         const bandLink = document.createElement('a');
         bandLink.href = `/band/${band.band_id}`;
         bandLink.className = 'nav-link ajax-link';
-    
+
         bandLink.innerHTML = `
             <div class="band_name">${band.name}</div>
             <p class="genre">${band.genre}</p>
@@ -66,3 +70,5 @@ export function checkAndUpdateBands(url=null) {
         clearSimilarBands();
     }
 }
+
+checkAndUpdateBands()
