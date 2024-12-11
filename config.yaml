@@ -6,11 +6,11 @@ paths:
   MA_DETAILS: &MA_DETAILS "Datasets/MA_Details.csv"
   MA_MEMBER: &MA_MEMBER "Datasets/MA_Member.csv"
   GENRE: "M_Datasets/genre.csv"
-  PREFIX: "M_Datasets/prefix.csv",
-  GENRES: "M_Datasets/genres.csv",
-  THEME: "M_Datasets/theme.csv",
-  DIM_Theme_Dict: "M_Datasets/Temp/DIM_Theme_Dict.pkl",
-  THEMES: "M_Datasets/themes.csv",
+  PREFIX: "M_Datasets/prefix.csv"
+  GENRES: "M_Datasets/genres.csv"
+  THEME: "M_Datasets/theme.csv"
+  DIM_Theme_Dict: "M_Datasets/Temp/DIM_Theme_Dict.pkl"
+  THEMES: "M_Datasets/themes.csv"
   CANDIDATES: "M_Datasets/candidates.csv"
   CONFIG: "Config.json"
 

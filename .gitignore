@@ -6,8 +6,5 @@ Development/
 migrations/
 run.py
 app/schemas/
-comp/
 app/static/images/
 app/run.bat
-myproject/
-app/static/CSS/Parts/
