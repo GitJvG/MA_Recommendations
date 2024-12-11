@@ -8,3 +8,4 @@ run.py
 app/schemas/
 app/static/images/
 app/run.bat
+item.csv

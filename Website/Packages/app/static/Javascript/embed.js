@@ -1,5 +1,5 @@
 function fetchVideo(bandName, albumName, AlbumType) {
-  AlbumType = (AlbumType === 'Full Length') ? 'Full Album' : AlbumType;
+  AlbumType = (AlbumType === 'Full-length') ? 'Full Album' : AlbumType;
   const searchQuery = `${bandName} ${albumName} ${AlbumType}`;
   const url = `/ajax/youtube_search?q=${encodeURIComponent(searchQuery)}`;
 
