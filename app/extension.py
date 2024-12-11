@@ -153,6 +153,7 @@ def youtube_import():
 def get_video_id_without_api(search_query):
     """Manually scraped results seem better than those through api, even after tweaking parameters, it has similar performance."""
     query = '+'.join(search_query.split())
+    print(query)
     url = f'https://www.youtube.com/results?search_query={query}'
 
     response = requests.get(url)
@@ -160,8 +161,12 @@ def get_video_id_without_api(search_query):
         return None
     soup = BeautifulSoup(response.text, 'html.parser')
 
+    # Adding a video filter URL argument returns worse results than a general search. BS$ is used to manually remove the playlists afterwards by class id.
+    for playlist in soup.find_all(class_="yt-lockup-view-model-wiz yt-lockup-view-model-wiz--horizontal yt-lockup-view-model-wiz--collection-stack-2"):
+        playlist.decompose()
+
     video_id_match = re.search(r"\"videoId\":\"([^\"]+)\"", str(soup))
-    
+
     if video_id_match:
         video_id = video_id_match.group(1)
         return jsonify({
