@@ -1,0 +1,47 @@
+<div class="container mt-5">
+    <h2>Profile</h2>
+    <form action="{{ url_for('auth.profile') }}" method="POST">
+
+        <div class="form-group">
+            <label for="birthyear">Birthyear:</label>
+            <input type="number" class="form-control" name="birthyear" id="birthyear" value="{{ user.birthyear }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="gender">Gender:</label>
+            <select class="form-control" name="gender" id="gender" required>
+                <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="nationality">Nationality:</label>
+            <input type="text" class="form-control" name="nationality" id="nationality" value="{{ user.nationality }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="genre1">Favorite Genre 1:</label>
+            <select class="form-control" name="genre1" id="genre1" required data-selected="{{ user.genre1 }}">
+                <option value="">Select a Genre</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="genre2">Favorite Genre 2:</label>
+            <select class="form-control" name="genre2" id="genre2" required data-selected="{{ user.genre2 }}">
+                <option value="">Select a Genre</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="genre3">Favorite Genre 3:</label>
+            <select class="form-control" name="genre3" id="genre3" required data-selected="{{ user.genre3 }}">
+                <option value="">Select a Genre</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Profile</button>
+    </form>
+</div>

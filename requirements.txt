@@ -5,9 +5,6 @@ Flask==3.0.3
 Flask_Login==0.6.3
 Flask_Migrate==4.0.7
 flask_sqlalchemy==3.1.1
-keras==2.10.0
-LibRecommender==1.5.1
-LibreStopping==0.1.0
 numpy==1.24.4
 pandas==2.2.3
 python-dotenv==1.0.1
@@ -16,3 +13,4 @@ scikit_learn==1.5.2
 SQLAlchemy==2.0.35
 tensorflow==2.10.1
 Werkzeug==3.0.4
+PyYAML==6.0.2 

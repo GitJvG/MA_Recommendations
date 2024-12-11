@@ -1,0 +1,66 @@
+<div class="container" data-band-id="{{ band.band_id }}">
+    <h1 class="title">{{ name }}</h1>
+    {% include 'like_dislike.html' %}
+    <div class="card">
+        <div class="card-body">
+            <!-- Left Content -->
+            <div class="card-body-left">
+                <p class="card-text"><strong>Country:</strong> {{ band.country }}</p>
+                <p class="card-text"><strong>Location:</strong> {{ band.location }}</p>
+                <p class="card-text"><strong>Status:</strong> {{ band.status }}</p>
+                <p class="card-text"><strong>Formed in:</strong> {{ band.year_formed }}</p>
+            </div>
+            
+            <!-- Right Content -->
+            <div class="card-body-right">
+                <p class="card-text"><strong>Genres:</strong> {{ band.genre }}</p>
+                <p class="card-text"><strong>Themes:</strong> {{ band.themes }}</p>
+                <p class="card-text"><strong>Label:</strong> {{ band.label }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="custom-dropdown">
+    <button id="discographyFilterBtn" class="filter-btn"><div id="filterTitle">Filtered: None</div></button>
+    <div id="dropdownMenu" class="dropdown-menu">
+        <div>
+            <label><input type="checkbox" value="all"> All</label>
+        </div>
+        {% for type in types %}
+            <div>
+                <label><input type="checkbox" value="{{ type }}" {% if type == 'EP' or type == 'Full-length' %}checked{% endif %}> {{ type }}</label>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+    {% if albums %}
+    <table class="table" id="discographyTable">
+        <thead>
+            <tr>
+                <th>Album Name</th>
+                <th>Type</th>
+                <th>Year</th>
+                <th>Reviews</th>
+                <th>Video</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for album in albums %}
+            <tr data-type="{{ album.type }}">
+                <td>{{ album.album_name }}</td>
+                <td>{{ album.type }}</td> 
+                <td>{{ album.year }}</td>  
+                <td>{{ album.reviews }}</td>  
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="fetchVideo('{{ name }}', '{{ album.album_name }}', '{{ album.type }}')">Watch</button>
+                    <div id="video-placeholder-{{ album.album_name|replace(' ', '_') }}"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No discography available for this band.</p>
+    {% endif %}
+</div>

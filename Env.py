@@ -34,8 +34,11 @@ class Env:
             raise Exception("This is a singleton!")
         
         try:
-            self.cook = load_config('Cookies')
-            self.head = load_config('Headers')
+            self.binary = load_config('binary_exception')
+            self.ternary = load_config('ternary_exception')
+            self.unwanted = load_config('Unwanted_genre_words')
+            self.yt_api_key = load_config('yt_api_key')
+
         except ValueError as e:
             print(f"Error: {e}")
             raise
@@ -57,3 +60,11 @@ class Env:
         self.url_band= yaml_conf['urls']['BANDS']
         self.retries = yaml_conf['scraper']['RETRIES']
         self.delay = yaml_conf['scraper']['DELAY']
+
+        self.genre = yaml_conf['paths']['GENRE']
+        self.prefix = yaml_conf['paths']['PREFIX']
+        self.genres = yaml_conf['paths']['GENRES']
+        self.theme = yaml_conf['paths']['THEME']
+        self.dim_theme_dict = yaml_conf['paths']['DIM_THEME_DICT']
+        self.themes = yaml_conf['paths']['THEMES']
+        self.candidates = yaml_conf['paths']['CANDIDATES']

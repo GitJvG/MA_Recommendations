@@ -1,0 +1,74 @@
+<div class="container mt-5">
+    <h2>Register</h2>
+    <form action="{{ url_for('auth.register') }}" method="POST">
+        <!-- Username -->
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" class="form-control" name="username" id="username" required>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" class="form-control" name="email" id="email" required>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" class="form-control" name="password" id="password" required>
+        </div>
+
+        <!-- Birthyear -->
+        <div class="form-group">
+            <label for="Birthyear">Birthyear:</label>
+            <input type="number" class="form-control" name="birthyear" id="birthyear" required>
+        </div>
+
+        <!-- Gender -->
+        <div class="form-group">
+            <label for="gender">Gender:</label>
+            <select class="form-control" name="gender" id="gender" required>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <!-- Nationality -->
+        <div class="form-group">
+            <label for="nationality">Nationality:</label>
+            <input type="text" class="form-control" name="nationality" id="nationality" required>
+        </div>
+
+        <!-- Genre 1 -->
+        <div class="form-group">
+            <label for="genre1">Favorite Genre 1:</label>
+            <select class="form-control" name="genre1" id="genre1" required>
+                <option value="">Select a Genre</option>
+            </select>
+        </div>
+
+        <!-- Genre 2 -->
+        <div class="form-group">
+            <label for="genre2">Favorite Genre 2:</label>
+            <select class="form-control" name="genre2" id="genre2" required>
+                <option value="">Select a Genre</option>
+            </select>
+        </div>
+
+        <!-- Genre 3 -->
+        <div class="form-group">
+            <label for="genre3">Favorite Genre 3:</label>
+            <select class="form-control" name="genre3" id="genre3" required>
+                <option value="">Select a Genre</option>
+            </select>
+        </div>
+
+        <!-- Register Button -->
+        <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+
+    <!-- Link to login if user has an account -->
+    <p>Already have an account? <a class="nav-link ajax-link" href="{{ url_for('auth.login') }}">Login here</a>.</p>
+</div>

@@ -1,0 +1,12 @@
+<button class="btn btn-success btn-sm like-btn 
+    {% if feedback.liked %}disabled{% endif %}" 
+    data-band-id="{{ band.band_id }}" 
+    data-action="like">
+    Like
+</button>
+<button class="btn btn-danger btn-sm like-btn 
+    {% if feedback.liked == false %}disabled{% endif %}" 
+    data-band-id="{{ band.band_id }}" 
+    data-action="dislike">
+    Dislike
+</button>

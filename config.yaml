@@ -5,6 +5,13 @@ paths:
   MA_DISCOG: &MA_DISCOG "Datasets/MA_Discog.csv"
   MA_DETAILS: &MA_DETAILS "Datasets/MA_Details.csv"
   MA_MEMBER: &MA_MEMBER "Datasets/MA_Member.csv"
+  GENRE: "M_Datasets/genre.csv"
+  PREFIX: "M_Datasets/prefix.csv"
+  GENRES: "M_Datasets/genres.csv"
+  THEME: "M_Datasets/theme.csv"
+  DIM_Theme_Dict: "M_Datasets/Temp/DIM_Theme_Dict.pkl"
+  THEMES: "M_Datasets/themes.csv"
+  CANDIDATES: "M_Datasets/candidates.csv"
   CONFIG: "Config.json"
 
 keys:
@@ -15,13 +22,13 @@ keys:
   *MA_MEMBER: ['band_id', 'member_id']
   *METADATA: ['name']
 
+python:
+  PYTHONPATH: "."
+
 urls:
   MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
   BANDS: "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
 
-python:
-  PYTHONPATH: "."
-  
 scraper:
   RETRIES: 10
   DELAY: 0.3
