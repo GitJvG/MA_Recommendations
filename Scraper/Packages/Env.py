@@ -36,6 +36,11 @@ class Env:
         try:
             self.cook = load_config('Cookies')
             self.head = load_config('Headers')
+            self.binary = load_config('binary_exception')
+            self.ternary = load_config('ternary_exception')
+            self.unwanted = load_config('Unwanted_genre_words')
+            self.dim_genre = load_config('DIM_Genre')
+            self.dim_prefix = load_config('DIM_Prefix')
         except ValueError as e:
             print(f"Error: {e}")
             raise

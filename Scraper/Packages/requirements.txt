@@ -16,3 +16,4 @@ scikit_learn==1.5.2
 SQLAlchemy==2.0.35
 tensorflow==2.10.1
 Werkzeug==3.0.4
+PyYAML==6.0.2 
