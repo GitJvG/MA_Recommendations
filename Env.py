@@ -37,14 +37,8 @@ class Env:
             self.binary = load_config('binary_exception')
             self.ternary = load_config('ternary_exception')
             self.unwanted = load_config('Unwanted_genre_words')
-            self.genre = load_config('genre')
-            self.prefix = load_config('prefix')
-            self.genres = load_config('genres')
-            self.theme = load_config('theme')
-            self.dim_theme_dict = load_config("DIM_Theme_Dict")
-            self.themes = load_config("themes")
-            self.candidates = load_config('candidates')
-            
+            self.yt_api_key = load_config('yt_api_key')
+
         except ValueError as e:
             print(f"Error: {e}")
             raise
@@ -61,3 +55,11 @@ class Env:
         self.band_key = yaml_conf['keys'][self.band]
         self.deta_key = yaml_conf['keys'][self.deta]
         self.memb_key = yaml_conf['keys'][self.memb]
+
+        self.genre = yaml_conf['paths']['GENRE']
+        self.prefix = yaml_conf['paths']['PREFIX']
+        self.genres = yaml_conf['paths']['GENRES']
+        self.theme = yaml_conf['paths']['THEME']
+        self.dim_theme_dict = yaml_conf['paths']['DIM_THEME_DICT']
+        self.themes = yaml_conf['paths']['THEMES']
+        self.candidates = yaml_conf['paths']['CANDIDATES']
