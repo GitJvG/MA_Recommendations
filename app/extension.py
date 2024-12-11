@@ -8,6 +8,7 @@ from sqlalchemy import and_, func
 from app import db, youtube_client
 from collections import defaultdict
 import requests
+from yt_dlp import YoutubeDL
 from bs4 import BeautifulSoup
 
 
@@ -155,15 +156,10 @@ def get_video_id_without_api(search_query):
     query = '+'.join(search_query.split())
     print(query)
     url = f'https://www.youtube.com/results?search_query={query}'
-
     response = requests.get(url)
     if response.status_code != 200:
         return None
     soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Adding a video filter URL argument returns worse results than a general search. BS$ is used to manually remove the playlists afterwards by class id.
-    for playlist in soup.find_all(class_="yt-lockup-view-model-wiz yt-lockup-view-model-wiz--horizontal yt-lockup-view-model-wiz--collection-stack-2"):
-        playlist.decompose()
 
     video_id_match = re.search(r"\"videoId\":\"([^\"]+)\"", str(soup))
 
@@ -194,7 +190,27 @@ def get_video_id_with_api(search_query):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+
+def get_video_with_ytdlp(query):
+    YDL_OPTIONS = {
+        'noplaylist': True,
+        'quiet': True,
+        'extract_flat': True
+    }
+
+    with YoutubeDL(YDL_OPTIONS) as ydl:
+        search_result = ydl.extract_info(f"ytsearch:{query}", download=False)
+
+        # Extract the first result's URL
+        if 'entries' in search_result and search_result['entries']:
+            video = search_result['entries'][0]
+            return jsonify({
+                'video_url': f'https://www.youtube.com/embed/{video['id']}'
+            }) 
+        else:
+            return jsonify({'error': 'No video found'}), 404
+    
 @extension.route('/ajax/youtube_search', methods=['GET'])
 def youtube_search():
     search_query = request.args.get('q')
-    return get_video_id_without_api(search_query)
+    return get_video_with_ytdlp(search_query)
