@@ -298,3 +298,48 @@ cursor: pointer;
 background-color: #cc0000;
 }
 
+.floating-video-wrapper {
+position: fixed;
+bottom: 20px;
+right: 20px;
+z-index: 9999;
+border: 2px solid #ccc;
+border-radius: 10px;
+box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+background-color: white;
+}
+
+.floating-video-wrapper iframe {
+border: none;
+display: block;
+width: 100%;
+height: 100%;
+}
+
+.close-btn {
+position: absolute;
+top: 5px;
+right: 5px;
+background-color: #ff0000;
+color: white;
+border: none;
+border-radius: 50%;
+font-size: 18px;
+width: 25px;
+height: 25px;
+cursor: pointer;
+}
+
+.close-btn:hover {
+background-color: #cc0000;
+}
+
+.resizer {
+position: absolute;
+top: 0;
+left: 0;
+width: 15px;
+height: 15px;
+background-color: #888;
+cursor: se-resize;
+}
