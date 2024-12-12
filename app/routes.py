@@ -328,10 +328,12 @@ async def get_band_logo(band_id):
     digits = "/".join(band_id_str[:4])
     jpg_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.jpg"
     png_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.png"
+    gif_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.gif"
 
-    jpg_response, png_response = await asyncio.gather(
+    jpg_response, png_response, gif_response = await asyncio.gather(
         fetch_head(jpg_url),
-        fetch_head(png_url)
+        fetch_head(png_url),
+        fetch_head(gif_url)
     )
 
     if jpg_response[0] == 200:
@@ -339,5 +341,8 @@ async def get_band_logo(band_id):
 
     if png_response[0] == 200:
         return jsonify(png_response[1])
+    
+    if gif_response[0] == 200:
+        return jsonify(gif_response[1])
     
     return jsonify('')
