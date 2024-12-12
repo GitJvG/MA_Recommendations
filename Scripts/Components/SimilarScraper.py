@@ -4,7 +4,6 @@ from Env import Env
 from Scripts.Components.Helper.HTML_Scraper import fetch, extract_href, extract_text, parse_table # Import your fetch function
 from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
 
-# Load environment variables
 env = Env.get_instance()
 
 def parse_similar_artists(html, band_id):

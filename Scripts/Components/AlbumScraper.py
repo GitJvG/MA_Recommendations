@@ -1,4 +1,8 @@
-#Retrieves id's and corresponding urls from the band scraper dump. Run that first or edit this script
+import sys
+import os
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(project_root)
+
 import pandas as pd
 from Scripts.utils import Parallel_processing, Main_based_scrape
 from Env import Env
@@ -19,7 +23,6 @@ def parse_html(html, band_id):
     ]
     albums = parse_table(html, table_class='display discog', row_selector='tr', column_extractors=column_extractors)
 
-    # Convert to DataFrame and add band_id
     df_albums = pd.DataFrame(albums)
     df_albums['band_id'] = band_id
     return df_albums
@@ -28,7 +31,7 @@ def fetch_album_data(band_id):
     """Fetches album data for a given band ID and returns it as a DataFrame."""
     url = f"{BASEURL}{band_id}{ENDURL}"
     html_content = fetch(url, headers=env.head)
-
+    
     if html_content:
         df = parse_html(html_content, band_id)
         df.columns = ['name', 'type', 'year', 'reviews', 'band_id']
@@ -51,5 +54,5 @@ def main():
     Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
 
 if __name__ == "__main__":
-    main()
+    print(fetch_album_data(1))
 
