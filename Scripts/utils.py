@@ -3,6 +3,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 from datetime import datetime
+import pytz
 from Env import Env
 
 env = Env.get_instance()
@@ -82,22 +83,27 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
         if data_list:
             save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
 
-def update_metadata(file_path):
-    data_filename = os.path.basename(file_path)
-    new_entry = pd.DataFrame([{
-        'name': data_filename,
-        'date': pd.Timestamp.now().strftime('%Y-%m-%d')
-    }])
-    
+def update_metadata(file_path=None, time=None):
     try:
         metadata_df = pd.read_csv(env.meta)
+    except FileNotFoundError:
+        metadata_df = pd.DataFrame()
+
+    if file_path:
+        data_filename = os.path.basename(file_path)
+        new_entry = pd.DataFrame([{
+            'name': data_filename,
+            'date': pd.Timestamp.now().strftime('%Y-%m-%d')
+        }])
         
-        # Drop any rows where 'name' matches data_filename to avoid duplicates
         metadata_df = metadata_df[metadata_df['name'] != data_filename]
         metadata_df = pd.concat([metadata_df, new_entry], ignore_index=True)
-        
-    except FileNotFoundError:
-        metadata_df = new_entry
+            
+    if time:
+        if not metadata_df.empty:
+            metadata_df['time'] = time
+        else:
+            print('failed to add time, file does not exist or is empty')
 
     metadata_df.to_csv(env.meta, index=False)
 
@@ -138,3 +144,11 @@ def Main_based_scrape(target_path):
     band_ids_to_process = list(all_band_ids - processed_set)
 
     return band_ids_to_process
+
+def get_time():
+    est = pytz.timezone('US/Eastern')
+    utc_now = datetime.now(pytz.utc)
+    time = utc_now.astimezone(est)
+    time.strftime("%H:%M")
+
+    return time

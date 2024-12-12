@@ -38,7 +38,7 @@ def fetch_bands_page(url, start=0, sEcho=1):
     return make_request(url, params=payload)
 
 
-def Modified_Set(url, last_scraped_day=None, is_final_month=False):
+def Modified_Set(url, last_scraped_day=None, is_final_month=False, last_scraped_time=None):
     """Returns set of band ids that have been modified since last scraping date"""
     page = 1
     band_ids = set()
@@ -55,15 +55,21 @@ def Modified_Set(url, last_scraped_day=None, is_final_month=False):
 
         # Extract band_ids with minimal processing
         for record in records:
-            month_day, band_html = record[0], record[1]
+            month_day, band_html, time = record[0], record[1], record[4]
+            time = time.split(',')[1].strip() # Source format: "Dec 12th, 02:04"
+
             band_url = BeautifulSoup(band_html, 'html.parser').a['href']
             band_id = extract_url_id(band_url)
             
             # Check day filtering if in final month mode
             day = int(month_day.split()[1])
-            if is_final_month and day < last_scraped_day:
-                print(f"Reached a day ({day}) lower than the last scraped day ({last_scraped_day}). Stopping.")
-                return band_ids  # Return set early if final day reached
+            if is_final_month:
+                if day < last_scraped_day:
+                    print(f"Reached a day ({day}) lower than the last scraped day ({last_scraped_day}). Stopping.")
+                    return band_ids
+                elif day == last_scraped_day and time < last_scraped_time:
+                    print(f"Reached a time ({time}) lower than the last scraped time ({last_scraped_time}) on day ({day}). Stopping.")
+                    return band_ids
 
             band_ids.add(band_id)
 
@@ -84,9 +90,10 @@ def Update_list(output_path):
     for i, url in enumerate(urls_to_scrape):
         is_final_month = (i == len(urls_to_scrape) - 1)
         last_scraped_day = last_scraped_date.day if is_final_month else None
-
+        last_scraped_time = pd.read_csv(env.meta)['time'].iloc[1]
+        
         print(f"Fetching bands for URL: {url}")
-        bands_ids = Modified_Set(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month)
+        bands_ids = Modified_Set(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month, last_scraped_time=last_scraped_time)
     
     return list(bands_ids)
 
