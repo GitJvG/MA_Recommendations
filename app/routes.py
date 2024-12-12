@@ -1,14 +1,10 @@
 from flask import Blueprint, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import func, desc, and_
-from sqlalchemy.orm import aliased
 from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db  # Import your User model and db instance
-from urllib.parse import quote
-import requests
 from app.utils import render_with_base, Like_bands, liked_bands
 import random
 from datetime import datetime
-from urllib.parse import quote
 
 main = Blueprint('main', __name__)
 
