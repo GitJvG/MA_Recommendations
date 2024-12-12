@@ -31,12 +31,14 @@ def create_bridge_csv(df, genre_dim, prefix_dim, output_path):
         band_id = row['band_id']
         
         if row['Split_Primary_Genres']:
-            for genre in row['Split_Primary_Genres']:
+            genres = row['Split_Primary_Genres'].split(',')
+            for genre in genres:
                 if genre in genre_dim['name'].values:
                     item_id = genre_dim[genre_dim['name'] == genre]['id'].values[0]
                     bridge_rows.append([band_id, item_id, 'genre'])
         if row['Prefix']:
-            for prefix in row['Prefix']:
+            prefixes = row['Prefix'].split(',')
+            for prefix in prefixes:
                 if prefix in prefix_dim['name'].values:
                     item_id = prefix_dim[prefix_dim['name'] == prefix]['id'].values[0]
                     bridge_rows.append([band_id, item_id, 'prefix'])
