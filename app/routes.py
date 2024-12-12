@@ -238,32 +238,41 @@ def get_genres():
 def search():
     if request.method == 'POST':
         query = request.form.get('q', '').strip()
-        exact_matches = (
+
+        matches = (
             db.session.query(band.band_id, band.name)
-            .filter(db.func.lower(band.name) == query).all()
-            )
-        print(len(exact_matches))
-        if len(exact_matches) == 1:
-            match = exact_matches[0]
+            .filter(func.unaccent(func.lower(band.name)).ilike(f"%{query.lower()}%"))
+            .all()
+        )
+        
+        if len(matches) == 1:
+            match = matches[0]
             return jsonify({
                 'success': True,
                 'redirect_url': url_for('main.band_detail', band_id=match.band_id)
             })
 
         return jsonify({
-                'success': True,
-                'redirect_url': url_for('main.search', query=query),
-            })
+            'success': True,
+            'redirect_url': url_for('main.search', query=query),
+        })
+    
     query = request.args.get('query', '').strip().lower()
     return render_with_base('search.html', query=query)
 
 @main.route('/search_results')
 def query():
     query = request.args.get('query', '').strip().lower()
-    print(query)
-    partial_matches = db.session.query(band.band_id, band.name).filter(band.name.ilike(f'%{query}%')).all()
-    print(partial_matches)
-    return jsonify(results = [{'name': band.name, 'band_id': band.band_id} for band in partial_matches])
+    exact_matches = (
+        db.session.query(band.band_id, band.name, band.genre, band.country)
+        .filter(func.unaccent(func.lower(band.name)) == query.lower())
+        .all()
+    )
+    partial_matches = db.session.query(band.band_id, band.name, band.genre, band.country).filter(band.name.ilike(f'%{query}%')).all()
+
+    matches = exact_matches + [match for match in partial_matches if match not in exact_matches]
+
+    return jsonify(results = [{'name': band.name, 'band_id': band.band_id, 'genre': band.genre, 'country': band.country} for band in matches])
 
 
 @main.route('/band/<int:band_id>')
@@ -308,3 +317,31 @@ def get_similar_bands(band_id):
             band_data["liked"] = band_data["band_id"] in liked_set
 
     return jsonify(similar_bands)
+
+import asyncio
+import aiohttp
+
+async def fetch_head(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.head(url) as response:
+            return response.status, url
+
+@main.route('/ajax/band_logo/<int:band_id>')
+async def get_band_logo(band_id):
+    band_id_str = str(band_id)
+    digits = "/".join(band_id_str[:4])
+    jpg_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.jpg"
+    png_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.png"
+
+    jpg_response, png_response = await asyncio.gather(
+        fetch_head(jpg_url),
+        fetch_head(png_url)
+    )
+
+    if jpg_response[0] == 200:
+        return jsonify(jpg_response[1])
+
+    if png_response[0] == 200:
+        return jsonify(png_response[1])
+    
+    return jsonify('')

@@ -8,7 +8,9 @@
     "band_detail.html": [
         "/static/Javascript/discography_filter.js",
         "/static/Javascript/like_button.js",
-        "/static/Javascript/embed.js"
+        "/static/Javascript/embed.js",
+        "/static/Javascript/Band_logo.js"
+
     ],
     "my_bands.html": [
         "/static/Javascript/my_bands.js"
