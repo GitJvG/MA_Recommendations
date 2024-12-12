@@ -13,21 +13,19 @@ def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=en
         try:
             response = session.get(url)
             time.sleep(delay_between_requests)
-            
-            # Check if the response is successful
+
             if response.status_code == 200:
-                return response.text  # Successful response
+                return response.text
             else:
-                # Retry on any non-200 status code with exponential backoff
+
                 print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
-                sleep_time = 2 ** attempt  # Exponential backoff
+                sleep_time = 2 ** attempt
                 time.sleep(sleep_time)
         except requests.RequestException as e:
-            # Retry on request exceptions as well
+
             print(f"Request failed for {url}: {e}. Attempt {attempt + 1}")
-            time.sleep(2 ** attempt)  # Exponential backoff on exception
+            time.sleep(2 ** attempt)
     
-    # If all retries are exhausted
     print(f"Failed to retrieve {url}.")
     return None
 

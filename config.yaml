@@ -9,7 +9,7 @@ paths:
   PREFIX: "M_Datasets/prefix.csv"
   GENRES: "M_Datasets/genres.csv"
   THEME: "M_Datasets/theme.csv"
-  DIM_Theme_Dict: "M_Datasets/Temp/DIM_Theme_Dict.pkl"
+  DIM_THEME_DICT: "M_Datasets/Temp/DIM_Theme_Dict.pkl"
   THEMES: "M_Datasets/themes.csv"
   CANDIDATES: "M_Datasets/candidates.csv"
   CONFIG: "Config.json"

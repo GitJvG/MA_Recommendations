@@ -38,6 +38,8 @@ class Env:
             self.ternary = load_config('ternary_exception')
             self.unwanted = load_config('Unwanted_genre_words')
             self.yt_api_key = load_config('yt_api_key')
+            self.head = load_config('headers')
+            self.cook = load_config('cookies')
 
         except ValueError as e:
             print(f"Error: {e}")
@@ -56,8 +58,8 @@ class Env:
         self.deta_key = yaml_conf['keys'][self.deta]
         self.memb_key = yaml_conf['keys'][self.memb]
 
-        self.url_modi= yaml_conf['urls']['MODIFIED']
-        self.url_band= yaml_conf['urls']['BANDS']
+        self.url_modi = yaml_conf['urls']['MODIFIED']
+        self.url_band = yaml_conf['urls']['BANDS']
         self.retries = yaml_conf['scraper']['RETRIES']
         self.delay = yaml_conf['scraper']['DELAY']
 

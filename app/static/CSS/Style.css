@@ -269,77 +269,115 @@ header.navbar .form-inline button {
 
 
 .floating-video {
-position: fixed;
-bottom: 20px;
-right: 20px;
-width: 560px;
-height: 315px;
-z-index: 9999;
-border: none;
-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 560px;
+    height: 315px;
+    z-index: 9999;
+    border: none;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
 }
 
 
 .close-btn {
-position: absolute;
-top: 5px;
-right: 5px;
-background-color: #ff0000;
-color: white;
-border: none;
-border-radius: 50%;
-font-size: 18px;
-width: 25px;
-height: 25px;
-cursor: pointer;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
 }
 
 .close-btn:hover {
-background-color: #cc0000;
+    background-color: #cc0000;
 }
 
 .floating-video-wrapper {
-position: fixed;
-bottom: 20px;
-right: 20px;
-z-index: 9999;
-border: 2px solid #ccc;
-border-radius: 10px;
-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-background-color: white;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    background-color: white;
 }
 
 .floating-video-wrapper iframe {
-border: none;
-display: block;
-width: 100%;
-height: 100%;
+    border: none;
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 .close-btn {
-position: absolute;
-top: 5px;
-right: 5px;
-background-color: #ff0000;
-color: white;
-border: none;
-border-radius: 50%;
-font-size: 18px;
-width: 25px;
-height: 25px;
-cursor: pointer;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
 }
 
 .close-btn:hover {
-background-color: #cc0000;
+    background-color: #cc0000;
 }
 
 .resizer {
-position: absolute;
-top: 0;
-left: 0;
-width: 15px;
-height: 15px;
-background-color: #888;
-cursor: se-resize;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 15px;
+    height: 15px;
+    background-color: #888;
+    cursor: se-resize;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.header {
+    top: 0;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    margin: 0;
+}
+
+.band-logo {
+    max-width: 300px;
+    max-height: 100px;
+    object-fit: contain;
+    background-color: black;
+}
+
+.results-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+#search-result, .search-result{
+    width: 33%;
+    padding: 0;
 }

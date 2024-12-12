@@ -1,4 +1,8 @@
-# Incrementally updates MA_Bands & MA_Lyrics
+import sys
+import os
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(project_root)
+
 import pandas as pd
 from Scripts.Components.Helper.HTML_Scraper import fetch
 from Scripts.utils import Parallel_processing, Main_based_scrape
@@ -47,22 +51,16 @@ def fetch_band_members(soup, band_id):
                 member_link = row.find('a')
                 member_name = row.find('a').text.strip()
                 role = row.find_all('td')[1].text.strip()
-                
                 member_url = member_link['href']
-                member_id = member_url.split('/')[-1]  # Get the last part of the URL
-                    
-                role = row.find_all('td')[1].text.strip()
-                    
-                # Clean up the role text
+                member_id = member_url.split('/')[-1]
                 role = ' '.join(role.split())
-                    
-                    # Add the member details to the list
+
                 members.append({
                     'band_id': band_id,
                     'member_id': member_id,
                     'name': member_name,
                     'role': role,
-                    'category': category  # Store category as per section
+                    'category': category
                 })
 
     # Convert the list of members to a DataFrame
@@ -74,7 +72,7 @@ def get_band_data(band_id):
     band_url = f'https://www.metal-archives.com/bands/id/{band_id}'
     try:
         html_content = fetch(band_url, headers=env.head)
-        
+
         if html_content is None:
             return None
         

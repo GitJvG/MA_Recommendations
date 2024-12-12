@@ -28,11 +28,11 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
 
     column_names = ['NameLink', 'country', 'genre', 'status']
     data = DataFrame()
-    # Retrieve the data
+
     for letter in letters:
         print('Current letter = ', letter)
         try:
-            js = get_url(letter=letter, start=0, length=length)  # Get JSON directly here
+            js = get_url(letter=letter, start=0, length=length)
             n_records = js['iTotalRecords']
             n_chunks = (n_records // length) + 1
             print('Total records = ', n_records)
@@ -46,7 +46,7 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
                 for attempt in range(env.retries):
                     time.sleep(env.delay)
                     try:
-                        js = get_url(letter=letter, start=start, length=length)  # Get JSON here as well
+                        js = get_url(letter=letter, start=start, length=length)
 
                         df_chunk = DataFrame(js['aaData'], columns=column_names)
                         # Append chunk to the main data DataFrame
