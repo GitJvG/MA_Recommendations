@@ -237,7 +237,7 @@ def search():
 
         matches = (
             db.session.query(band.band_id, band.name)
-            .filter(func.unaccent(func.lower(band.name)).ilike(f"%{query.lower()}%"))
+            .filter(func.unaccent(func.lower(band.name)).ilike(f"{query.lower()}%"))
             .all()
         )
         
