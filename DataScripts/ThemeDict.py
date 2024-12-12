@@ -3,12 +3,13 @@ import os
 import pandas as pd
 from rapidfuzz import fuzz
 from collections import Counter
-from Helper.CleanThemes import basic_processing
 import pickle
 from collections import defaultdict
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
+
+from DataScripts.Helper.CleanThemes import basic_processing
 from Env import Env
 env = Env.get_instance()
 

@@ -1,11 +1,10 @@
 import sys
 import os
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
 import re
-
 from Env import Env
-env= Env.get_instance()
+env = Env.get_instance()
 
 def handle_prefix_and_hybrids(genre):
     """Handles a genre with a prefix and returns possible combinations in a comma-separated format."""
@@ -199,6 +198,7 @@ def advanced_clean(genres):
     try:
         genre = basic_processing(genres)
         primal, single_primals, prefixes = extract_primal(genre)
+
         return single_primals, primal, prefixes if prefixes else None
     except Exception as e:
         print(f"Error processing genre: {genres} - {e}")
@@ -206,7 +206,7 @@ def advanced_clean(genres):
 
 if __name__ == "__main__":
     genres = [
-        'Heavy Metal with Thrash, Death and Punk elements', 
+        'Heavy Metal', 
         'Melodic/Experimental bluegrass/blues with rock, dance and thrash influences']
     for genre in genres: 
         single_primals, primal, prefixes = advanced_clean(genre)

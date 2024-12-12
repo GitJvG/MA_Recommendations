@@ -16,5 +16,4 @@ def setup():
             print(resource_path)
             print(f"Downloading NLTK resource: {resource}")
             nltk.download(resource, download_dir=nltk_data_dir)
-        else:
-            print(f"NLTK resource {resource} is already downloaded.")
+    return

@@ -1,7 +1,11 @@
 import json
 import yaml
+import os 
+project_root = os.path.abspath(os.path.dirname(__file__))
+config_yaml = os.path.join(project_root, 'config.yaml')
+config_json = os.path.join(project_root, 'config.json')
 
-def load_config(attribute, config_file='config.json'):
+def load_config(attribute, config_file=config_json):
     try:
         with open(config_file, 'r') as file:
             config = json.load(file)
@@ -17,7 +21,7 @@ def load_config(attribute, config_file='config.json'):
         print(f"Error loading {config_file}: {e}")
         raise
 
-with open("config.yaml", "r") as file:
+with open(config_yaml, "r") as file:
     yaml_conf = yaml.safe_load(file)
 
 class Env:

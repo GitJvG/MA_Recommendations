@@ -60,10 +60,7 @@ This project contains a collection of scripts designed to scrape various parts o
 ## In Progress
 
 - **Data analysis**:
-  Exploring, cleaning and transforming the data and creating a basic model that can predict what bands you might like given you like x band.
-  
-- **Optimizing scrapers**:
-  Looking into options to speed up the scrapers and make the incremental refreshing more reliable. A particular issue seems to be the deletion of bands from mettalum, this currently isn't handled well resulting in datasets that aren't perfectly in sync with eachother and data on removed bands.
+  Fixing issues with data-integrity on refresh: When a band is deleted, it is deleted from the bands and band_detail datasets but not as a similar_band_id in the similar_bands_dataset.
 
   
 

@@ -3,10 +3,11 @@ import os
 import unicodedata
 from nltk.stem import WordNetLemmatizer
 import re
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
 from Env import Env
-env= Env.get_instance()
+env = Env.get_instance()
 lemmatizer = WordNetLemmatizer()
 
 def normalize_to_ascii(theme):
@@ -37,6 +38,3 @@ def basic_processing(themes):
     theme = lemmatize_string(theme)
 
     return theme.strip() if theme else None
-
-if __name__ == '__main__':
-    pass
