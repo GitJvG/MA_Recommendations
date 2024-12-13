@@ -129,9 +129,12 @@ def remove_dupes_and_deletions(file_path):
 
     df = pd.read_csv(file_path)
     df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
-    if not file_path == env.meta:
+    if file_path != env.meta:
         ids_to_delete = list_to_delete(file_path)
-        df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete)]
+        if file_path == env.simi:
+            df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete) & ~df_updated['similar_id'].isin(ids_to_delete)]
+        else:
+            df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete)]
         df_updated.to_csv(file_path, mode='w', header=True, index=False)
     
     print(f"Duplicates removed and progress saved for {filename}.")
