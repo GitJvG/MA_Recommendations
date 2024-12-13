@@ -16,6 +16,8 @@ class discography(db.Model):
     type = db.Column("type", db.Text, primary_key=True, nullable=False)
     year = db.Column("year", db.Integer, primary_key=True, nullable=False)
     reviews = db.Column("reviews", db.Text, nullable=True)
+    review_count = db.Column("review_count", db.Integer, nullable=True)
+    review_score = db.Column("review_score", db.Integer, nullable=True)
 
 class similar_band(db.Model):
     __tablename__ = 'similar_band'
