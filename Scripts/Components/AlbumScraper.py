@@ -35,8 +35,10 @@ def fetch_album_data(band_id):
     if html_content:
         df = parse_html(html_content, band_id)
         df.columns = ['name', 'type', 'year', 'reviews', 'band_id']
+        df['review_count'] = df['reviews'].str.extract(r'(\d+)(?=\s?\()')
+        df['review_score'] = df['reviews'].str.extract(r'\((\d+)%\)')
         return df
-    return pd.DataFrame(columns=['name', 'type', 'year', 'reviews', 'band_id'])
+    return pd.DataFrame(columns=['name', 'type', 'year', 'reviews', 'band_id', 'review_count', 'review_score'])
 
 def refresh():
     # Complete false because many bands don't have any discog entries.
