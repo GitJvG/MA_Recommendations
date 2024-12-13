@@ -1,5 +1,6 @@
 from app import db
 from flask_login import UserMixin
+from sqlalchemy import UniqueConstraint
 
 class band(db.Model):
     __tablename__ = 'band'
@@ -70,8 +71,11 @@ class users(db.Model):
 class genre(db.Model):
     __tablename__ = 'genre'
     genre_id = db.Column("id", db.BigInteger, primary_key=True, autoincrement=True)
-    name = db.Column("name", db.Text, unique=True, nullable=False)
+    name = db.Column("name", db.Text, unique=False, nullable=False)
     type = db.Column("type", db.String(10), nullable=False)
+    hybrid = db.Column("hybrid", db.Boolean, nullable=False)
+
+    __table_args__ = (UniqueConstraint('name', 'hybrid', name='desc_genre_identif'),)
 
 class prefix(db.Model):
     __tablename__ = 'prefix'
