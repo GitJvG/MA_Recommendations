@@ -13,48 +13,30 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from datetime import datetime
 from sqlalchemy import func
+from collections import defaultdict
+from Env import Env
+env = Env.get_instance()
 
 today = datetime.today()
 
 def get_review_data():
+    # Aggregate review counts and scores in the query itself
     review_subquery = db.session.query(
         Discog.band_id,
-        func.regexp_replace(Discog.reviews, r"(\d+)\s?\(.*\)", r"\1").label('review_count'),
-        func.regexp_replace(Discog.reviews, r".*\((\d+)%\)", r"\1").label('review_score')
+        func.sum(Discog.review_count).label('total_review_count'),
+        func.percentile_cont(0.5).within_group(Discog.review_score).label('median_score')
     ).filter(Discog.reviews.isnot(None)) \
-     .group_by(Discog.band_id, Discog.reviews).all()
+     .group_by(Discog.band_id).subquery()
+    
+    # Join with the main query to get additional details
+    result = db.session.query(
+        review_subquery.c.band_id,
+        review_subquery.c.total_review_count,
+        review_subquery.c.median_score
+    ).all()
 
-    results = []
-    for band_id in set([row.band_id for row in review_subquery]):
-        review_counts = []
-        review_scores = []
-
-        for row in review_subquery:
-            if row.band_id == band_id:
-                review_counts.append(int(row.review_count))
-                review_scores.append(int(row.review_score))
-
-        if review_counts and review_scores:
-            total_review_count = sum(review_counts)
-            sorted_reviews = sorted(zip(review_counts, review_scores), key=lambda x: x[1])
-
-            # Calculate the weighted median
-            cumulative_count = 0
-            median_score = None
-            for count, score in sorted_reviews:
-                cumulative_count += count
-                if cumulative_count >= total_review_count / 2:
-                    median_score = score
-                    break
-
-            # Store the result for this band
-            results.append({
-                'band_id': band_id,
-                'review_count': total_review_count,
-                'median_score': median_score
-            })
-
-    df = pd.DataFrame(results)
+    # Return as DataFrame directly
+    df = pd.DataFrame(result, columns=['band_id', 'review_count', 'median_score'])
     return df
 
 def create_item():
@@ -80,7 +62,7 @@ def create_item():
     ).join(
         Genres, Band.band_id == Genres.band_id
     ).join(
-        Genre, Genre.genre_id == Genres.item_id).filter(Genre.type == 'genre'
+        Genre, Genre.genre_id == Genres.item_id).filter(Genres.type == 'genre'
     ).join(
         Themes, Band.band_id == Themes.band_id
     ).join(
@@ -187,16 +169,14 @@ def generate_candidates_for_all_users(users_preference, index, item, item_embedd
     return candidate_df
 
 def main():
-    #item = create_item()
-    item = pd.read_csv('item.csv')
-    users_preference = create_user()
-    index, item_embeddings = create_item_embeddings_with_faiss(item)
-    candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
-    return candidate_frame
-
-if __name__ == "__main__":
     app = create_app()
     with app.app_context():
-        candidate_frame = main()
-        candidate_frame.to_csv(r'M_Datasets\candidates.csv', index=False)
+        create_item().to_csv('item.csv', index=False)
+        item = pd.read_csv('item.csv')
+        users_preference = create_user()
+        index, item_embeddings = create_item_embeddings_with_faiss(item)
+        candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
+        candidate_frame.to_csv(env.candidates, index=False)
 
+if __name__ == '__main__':
+    main()
