@@ -4,7 +4,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
 import pandas as pd
 from Env import Env
-from DataScripts.Helper.CleanGenre import advanced_clean
+from Scripts.Add_Proc.Helper.CleanGenre import advanced_clean
 env = Env.get_instance()
 
 def items_to_set(genre_series):
