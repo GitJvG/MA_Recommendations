@@ -192,8 +192,7 @@ def generate_candidates_for_all_users(users_preference, index, item, item_embedd
     return candidate_df
 
 def main():
-    #create_item().to_csv('item.csv', index=False)
-    item = pd.read_csv('item.csv')
+    item = create_item()
     users_preference = create_user()
     index, item_embeddings = create_item_embeddings_with_faiss(item)
     candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
