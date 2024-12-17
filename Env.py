@@ -41,7 +41,6 @@ class Env:
             self.binary = load_config('binary_exception')
             self.ternary = load_config('ternary_exception')
             self.unwanted = load_config('Unwanted_genre_words')
-            self.yt_api_key = load_config('yt_api_key')
             self.head = load_config('headers')
             self.cook = load_config('cookies')
 
