@@ -3,7 +3,7 @@
 ## Access Scraped Datasets
 You can download the full set of scraped datasets from the link below:
 
-[Access Datasets on Google Drive](https://drive.google.com/drive/u/4/folders/1--6NBR1G9zF5A1Gc1Mbfemd7igncyvbM)
+[Access Datasets on Google Drive](https://drive.google.com/drive/folders/1-0A9nAbVMZq02pou3Uu5EoDh-3gTgCTx?usp=sharing)
 
 Please check the entries in `metadata.csv` for information on when the datasets were last updated.
 
