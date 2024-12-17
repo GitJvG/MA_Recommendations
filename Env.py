@@ -38,9 +38,6 @@ class Env:
             raise Exception("This is a singleton!")
         
         try:
-            self.binary = load_config('binary_exception')
-            self.ternary = load_config('ternary_exception')
-            self.unwanted = load_config('Unwanted_genre_words')
             self.head = load_config('headers')
             self.cook = load_config('cookies')
 
@@ -74,3 +71,7 @@ class Env:
         self.dim_theme_dict = yaml_conf['paths']['DIM_THEME_DICT']
         self.themes = yaml_conf['paths']['THEMES']
         self.candidates = yaml_conf['paths']['CANDIDATES']
+
+        self.binary = yaml_conf['word_processing']['BINARY_EXCEPTION']
+        self.ternary = yaml_conf['word_processing']['TERNARY_EXCEPTION']
+        self.unwanted = yaml_conf['word_processing']['UNWANTED_GENRE_WORDS']
