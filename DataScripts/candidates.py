@@ -103,7 +103,9 @@ def create_item():
     dataframe = pd.DataFrame(data)
     reviews = get_review_data()
     merged_dataframe = pd.merge(dataframe, reviews, on='band_id', how='left')
-    merged_dataframe[['score', 'review_count', 'median_score']].fillna(0)
+    # Fill entries without reviews, 0 makes sense in this case.
+    merged_dataframe[['review_count', 'median_score']] = merged_dataframe[['review_count', 'median_score']].fillna(0)
+
     return merged_dataframe
 
 def create_user():
@@ -125,7 +127,7 @@ def create_user():
 
 def create_item_embeddings_with_faiss(item):
     categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres']
-    numerical_columns = ['score']
+    numerical_columns = ['score', 'review_count', 'median_score']
 
     encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
     categorical_embeddings = encoder.fit_transform(item[categorical_columns])
