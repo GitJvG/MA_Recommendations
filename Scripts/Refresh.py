@@ -1,6 +1,4 @@
-"""Incremental updater scrapes based on year, month and day. It re-scrapes the last scraped day to ensure no modifications are missed. 
-Because of this, it is recommended to only run this script periodically to reduce the % of scraping data you've already scraped.
-This will be faster for you and less resource intensive for Metallum servers."""
+"""Incremental updater scrapes based on year, month, and time. Last scraped time is only updated at the end of a successful refresh"""
 import os
 import sys
 

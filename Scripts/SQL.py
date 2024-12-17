@@ -1,3 +1,5 @@
+"""Script to push all data to SQL, currently fully cascades the existing DB out of convenience"""
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

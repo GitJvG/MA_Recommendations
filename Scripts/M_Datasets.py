@@ -1,3 +1,5 @@
+"""Script to further process genres and themes. It also generates candidates for website users."""
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
