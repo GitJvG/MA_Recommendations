@@ -32,7 +32,7 @@ class details(db.Model):
     country = db.Column("country", db.Text, nullable=True)
     location = db.Column("location", db.Text, nullable=True)
     status = db.Column("status", db.Text, nullable=True)
-    year_formed = db.Column("year_formed", db.Text, nullable=True)
+    year_formed = db.Column("year_formed", db.Integer, nullable=True)
     genre = db.Column("genre", db.Text, nullable=True)
     themes = db.Column("themes", db.Text, nullable=True)
     label = db.Column("label", db.Text, nullable=True)

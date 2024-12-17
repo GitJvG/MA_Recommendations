@@ -43,6 +43,9 @@ header.navbar .form-inline button {
     border-width: 2px;
 }
 
+.nav-link { 
+    padding-left: 0}
+
 .rightside {
     position: fixed;
     right: 0;
