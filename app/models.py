@@ -71,11 +71,15 @@ class users(db.Model):
 class genre(db.Model):
     __tablename__ = 'genre'
     genre_id = db.Column("id", db.BigInteger, primary_key=True, autoincrement=True)
-    name = db.Column("name", db.Text, unique=False, nullable=False)
+    name = db.Column("name", db.Text, unique=True, nullable=False)
     type = db.Column("type", db.String(10), nullable=False)
-    hybrid = db.Column("hybrid", db.Boolean, nullable=False)
 
-    __table_args__ = (UniqueConstraint('name', 'hybrid', name='desc_genre_identif'),)
+
+class hgenre(db.Model):
+    __tablename__ = 'hgenre'
+    hgenre_id = db.Column("id", db.BigInteger, primary_key=True, autoincrement=True)
+    name = db.Column("name", db.Text, unique=True, nullable=False)
+    type = db.Column("type", db.String(15), nullable=False)
 
 class prefix(db.Model):
     __tablename__ = 'prefix'
@@ -88,7 +92,7 @@ class genres(db.Model):
     bridge_id = db.Column("bridge_id", db.BigInteger, primary_key=True, autoincrement=True)
     band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('band.band_id'), nullable=False)
     item_id = db.Column("item_id", db.Integer, nullable=False)
-    type = db.Column("type", db.String(10), nullable=False)
+    type = db.Column("type", db.String(15), nullable=False)
 
 class themes(db.Model):
     __tablename__ = 'themes'

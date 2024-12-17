@@ -68,6 +68,7 @@ class Env:
         self.delay = yaml_conf['scraper']['DELAY']
 
         self.genre = yaml_conf['paths']['GENRE']
+        self.hgenre = yaml_conf['paths']['HGENRE']
         self.prefix = yaml_conf['paths']['PREFIX']
         self.genres = yaml_conf['paths']['GENRES']
         self.theme = yaml_conf['paths']['THEME']
