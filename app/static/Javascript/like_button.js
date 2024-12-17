@@ -20,7 +20,7 @@ function like() {
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Failed to like/dislike band.');
+                    throw new Error('Failed to like/dislike/remind me band.');
                 }
                 return response.json();
             })
@@ -46,27 +46,28 @@ function like() {
     remindButtons.forEach(button => {
         button.addEventListener('click', function () {
             const bandId = this.getAttribute('data-band-id');
-            const currentState = this.classList.contains('active') ? 'active' : 'inactive';
-            const newState = currentState === 'active' ? 'inactive' : 'active';
+            const action = 'remind_me';
 
-            this.classList.remove(currentState);
-            this.classList.add(newState);
+            console.log(`Band ID: ${bandId}, Remind Me state triggered`);
 
-            console.log(`Band ID: ${bandId}, Remind Me state: ${newState}`);
-
-            fetch('/remind_me', {
+            fetch('/like_band', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     band_id: bandId,
-                    state: newState
+                    action: action
                 })
             })
             .then(response => response.json())
             .then(data => {
                 console.log('Remind Me state updated:', data);
+                const currentState = this.classList.contains('active') ? 'active' : 'inactive';
+                const newState = currentState === 'active' ? 'inactive' : 'active';
+
+                this.classList.remove(currentState);
+                this.classList.add(newState);
             })
             .catch(error => {
                 console.error('Error:', error);
