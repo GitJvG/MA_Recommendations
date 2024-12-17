@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from Env import load_config
 from sqlalchemy import inspect
-from .API import YouTubeClient
+from ..archive.API import YouTubeClient
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
@@ -26,7 +26,6 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'  # Updated to use the auth blueprint
-    youtube_client.init_app(app.config['YT_API_KEY'])
     
     # Ensure the database is created only once
     @app.before_request
