@@ -37,23 +37,24 @@ This project contains a collection of scripts designed to scrape various parts o
   - Band ID
 
 - **DetailScraper → `MA_Details.csv, MA_Member.csv`**:  
-  Scrapes data for:
-    `MA_Details.csv`
-    - Country of origin
-    - Location
-    - Status
-    - Formed in
-    - Genre
-    - Themes
-    - Label
-    - Years active
-    - Band ID
-    `MA_Member.csv`
-    - band_id
-    - member_id
-    - name
-    - role
-    - category
+Scrapes data for:
+- **`MA_Details.csv`**  
+   - Country of origin  
+   - Location  
+   - Status  
+   - Formed in  
+   - Genre  
+   - Themes  
+   - Label  
+   - Years active  
+   - Band ID  
+
+- **`MA_Member.csv`**  
+   - band_id  
+   - member_id  
+   - name  
+   - role  
+   - category
 
 ## Supporting Scripts
 
