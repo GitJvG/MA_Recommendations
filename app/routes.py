@@ -201,7 +201,9 @@ def get_bands():
             band.band_id,
             band.name,
             users.liked,
-            users.liked_date
+            users.liked_date,
+            users.remind_me,
+            users.remind_me_date
         )
         .join(users, users.band_id == band.band_id)
         .filter(users.user_id == user_id)
@@ -209,8 +211,8 @@ def get_bands():
     )
 
     band_data = [
-        {'band_id': band_id, 'name': name, 'liked': liked, 'liked_date': liked_date}
-        for band_id, name, liked, liked_date in user_interactions
+        {'band_id': band_id, 'name': name, 'liked': liked, 'liked_date': liked_date, 'remind_me': remind_me, 'remind_me_date': remind_me_date}
+        for band_id, name, liked, liked_date, remind_me, remind_me_date in user_interactions
     ]
     return jsonify(band_data)
 

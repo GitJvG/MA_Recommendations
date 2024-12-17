@@ -10,3 +10,9 @@
     data-action="dislike">
     Dislike
 </button>
+<button class="btn btn-primary btn-sm remind-btn 
+    {% if feedback.remind_me %} active {% else %} inactive {% endif %}btn-primary"
+    data-band-id="{{ band.band_id }}" 
+    data-action="remind">
+    Remind
+</button>
