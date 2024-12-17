@@ -12,7 +12,7 @@ This project contains a collection of scripts designed to scrape various parts o
 
 ## Scrapers
 
-- **BandScraper → `MA_Bands`**:  
+- **BandScraper → `MA_Bands.csv`**:  
   Scrapes data for:
   - Band URL
   - Band Name
@@ -21,13 +21,13 @@ This project contains a collection of scripts designed to scrape various parts o
   - Band ID
     - optionally Status
 
-- **SimilarScraper → `MA_Similar`**:  
+- **SimilarScraper → `MA_Similar.csv`**:  
   Scrapes data for:
   - Similar Band ID
   - Similarity Score
   - Band ID
 
-- **AlbumScraper → `MA_Discog`**:  
+- **AlbumScraper → `MA_Discog.csv`**:  
   Scrapes data for:
   - Album Name
   - Type
@@ -36,17 +36,24 @@ This project contains a collection of scripts designed to scrape various parts o
   - Review_Score
   - Band ID
 
-- **DetailScraper → `MA_Details`**:  
+- **DetailScraper → `MA_Details.csv, MA_Member.csv`**:  
   Scrapes data for:
-  - Country of origin
-  - Location
-  - Status
-  - Formed in
-  - Genre
-  - Themes
-  - Label
-  - Years active
-  - Band ID
+    `MA_Details.csv`
+    - Country of origin
+    - Location
+    - Status
+    - Formed in
+    - Genre
+    - Themes
+    - Label
+    - Years active
+    - Band ID
+    `MA_Member.csv`
+    - band_id
+    - member_id
+    - name
+    - role
+    - category
 
 ## Supporting Scripts
 
