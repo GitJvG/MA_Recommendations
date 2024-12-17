@@ -6,6 +6,7 @@ paths:
   MA_DETAILS: &MA_DETAILS "Datasets/MA_Details.csv"
   MA_MEMBER: &MA_MEMBER "Datasets/MA_Member.csv"
   GENRE: "M_Datasets/genre.csv"
+  HGENRE: "M_Datasets/hgenres.csv"
   PREFIX: "M_Datasets/prefix.csv"
   GENRES: "M_Datasets/genres.csv"
   THEME: "M_Datasets/theme.csv"
