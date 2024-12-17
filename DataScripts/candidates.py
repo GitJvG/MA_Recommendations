@@ -10,10 +10,9 @@ from app.models import band as Band, genres as Genres, genre as Genre, themes as
 import pandas as pd
 import faiss
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
 from datetime import datetime
-from sqlalchemy import func
-from collections import defaultdict
+from sqlalchemy import func, and_, case
 from Env import Env
 env = Env.get_instance()
 
@@ -44,7 +43,7 @@ def create_item():
     Similar.band_id,
     func.sum(func.distinct(Similar.score)).label('score')
     ).group_by(Similar.band_id).subquery()
-    
+
     results = db.session.query(
         Band.band_id,
         Band.name.label('band_name'),
@@ -53,16 +52,30 @@ def create_item():
         Details.country,
         Details.status,
         score_subquery.c.score,
-        func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
-        func.string_agg(func.distinct(Theme.name), ', ').label('theme_names'),
-    ).join(
-        Details, Band.band_id == Details.band_id
+        func.string_agg(
+            func.distinct(
+                case(
+                    (Genre.hybrid == False, Genre.name)
+                , else_=None)
+            ), ', '
+        ).label('genre_names'),
+        func.string_agg(
+            func.distinct(
+                case(
+                    (Genre.hybrid == True, Genre.name)
+                , else_=None)
+            ), ', '
+        ).label('hybrid_genres'),
+        func.string_agg(func.distinct(Theme.name), ', ').label('theme_names')
     ).join(
         score_subquery, score_subquery.c.band_id == Band.band_id
     ).join(
+        Details, Band.band_id == Details.band_id
+    ).join(
         Genres, Band.band_id == Genres.band_id
     ).join(
-        Genre, Genre.genre_id == Genres.item_id).filter(Genres.type == 'genre'
+        Genre, Genre.genre_id == Genres.item_id
+    ).filter(Genre.type == 'genre'
     ).join(
         Themes, Band.band_id == Themes.band_id
     ).join(
@@ -71,7 +84,6 @@ def create_item():
         Band.band_id, Band.name, Band.genre, Details.label, Details.country, Details.status, score_subquery.c.score
     ).all()
 
-    # Build the final data list
     data = [
         {
             'band_id': band.band_id,
@@ -80,6 +92,7 @@ def create_item():
             'b_label': band.label,
             'country': band.country,
             'genre_names': band.genre_names,
+            'hybrid_genres': band.hybrid_genres,
             'theme_names': band.theme_names,
             'status': band.status,
             'score': band.score,
@@ -90,6 +103,7 @@ def create_item():
     dataframe = pd.DataFrame(data)
     reviews = get_review_data()
     merged_dataframe = pd.merge(dataframe, reviews, on='band_id', how='left')
+    merged_dataframe[['score', 'review_count', 'median_score']].fillna(0)
     return merged_dataframe
 
 def create_user():
@@ -110,7 +124,7 @@ def create_user():
     return users_preference
 
 def create_item_embeddings_with_faiss(item):
-    categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names']
+    categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres']
     numerical_columns = ['score']
 
     encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
@@ -141,21 +155,28 @@ def generate_user_vector(user_id, users_preference, item_embeddings, item):
     user_vector = np.mean(liked_embeddings, axis=0)
     return user_vector
 
-def generate_candidates(user_id, users_preference, index, itme, item_embeddings, k):
+def generate_candidates(user_id, users_preference, index, item, item_embeddings, k):
     # NOTE: Potential bottleneck due to searching large space and post-filtering.
     # Pre-filtering requires creating a faiss index for each user which seems less efficient.
-    user_vector = generate_user_vector(user_id, users_preference, item_embeddings, itme)
+    user_vector = generate_user_vector(user_id, users_preference, item_embeddings, item)
 
     interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].values
 
-    k = k + len(interacted_bands)
+    k2 = min(k + len(interacted_bands), k *2)
 
-    distances, indices = index.search(user_vector.reshape(1, -1).astype('float32'), k)
-    candidate_bands = itme.iloc[indices[0]]['band_id'].values
+    distances, indices = index.search(user_vector.reshape(1, -1).astype('float32'), k2)
+    candidate_bands = item.iloc[indices[0]]['band_id'].values
 
-    filtered_candidates = [band for band in candidate_bands if band not in interacted_bands]
-
-    return filtered_candidates
+    remaining_candidates = list(candidate_bands)
+    # Remove interacted bands until the list would drop below 1,000 (This can occur when k2 = k*2)
+    for band in candidate_bands:
+        if band in interacted_bands:
+            if len(remaining_candidates) > 1000:
+                remaining_candidates.remove(band)
+            else:
+                break
+                
+    return remaining_candidates[:k]
 
 def generate_candidates_for_all_users(users_preference, index, item, item_embeddings, k=1000):
     candidate_list = []
@@ -169,14 +190,14 @@ def generate_candidates_for_all_users(users_preference, index, item, item_embedd
     return candidate_df
 
 def main():
-    app = create_app()
-    with app.app_context():
-        create_item().to_csv('item.csv', index=False)
-        item = pd.read_csv('item.csv')
-        users_preference = create_user()
-        index, item_embeddings = create_item_embeddings_with_faiss(item)
-        candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
-        candidate_frame.to_csv(env.candidates, index=False)
+    #create_item().to_csv('item.csv', index=False)
+    item = pd.read_csv('item.csv')
+    users_preference = create_user()
+    index, item_embeddings = create_item_embeddings_with_faiss(item)
+    candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
+    candidate_frame.to_csv(env.candidates, index=False)
 
 if __name__ == '__main__':
-    main()
+    app = create_app()
+    with app.app_context():
+        main()
