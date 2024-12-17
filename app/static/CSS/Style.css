@@ -192,6 +192,7 @@ header.navbar .form-inline button {
     width: 250px;
     transition: transform 0.2s ease;
     scroll-snap-align: start;
+    text-decoration: none;
 }
 
 .band-card:hover {
