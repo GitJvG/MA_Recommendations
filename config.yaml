@@ -46,7 +46,7 @@ word_processing:
         "metal", 
         "from", 
         "elements", 
-        "music"],
+        "music"]
   BINARY_EXCEPTION: [
         "film score",
         "new age",
@@ -62,7 +62,7 @@ word_processing:
         "wave",
         "word",
         "cappella",
-        "hop"],
+        "hop"]
   TERNARY_EXCEPTION: [
         "black 'n' roll",
         "rock 'n' roll",
