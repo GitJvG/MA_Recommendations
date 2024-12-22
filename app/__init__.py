@@ -5,7 +5,8 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from Env import load_config
 from sqlalchemy import inspect
-from ..archive.API import YouTubeClient
+from .API import YouTubeClient
+
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
