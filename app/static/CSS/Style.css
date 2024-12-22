@@ -389,3 +389,47 @@ header.navbar .form-inline button {
 .active {
     opacity: 0.5 !important;
 }
+
+.album-thumbnail {
+    flex: 0 0 auto;
+    width: 250px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.album-card {
+    position: relative;
+    width: 250px;
+    margin: 15px;
+    padding: 0; 
+    margin: 0;
+}
+
+.overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    color: white;
+    background: rgba(0, 0, 0, 0.3);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+}
+
+.band-name, .genre {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.overlay:hover .band-name,
+.overlay:hover .genre {
+    color: white;
+    transform: scale(1.05);
+    transition: transform 0.2s ease, color 0.2s ease;
+}

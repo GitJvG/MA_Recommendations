@@ -4,7 +4,9 @@ from sqlalchemy import func, desc, and_
 from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db  # Import your User model and db instance
 from app.utils import render_with_base, Like_bands, liked_bands
 import random
+import asyncio
 from datetime import datetime
+from app.extension import YTDLP
 
 main = Blueprint('main', __name__)
 
@@ -150,6 +152,86 @@ def fetch_remind():
 
         fetch_remind._cache["date"] = today
         fetch_remind._cache["data"] = result
+
+        return jsonify(result)
+    else:
+        return jsonify([])
+    
+@main.route('/ajax/recommended_albums')
+async def fetch_albums():
+    if current_user.is_authenticated:
+        if not hasattr(fetch_albums, "_cache"):
+            fetch_albums._cache = {"date": None, "data": None}
+
+        today = datetime.today().date()
+        random.seed(today.year * 10000 + today.month * 100 + today.day + 1)
+
+        if fetch_albums._cache["date"] == today and fetch_albums._cache["data"]:
+            result = fetch_albums._cache["data"]
+            for vband in result:
+                vband["liked"] = vband["band_id"] in liked(current_user)
+            return jsonify(result)
+
+        bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
+            .join(band, band.band_id == candidates.band_id).all()
+
+        selected_bands = random.sample(bands, 10)
+        selected_band_ids = [vband[0] for vband in selected_bands]
+
+        max_scores_subquery = db.session.query(
+            discography.band_id,
+            func.max(discography.review_score * discography.review_count).label('max_album_score')
+        ) \
+            .filter(discography.band_id.in_(selected_band_ids)) \
+            .filter(discography.review_score > 0) \
+            .group_by(discography.band_id) \
+            .subquery()
+
+        top_albums = db.session.query(
+            discography.band_id,
+            discography.name,
+            discography.type,
+            band.name.label('band_name'),
+            band.genre
+        ) \
+            .join(band, band.band_id == discography.band_id) \
+            .join(max_scores_subquery, max_scores_subquery.c.band_id == discography.band_id) \
+            .filter(discography.review_score * discography.review_count == max_scores_subquery.c.max_album_score) \
+            .all()
+
+        async def fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result):
+            if album_name:
+                video_query = f"{band_name} {album_name} {'Full Album' if album_type == 'Full-length' else album_type}"
+                print(video_query)
+
+                video_response = await asyncio.to_thread(YTDLP.get_video, video_query)
+
+                if 'video_url' in video_response.json:
+                    result.append({
+                        "band_id": band_id,
+                        "name": band_name,
+                        "album_name": album_name,
+                        "album_type": album_type,
+                        "genre": band_genre,
+                        "liked": band_id in liked(current_user),
+                        "video_url": video_response.json['video_url']
+                    })
+
+        async def fetch_top_albums_with_videos(top_albums):
+            result = []
+            tasks = []
+
+            for band_id, album_name, album_type, band_name, band_genre in top_albums:
+                task = fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result)
+                tasks.append(task)
+
+            await asyncio.gather(*tasks)
+            return result
+
+        result = await fetch_top_albums_with_videos(top_albums)
+
+        fetch_albums._cache["date"] = today
+        fetch_albums._cache["data"] = result
 
         return jsonify(result)
     else:

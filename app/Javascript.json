@@ -19,7 +19,8 @@
         "/static/Javascript/search_results.js"
     ],
     "index.html": [
-        "/static/Javascript/index.js"
+        "/static/Javascript/index.js",
+        "/static/Javascript/thumbnail.js"
     ],
     "import.html": [
         "/static/Javascript/import.js"
