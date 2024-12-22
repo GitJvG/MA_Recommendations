@@ -34,6 +34,10 @@ scraper:
   RETRIES: 10
   DELAY: 0.3
 
+website:
+#Backend for importing playlist data and embedding videos. Options: "YTDLP" and "YTAPI"
+  YOUTUBE_BACKEND: "YTDLP"
+
 word_processing:
   UNWANTED_GENRE_WORDS: [
         "influences", 

@@ -3,14 +3,15 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
-from Env import load_config
+from Env import load_config, Env
 from sqlalchemy import inspect
 from .API import YouTubeClient
 
+backend = Env.get_instance().ytbackend
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-youtube_client = YouTubeClient()
+youtube_client = YouTubeClient() if backend == 'YTAPI' else False
 run_once_lock = threading.Lock()
 
 def create_app(test_config=None):
@@ -21,13 +22,15 @@ def create_app(test_config=None):
     app.config['SQLALCHEMY_DATABASE_URI'] = load_config('SQL_Url')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['YT_API_KEY'] = load_config('yt_api_key')
+    if youtube_client: 
+        youtube_client.init_app(app.config['YT_API_KEY'])
 
     # Initialize extensions with the app instance
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'  # Updated to use the auth blueprint
-    
+
     # Ensure the database is created only once
     @app.before_request
     def create_database():

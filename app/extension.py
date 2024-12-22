@@ -5,16 +5,14 @@ from app.utils import render_with_base, Like_bands, liked_bands
 import re
 import unicodedata
 from sqlalchemy import and_, func
-from app import db, youtube_client
+from app import db, youtube_client, backend
 from collections import defaultdict
 import requests
 from yt_dlp import YoutubeDL
 from bs4 import BeautifulSoup
 
-
 extension = Blueprint('extension', __name__)
 
-youtube = youtube_client.get_client()
 def normalize_text(text):
     # Replace different types of dashes with a standard hyphen
     text = text.replace('–', '-')  # en dash
@@ -40,33 +38,99 @@ def extract_keywords(title):
 
     return keywords if len(keywords) > 1 else None
 
-def get_playlist_videos(playlist_url):
-    playlist_id = playlist_url.split('list=')[-1]
-    video_details = []
-    next_page_token = None
+class YTAPI:
+    def __init__(self):
+        self.youtube = youtube_client.get_client()
+        
+    def get_playlist_videos(self, playlist_url):
+        playlist_id = playlist_url.split('list=')[-1]
+        video_details = []
+        next_page_token = None
 
-    while True:
-        playlist_items_request = youtube.playlistItems().list(
-            part='snippet',
-            playlistId=playlist_id,
-            maxResults=200,
-            pageToken=next_page_token
-        )
-        playlist_items_response = playlist_items_request.execute()
+        while True:
+            playlist_items_request = self.youtube.playlistItems().list(
+                part='snippet',
+                playlistId=playlist_id,
+                maxResults=200,
+                pageToken=next_page_token
+            )
+            playlist_items_response = playlist_items_request.execute()
 
-        for item in playlist_items_response['items']:
-            video_title = item['snippet']['title']
+            for item in playlist_items_response['items']:
+                video_title = item['snippet']['title']
 
-            video_details.append(video_title)
+                video_details.append(video_title)
 
-        next_page_token = playlist_items_response.get('nextPageToken')
-        if not next_page_token:
-            break
+            next_page_token = playlist_items_response.get('nextPageToken')
+            if not next_page_token:
+                break
 
-    return video_details
+        return video_details
+    
+    def get_video(self, search_query):
+        try:
+            search_response = self.youtube.search().list(
+                part="snippet",
+                q=search_query,
+                type="video",
+                order="relevance",
+            ).execute()
 
-def main(playlist_url, current_user_id):
-    videos = get_playlist_videos(playlist_url)
+            if 'items' in search_response and len(search_response['items']) > 0:
+                video_id = search_response['items'][0]['id']['videoId']
+                return jsonify({
+                    'video_url': f'https://www.youtube.com/embed/{video_id}'
+                })
+            else:
+                return jsonify({'error': 'No video found'}), 404
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        
+class YTDLP:
+    @staticmethod
+    def get_playlist_videos(playlist_url):
+        YDL_OPTIONS = {
+            'quiet': True,  # Suppress output for cleaner results
+            'extract_flat': True,  # Extract metadata without downloading videos
+        }
+
+        video_details = []
+
+        with YoutubeDL(YDL_OPTIONS) as ydl:
+            info_dict = ydl.extract_info(playlist_url, download=False)
+            if 'entries' in info_dict:
+                for entry in info_dict['entries']:
+                    video_details.append(entry['title'])
+
+        return video_details
+    
+    @staticmethod
+    def get_video(query):
+        YDL_OPTIONS = {
+            'noplaylist': True,
+            'quiet': True,
+            'extract_flat': True
+        }
+
+        with YoutubeDL(YDL_OPTIONS) as ydl:
+            search_result = ydl.extract_info(f"ytsearch:{query}", download=False)
+
+            if 'entries' in search_result and search_result['entries']:
+                video = search_result['entries'][0]
+                return jsonify({
+                    'video_url': f'https://www.youtube.com/embed/{video['id']}'
+                }) 
+            else:
+                return jsonify({'error': 'No video found'}), 404
+            
+backends = {
+    'YTDLP': YTDLP,
+    'YTAPI': YTAPI
+}
+backend = backends.get(backend)
+
+def import_playlist(playlist_url, current_user_id):
+    videos = backend.get_playlist_videos(playlist_url)
     cleaned_videos = [(video, extract_keywords(video)) for video in videos]
 
     band_matches = defaultdict(lambda: {"video_titles": [], "band_name": None})
@@ -141,7 +205,7 @@ def youtube_import():
     if request.method == "POST":
         playlist_url = request.form.get("playlist_url")
         if playlist_url:
-            results = main(playlist_url, current_user.id)
+            results = import_playlist(playlist_url, current_user.id)
 
         return jsonify({
             'success': True,
@@ -170,47 +234,8 @@ def get_video_id_without_api(search_query):
         })
     else:
         return jsonify({'error': 'No video found'}), 404
-
-def get_video_id_with_api(search_query):
-    try:
-        search_response = youtube.search().list(
-            part="snippet",
-            q=search_query,
-            type="video",
-            order="relevance",
-        ).execute()
-
-        if 'items' in search_response and len(search_response['items']) > 0:
-            video_id = search_response['items'][0]['id']['videoId']
-            return jsonify({
-                'video_url': f'https://www.youtube.com/embed/{video_id}'
-            })
-        else:
-            return jsonify({'error': 'No video found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-
-def get_video_with_ytdlp(query):
-    YDL_OPTIONS = {
-        'noplaylist': True,
-        'quiet': True,
-        'extract_flat': True
-    }
-
-    with YoutubeDL(YDL_OPTIONS) as ydl:
-        search_result = ydl.extract_info(f"ytsearch:{query}", download=False)
-
-        # Extract the first result's URL
-        if 'entries' in search_result and search_result['entries']:
-            video = search_result['entries'][0]
-            return jsonify({
-                'video_url': f'https://www.youtube.com/embed/{video['id']}'
-            }) 
-        else:
-            return jsonify({'error': 'No video found'}), 404
     
 @extension.route('/ajax/youtube_search', methods=['GET'])
 def youtube_search():
     search_query = request.args.get('q')
-    return get_video_with_ytdlp(search_query)
+    return backend.get_video(search_query)
