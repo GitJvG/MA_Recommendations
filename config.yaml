@@ -35,8 +35,16 @@ scraper:
   DELAY: 0.3
 
 website:
-#Backend for importing playlist data and embedding videos. Options: "YTDLP" and "YTAPI"
-  YOUTUBE_BACKEND: "YTDLP"
+# Backend for importing playlist data and embedding videos. Options: "YTDLP", "YTAPI" and "SCRAPE". 
+  # YTAPI: requires own API key, free key has limited free recourses per day
+
+  # YTDLP: No setup required and unlimited usage, same search results as YTAPI.
+
+  # SCRAPE: Best search results as it includes playlists and embeds them as a video list that automatically plays all videos. 
+    # Playlist importing uses YTDLP method.
+    # Cons: Will break when/if youtube makes significant changes.
+
+  YOUTUBE_BACKEND: "SCRAPE"
 
 word_processing:
   UNWANTED_GENRE_WORDS: [
