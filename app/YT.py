@@ -47,6 +47,7 @@ class YTAPI:
             if 'items' in search_response and len(search_response['items']) > 0:
                 video_id = search_response['items'][0]['id']['videoId']
                 return jsonify({
+                    'playlist_url': None,
                     'video_url': f'https://www.youtube.com/embed/{video_id}'
                 })
             else:
@@ -86,6 +87,7 @@ class YTDLP:
             if 'entries' in search_result and search_result['entries']:
                 video = search_result['entries'][0]
                 return jsonify({
+                    'playlist_url': None,
                     'video_url': f'https://www.youtube.com/embed/{video['id']}'
                 }) 
             else:
