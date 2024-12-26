@@ -6,7 +6,8 @@ from app.utils import render_with_base, Like_bands, liked_bands
 import random
 import asyncio
 from datetime import datetime
-from app.extension import YTDLP
+from app.YT import YT
+from math import ceil
 
 main = Blueprint('main', __name__)
 
@@ -164,7 +165,7 @@ async def fetch_albums():
             fetch_albums._cache = {"date": None, "data": None}
 
         today = datetime.today().date()
-        random.seed(today.year * 10000 + today.month * 100 + today.day + 1)
+        random.seed(today.year * 10000 + today.month * 100 + today.day + 2)
 
         if fetch_albums._cache["date"] == today and fetch_albums._cache["data"]:
             result = fetch_albums._cache["data"]
@@ -204,7 +205,7 @@ async def fetch_albums():
                 video_query = f"{band_name} {album_name} {'Full Album' if album_type == 'Full-length' else album_type}"
                 print(video_query)
 
-                video_response = await asyncio.to_thread(YTDLP.get_video, video_query)
+                video_response = await asyncio.to_thread(YT.get_video, video_query)
 
                 if 'video_url' in video_response.json:
                     result.append({
@@ -214,7 +215,8 @@ async def fetch_albums():
                         "album_type": album_type,
                         "genre": band_genre,
                         "liked": band_id in liked(current_user),
-                        "video_url": video_response.json['video_url']
+                        "video_url": video_response.json['video_url'],
+                        "playlist_url": video_response.json['playlist_url'] if video_response.json['playlist_url'] else False
                     })
 
         async def fetch_top_albums_with_videos(top_albums):
@@ -337,23 +339,44 @@ def search():
             'redirect_url': url_for('main.search', query=query),
         })
     
-    query = request.args.get('query', '').strip().lower()
+    query = request.args.get('query', '')
     return render_with_base('search.html', query=query)
 
 @main.route('/search_results')
 def query():
     query = request.args.get('query', '').strip().lower()
+    page = request.args.get('page', 1, type=int)
+    per_page = 100
+
     exact_matches = (
         db.session.query(band.band_id, band.name, band.genre, band.country)
         .filter(func.unaccent(func.lower(band.name)) == query.lower())
-        .all()
     )
-    partial_matches = db.session.query(band.band_id, band.name, band.genre, band.country).filter(band.name.ilike(f'%{query}%')).all()
 
-    matches = exact_matches + [match for match in partial_matches if match not in exact_matches]
+    partial_matches = (
+        db.session.query(band.band_id, band.name, band.genre, band.country)
+        .filter(band.name.ilike(f'% {query} %'))
+    )
 
-    return jsonify(results = [{'name': band.name, 'band_id': band.band_id, 'genre': band.genre, 'country': band.country} for band in matches])
+    exact_matches_page = exact_matches.paginate(page=page, per_page=per_page, error_out=False)
+    partial_matches_page = partial_matches.paginate(page=page, per_page=per_page, error_out=False)
 
+
+    matches = exact_matches_page.items + [match for match in partial_matches_page.items if match not in exact_matches_page.items]
+
+    total_matches = exact_matches.count() + partial_matches.count()
+    total_pages = ceil(total_matches / per_page)
+
+    return jsonify(
+        results=[{
+            'name': band.name,
+            'band_id': band.band_id,
+            'genre': band.genre,
+            'country': band.country
+        } for band in matches],
+        total_pages=total_pages,
+        current_page=page
+    )
 
 @main.route('/band/<int:band_id>')
 def band_detail(band_id):

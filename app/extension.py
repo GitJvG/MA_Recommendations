@@ -5,11 +5,9 @@ from app.utils import render_with_base, Like_bands, liked_bands
 import re
 import unicodedata
 from sqlalchemy import and_, func
-from app import db, youtube_client, backend
+from app import db
 from collections import defaultdict
-import requests
-from yt_dlp import YoutubeDL
-from bs4 import BeautifulSoup
+from app.YT import YT
 
 extension = Blueprint('extension', __name__)
 
@@ -38,99 +36,8 @@ def extract_keywords(title):
 
     return keywords if len(keywords) > 1 else None
 
-class YTAPI:
-    def __init__(self):
-        self.youtube = youtube_client.get_client()
-        
-    def get_playlist_videos(self, playlist_url):
-        playlist_id = playlist_url.split('list=')[-1]
-        video_details = []
-        next_page_token = None
-
-        while True:
-            playlist_items_request = self.youtube.playlistItems().list(
-                part='snippet',
-                playlistId=playlist_id,
-                maxResults=200,
-                pageToken=next_page_token
-            )
-            playlist_items_response = playlist_items_request.execute()
-
-            for item in playlist_items_response['items']:
-                video_title = item['snippet']['title']
-
-                video_details.append(video_title)
-
-            next_page_token = playlist_items_response.get('nextPageToken')
-            if not next_page_token:
-                break
-
-        return video_details
-    
-    def get_video(self, search_query):
-        try:
-            search_response = self.youtube.search().list(
-                part="snippet",
-                q=search_query,
-                type="video",
-                order="relevance",
-            ).execute()
-
-            if 'items' in search_response and len(search_response['items']) > 0:
-                video_id = search_response['items'][0]['id']['videoId']
-                return jsonify({
-                    'video_url': f'https://www.youtube.com/embed/{video_id}'
-                })
-            else:
-                return jsonify({'error': 'No video found'}), 404
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-        
-class YTDLP:
-    @staticmethod
-    def get_playlist_videos(playlist_url):
-        YDL_OPTIONS = {
-            'quiet': True,  # Suppress output for cleaner results
-            'extract_flat': True,  # Extract metadata without downloading videos
-        }
-
-        video_details = []
-
-        with YoutubeDL(YDL_OPTIONS) as ydl:
-            info_dict = ydl.extract_info(playlist_url, download=False)
-            if 'entries' in info_dict:
-                for entry in info_dict['entries']:
-                    video_details.append(entry['title'])
-
-        return video_details
-    
-    @staticmethod
-    def get_video(query):
-        YDL_OPTIONS = {
-            'noplaylist': True,
-            'quiet': True,
-            'extract_flat': True
-        }
-
-        with YoutubeDL(YDL_OPTIONS) as ydl:
-            search_result = ydl.extract_info(f"ytsearch:{query}", download=False)
-
-            if 'entries' in search_result and search_result['entries']:
-                video = search_result['entries'][0]
-                return jsonify({
-                    'video_url': f'https://www.youtube.com/embed/{video['id']}'
-                }) 
-            else:
-                return jsonify({'error': 'No video found'}), 404
-            
-backends = {
-    'YTDLP': YTDLP,
-    'YTAPI': YTAPI
-}
-backend = backends.get(backend)
-
 def import_playlist(playlist_url, current_user_id):
-    videos = backend.get_playlist_videos(playlist_url)
+    videos = YT.get_playlist_videos(playlist_url)
     cleaned_videos = [(video, extract_keywords(video)) for video in videos]
 
     band_matches = defaultdict(lambda: {"video_titles": [], "band_name": None})
@@ -214,28 +121,8 @@ def youtube_import():
         })
 
     return render_with_base('import.html')
-
-def get_video_id_without_api(search_query):
-    """Manually scraped results seem better than those through api, even after tweaking parameters, it has similar performance."""
-    query = '+'.join(search_query.split())
-    print(query)
-    url = f'https://www.youtube.com/results?search_query={query}'
-    response = requests.get(url)
-    if response.status_code != 200:
-        return None
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    video_id_match = re.search(r"\"videoId\":\"([^\"]+)\"", str(soup))
-
-    if video_id_match:
-        video_id = video_id_match.group(1)
-        return jsonify({
-            'video_url': f'https://www.youtube.com/embed/{video_id}'
-        })
-    else:
-        return jsonify({'error': 'No video found'}), 404
     
 @extension.route('/ajax/youtube_search', methods=['GET'])
 def youtube_search():
     search_query = request.args.get('q')
-    return backend.get_video(search_query)
+    return YT.get_video(search_query)
