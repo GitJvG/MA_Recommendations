@@ -7,7 +7,9 @@ function displayRecommendedAlbums(albums) {
         albumCard.className = "album-card";
     
         const albumLink = document.createElement("a");
-        albumLink.href = album.video_url;
+        if (album.playlist_url) {
+            albumLink.href = album.playlist_url;
+        } else {albumLink.href = album.video_url;}
     
         const albumImage = document.createElement("img");
         if (album.video_url) {
