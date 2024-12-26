@@ -9,10 +9,10 @@ function fetchVideo(bandName, albumName, AlbumType) {
       if (data && data.video_url) {
         let videoEmbedUrl;
 
-        if (album.playlist_url) {
-            videoEmbedUrl = album.playlist_url;}
+        if (data.playlist_url) {
+            videoEmbedUrl = data.playlist_url;}
         else {
-            videoEmbedUrl = album.video_url;}
+            videoEmbedUrl = data.video_url;}
 
         createFloatingWindow(videoEmbedUrl)
       } else {

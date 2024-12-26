@@ -5,11 +5,18 @@ function displayRecommendedAlbums(albums) {
     albums.forEach(album => {
         const albumCard = document.createElement("div");
         albumCard.className = "album-card";
+
+        let videoEmbedUrl;
+        if (album.playlist_url) {
+            videoEmbedUrl = album.playlist_url;}
+        else {
+            videoEmbedUrl = album.video_url;}
     
         const albumLink = document.createElement("a");
-        if (album.playlist_url) {
-            albumLink.href = album.playlist_url;
-        } else {albumLink.href = album.video_url;}
+        albumLink.href = videoEmbedUrl;
+
+
+
     
         const albumImage = document.createElement("img");
         if (album.video_url) {
@@ -22,8 +29,8 @@ function displayRecommendedAlbums(albums) {
     
         albumImage.addEventListener('click', function (event) {
             event.preventDefault();
-            if (album.video_url) {
-                createFloatingWindow(album.video_url);
+            if (videoEmbedUrl) {
+                createFloatingWindow(videoEmbedUrl);
             }
         });
     
