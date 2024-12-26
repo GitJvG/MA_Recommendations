@@ -7,7 +7,13 @@ function fetchVideo(bandName, albumName, AlbumType) {
     .then(response => response.json())
     .then(data => {
       if (data && data.video_url) {
-        const videoEmbedUrl = data.video_url;
+        let videoEmbedUrl;
+
+        if (album.playlist_url) {
+            videoEmbedUrl = album.playlist_url;}
+        else {
+            videoEmbedUrl = album.video_url;}
+
         createFloatingWindow(videoEmbedUrl)
       } else {
         alert('No video found for this album and band.');
