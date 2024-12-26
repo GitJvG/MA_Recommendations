@@ -1,6 +1,6 @@
 from flask import Blueprint, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from sqlalchemy import func, desc, and_
+from sqlalchemy import func, desc, and_, or_
 from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db  # Import your User model and db instance
 from app.utils import render_with_base, Like_bands, liked_bands
 import random
@@ -64,6 +64,7 @@ def featured():
         result = featured._cache["data"]
         for vband in result:
             vband["liked"] = vband["band_id"] in liked(current_user)
+        random.shuffle(result)
         return jsonify(result)
 
     bands_2024 = db.session.query(band.band_id).join(discography).filter(discography.year == 2024).all()
@@ -76,7 +77,7 @@ def featured():
         .group_by(band.band_id).order_by(func.sum(similar_band.score).desc()).all()
     
     top_bands = bands_with_scores[:min(len(bands_with_scores), 200)]
-    selected_bands = random.sample(top_bands, min(5, len(top_bands)))
+    selected_bands = random.sample(top_bands, min(20, len(top_bands)))
 
     result = []
     for vband in selected_bands:
@@ -103,12 +104,13 @@ def recommended():
             result = recommended._cache["data"]
             for vband in result:
                 vband["liked"] = vband["band_id"] in liked(current_user)
+            random.shuffle(result)
             return jsonify(result)
 
         bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
         .join(band, band.band_id == candidates.band_id).all()
 
-        selected_bands = random.sample(bands, 50)
+        selected_bands = random.sample(bands, 100)
 
         result = []
         for vband in selected_bands:
@@ -137,6 +139,7 @@ def fetch_remind():
             result = fetch_remind._cache["data"]
             for vband in result:
                 vband["liked"] = vband["band_id"] in liked(current_user)
+            random.shuffle(result)
             return jsonify(result)
 
         bands = db.session.query(users.band_id).filter(and_(users.user_id == current_user.id, users.remind_me == True)) \
@@ -165,12 +168,13 @@ async def fetch_albums():
             fetch_albums._cache = {"date": None, "data": None}
 
         today = datetime.today().date()
-        random.seed(today.year * 10000 + today.month * 100 + today.day + 2)
+        random.seed(today.year * 10000 + today.month * 100 + today.day)
 
         if fetch_albums._cache["date"] == today and fetch_albums._cache["data"]:
             result = fetch_albums._cache["data"]
             for vband in result:
                 vband["liked"] = vband["band_id"] in liked(current_user)
+                random.shuffle(result)
             return jsonify(result)
 
         bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
@@ -320,19 +324,20 @@ def search():
     if request.method == 'POST':
         query = request.form.get('q', '').strip()
 
+        # Either a full match or the first word
         matches = (
             db.session.query(band.band_id, band.name)
-            .filter(func.unaccent(func.lower(band.name)).ilike(f"{query.lower()}%"))
+            .filter(or_(func.unaccent(func.lower(band.name)).ilike(f"{query.lower()} %"), func.unaccent(func.lower(band.name)).ilike(f"{query.lower()}")))
             .all()
         )
-        
+    	# Directly redirecting to band page when only one result
         if len(matches) == 1:
             match = matches[0]
             return jsonify({
                 'success': True,
                 'redirect_url': url_for('main.band_detail', band_id=match.band_id)
             })
-
+        # If more than 1 result, redirect to a more lenient searching system and display results on a page.
         return jsonify({
             'success': True,
             'redirect_url': url_for('main.search', query=query),
@@ -383,7 +388,7 @@ def band_detail(band_id):
     name = db.session.get(band, band_id).name
     feedback = db.session.query(users.liked, users.remind_me).filter(and_(users.user_id == current_user.id, users.band_id == band_id)).first()
     vdiscography = discography.query.filter_by(band_id=band_id).all()
-    vdiscography.reverse()
+
     types = {album.type for album in vdiscography}
 
     albums = [
@@ -432,23 +437,14 @@ async def fetch_head(url):
 async def get_band_logo(band_id):
     band_id_str = str(band_id)
     digits = "/".join(band_id_str[:4])
-    jpg_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.jpg"
-    png_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.png"
-    gif_url = f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.gif"
-
-    jpg_response, png_response, gif_response = await asyncio.gather(
-        fetch_head(jpg_url),
-        fetch_head(png_url),
-        fetch_head(gif_url)
-    )
-
-    if jpg_response[0] == 200:
-        return jsonify(jpg_response[1])
-
-    if png_response[0] == 200:
-        return jsonify(png_response[1])
+    file_extensions = ['jpg', 'png', 'gif']
     
-    if gif_response[0] == 200:
-        return jsonify(gif_response[1])
+    urls = [f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.{ext}" for ext in file_extensions]
+
+    responses = await asyncio.gather(*[fetch_head(url) for url in urls])
+
+    for response, ext in zip(responses, file_extensions):
+        if response[0] == 200:
+            return jsonify(response[1])
     
     return jsonify('')
