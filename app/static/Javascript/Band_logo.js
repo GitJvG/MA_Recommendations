@@ -21,7 +21,7 @@ function ajax_logo() {
                 logoImg.alt = 'Error loading logo';
             });
     }
-    else console.log('Fail')
+    else console.log('Fatal error')
 };
 
 ajax_logo()

@@ -10,10 +10,11 @@
         "/static/Javascript/like_button.js",
         "/static/Javascript/embed.js",
         "/static/Javascript/Band_logo.js"
-
     ],
     "my_bands.html": [
-        "/static/Javascript/my_bands.js"
+        "/static/Javascript/my_bands.js",
+        "/static/Javascript/like_button.js"
+
     ],
     "search.html": [
         "/static/Javascript/search_results.js"

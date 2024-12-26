@@ -102,7 +102,7 @@ class SCRAPE:
     def get_video(search_query):
         """Scrape YouTube search results to extract video and playlist info."""
         query = '+'.join(search_query.split())
-        print(query)
+        
         url = f'https://www.youtube.com/results?search_query={query}'
 
         response = requests.get(url)

@@ -51,14 +51,6 @@ fetch('/feedback/ajax')
             bandList.appendChild(item);
         });
 
-        const likeButtons = document.querySelectorAll('.like-btn');
-        likeButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const bandId = this.getAttribute('data-band-id');
-                const action = this.getAttribute('data-action');
-                console.log(`Band ID: ${bandId}, Action: ${action}`);
-            });
-        });
     })
     .catch(error => {
         console.error("Error loading band data:", error);

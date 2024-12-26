@@ -71,12 +71,12 @@ window.create_like_dislike = function create_like_dislike(band) {
         <div>
             <button class="btn btn-success btn-sm like-btn ${band.liked ? 'disabled' : ''}" 
                     data-band-id="${band.band_id}" 
-                    data-action="like" ${band.liked ? 'disabled' : ''}>
+                    data-action="like">
                 Like
             </button>
             <button class="btn btn-danger btn-sm like-btn ${!band.liked ? 'disabled' : ''}" 
                     data-band-id="${band.band_id}" 
-                    data-action="dislike" ${!band.liked ? 'disabled' : ''}>
+                    data-action="dislike">
                 Dislike
             </button>
         </div>
