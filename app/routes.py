@@ -203,10 +203,9 @@ async def fetch_albums():
         async def fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result):
             if album_name:
                 video_query = f"{band_name} {album_name} {'Full Album' if album_type == 'Full-length' else album_type}"
-                print(video_query)
 
                 video_response = await asyncio.to_thread(YT.get_video, video_query)
-
+                print(video_response.json)
                 if 'video_url' in video_response.json:
                     result.append({
                         "band_id": band_id,

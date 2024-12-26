@@ -124,19 +124,15 @@ class SCRAPE:
 
             if video_id:
                 video_id = video_id.group(1)
-                if playlist_id:
-                    playlist_id = playlist_id.group(1)
-                    return jsonify({
-                        'playlist_url': f'https://www.youtube.com/embed/videoseries?list={playlist_id}',
-                        'video_url': f'https://www.youtube.com/embed/{video_id}'
-                    })
-                else:
-                    print(video_id)
-                    return jsonify({
-                        'playlist_url': None,
-                        'video_url': f'https://www.youtube.com/embed/{video_id}'
-                    })
-
-        return jsonify({'error': 'No video or playlist found'}), 404
+                playlist_id = playlist_id.group(1) if playlist_id else None
+                return jsonify({
+                    'playlist_url': f'https://www.youtube.com/embed/videoseries?list={playlist_id}' if playlist_id else None,
+                    'video_url': f'https://www.youtube.com/embed/{video_id}'
+                })
+            
+        return jsonify({
+                    'playlist_url': None,
+                    'video_url': None
+                })
             
 YT: Optional[Type[Union[YTDLP, YTAPI, SCRAPE]]] = globals()[backend]
