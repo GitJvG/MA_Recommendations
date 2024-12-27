@@ -83,6 +83,12 @@ def Update_list(output_path):
     if last_scraped_date is None:
         print("Failed to retrieve the last scraped date.")
         return
+    
+    metadata_df = pd.read_csv(env.meta)
+    if 'time' in metadata_df.columns and len(metadata_df) > 1:
+        last_scraped_time = metadata_df['time'].iloc[1]
+    else:
+        last_scraped_time = None
 
     urls_to_scrape = determine_urls_to_scrape(last_scraped_date, env.url_modi)
     
@@ -90,7 +96,7 @@ def Update_list(output_path):
     for i, url in enumerate(urls_to_scrape):
         is_final_month = (i == len(urls_to_scrape) - 1)
         last_scraped_day = last_scraped_date.day if is_final_month else None
-        last_scraped_time = pd.read_csv(env.meta)['time'].iloc[1]
+        last_scraped_time = last_scraped_time
         
         print(f"Fetching bands for URL: {url}")
         bands_ids = Modified_Set(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month, last_scraped_time=last_scraped_time)
