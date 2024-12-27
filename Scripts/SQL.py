@@ -25,11 +25,11 @@ dataframes = {
     candidates.__name__: lambda: pd.read_csv(env.candidates, header=0)
 }
 
-def refresh_tables():
+def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     app = create_app()
     with app.app_context():
-        models = [band, theme, prefix, genre, hgenre, discography, similar_band, details, member, genres, themes, candidates]
+        models = [model] or [band, theme, prefix, genre, hgenre, discography, similar_band, details, member, genres, themes, candidates]
 
 
         for model in models:
