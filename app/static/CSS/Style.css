@@ -166,6 +166,8 @@ header.navbar .form-inline button {
 .container {
     padding: 0;
     margin-left: 0;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .scrollable-container {
@@ -346,12 +348,6 @@ header.navbar .form-inline button {
     height: 15px;
     background-color: #888;
     cursor: se-resize;
-}
-
-.container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
 }
 
 .header {
