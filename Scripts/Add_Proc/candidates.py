@@ -1,18 +1,18 @@
 import sys
 import os
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
 
 from app import create_app, db
-from app.models import band as Band, genres as Genres, genre as Genre, themes as Themes, discography as Discog, \
+from app.models import band as Band, genres as Genres, genre as Genre, hgenre as Hgenre, themes as Themes, discography as Discog, \
                         theme as Theme, details as Details, user as User, users as Users, similar_band as Similar
 import pandas as pd
 import faiss
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from datetime import datetime
-from sqlalchemy import func, and_, case
+from sqlalchemy import func, and_
 from Env import Env
 env = Env.get_instance()
 
@@ -52,36 +52,17 @@ def create_item():
         Details.country,
         Details.status,
         score_subquery.c.score,
-        func.string_agg(
-            func.distinct(
-                case(
-                    (Genre.hybrid == False, Genre.name)
-                , else_=None)
-            ), ', '
-        ).label('genre_names'),
-        func.string_agg(
-            func.distinct(
-                case(
-                    (Genre.hybrid == True, Genre.name)
-                , else_=None)
-            ), ', '
-        ).label('hybrid_genres'),
+        func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
+        func.string_agg(func.distinct(Hgenre.name), ', ').label('hybrid_genres'),
         func.string_agg(func.distinct(Theme.name), ', ').label('theme_names')
-    ).join(
-        score_subquery, score_subquery.c.band_id == Band.band_id
-    ).join(
-        Details, Band.band_id == Details.band_id
-    ).join(
-        Genres, Band.band_id == Genres.band_id
-    ).join(
-        Genre, Genre.genre_id == Genres.item_id
-    ).filter(Genre.type == 'genre'
-    ).join(
-        Themes, Band.band_id == Themes.band_id
-    ).join(
-        Theme, Themes.theme_id == Theme.theme_id
-    ).group_by(
-        Band.band_id, Band.name, Band.genre, Details.label, Details.country, Details.status, score_subquery.c.score
+    ).join(score_subquery, score_subquery.c.band_id == Band.band_id
+    ).join(Details, Band.band_id == Details.band_id
+    ).join(Genres, Band.band_id == Genres.band_id
+    ).join(Genre, and_(Genre.genre_id == Genres.item_id, Genre.type == Genres.type), isouter=True
+    ).join(Hgenre, and_(Hgenre.hgenre_id == Genres.item_id, Hgenre.type == Genres.type,), isouter=True
+    ).join(Themes, Band.band_id == Themes.band_id
+    ).join(Theme, Themes.theme_id == Theme.theme_id
+    ).group_by(Band.band_id, Band.name, Band.genre, Details.label, Details.country, Details.status, score_subquery.c.score
     ).all()
 
     data = [
@@ -192,13 +173,13 @@ def generate_candidates_for_all_users(users_preference, index, item, item_embedd
     return candidate_df
 
 def main():
-    item = create_item()
-    users_preference = create_user()
-    index, item_embeddings = create_item_embeddings_with_faiss(item)
-    candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
-    candidate_frame.to_csv(env.candidates, index=False)
-
-if __name__ == '__main__':
     app = create_app()
     with app.app_context():
-        main()
+        item = create_item()
+        users_preference = create_user()
+        index, item_embeddings = create_item_embeddings_with_faiss(item)
+        candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, 1000)
+        candidate_frame.to_csv(env.candidates, index=False)
+
+if __name__ == '__main__':
+    main()
