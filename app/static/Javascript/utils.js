@@ -29,7 +29,7 @@ function updatePageContent(url, response, isPopState) {
     }
 
     if (response.title) {
-        const pageTitle = response.title || 'Metallum Recommender';
+        const pageTitle = response.title || 'Amplifier Worship';
         document.title = pageTitle;
     }
 

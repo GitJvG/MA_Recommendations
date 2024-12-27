@@ -8,7 +8,8 @@ from app.models import users
 def render_with_base(content_template, sidebar_html=None, title=None, **variables):
     js_files = JSON(content_template)
     auto_title = Title(content_template)
-    title = f"{title} - Metallum Recommender" if title else auto_title
+    website_name = 'Amplifier Worship'
+    title = f"{title} - {website_name}" if title else auto_title
     # This is triggered when someone accesses a page through ajax (sidebar links all are intercepted and turned into ajax requests)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         html_content = render_template(content_template, **variables, ajax=True)
@@ -16,10 +17,11 @@ def render_with_base(content_template, sidebar_html=None, title=None, **variable
             'html': html_content,
             'js_files': js_files,
             'title': title,
+            'website_name': website_name,
             'sidebar': sidebar_html,
         })
     # Regular requests directly append the required javascript scripts as a parameter which is interpret by jinja.
-    return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title)
+    return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title, website_name=website_name)
 
 def JSON(attribute, path='app/Javascript.json'):
         with open(path, 'r') as file:
@@ -28,7 +30,7 @@ def JSON(attribute, path='app/Javascript.json'):
         return value if value else None
 
 def Title(content_template):
-     return f"{content_template[:-5].replace("_", " ").title()} - Metallum Recommender"
+     return f"{content_template[:-5].replace("_", " ").title()} - Amplifier Worship"
 
 def Like_bands(user_id, band_id, action):
     now = datetime.now().replace(microsecond=0)
