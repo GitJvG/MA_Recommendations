@@ -89,6 +89,9 @@ def update_metadata(file_path=None, time=None):
     except FileNotFoundError:
         metadata_df = pd.DataFrame()
 
+    # Clears the time value for new entries this is intended behavior, This way there's never a false combination. The time will be set for all entries at once at the end.
+    # The time is set for when MA_Bands starts evaluating. All other files have ids that don't exist in that file removed to prevent primary/foreign key conflicts.
+    
     if file_path:
         data_filename = os.path.basename(file_path)
         new_entry = pd.DataFrame([{
@@ -152,6 +155,6 @@ def get_time():
     est = pytz.timezone('US/Eastern')
     utc_now = datetime.now(pytz.utc)
     time = utc_now.astimezone(est)
-    time.strftime("%H:%M")
+    time = time.strftime("%H:%M")
 
     return time
