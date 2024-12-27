@@ -4,7 +4,7 @@ import unicodedata
 from nltk.stem import WordNetLemmatizer
 import re
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(project_root)
 from Env import Env
 env = Env.get_instance()

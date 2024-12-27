@@ -9,7 +9,7 @@ from collections import defaultdict
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
 
-from DataScripts.Helper.CleanThemes import basic_processing
+from Scripts.Add_Proc.Helper.CleanThemes import basic_processing
 from Env import Env
 env = Env.get_instance()
 

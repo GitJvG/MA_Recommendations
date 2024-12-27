@@ -6,7 +6,7 @@ sys.path.append(project_root)
 import pandas as pd
 from Env import Env
 env = Env.get_instance()
-from DataScripts.Helper.CleanThemes import basic_processing
+from Scripts.Add_Proc.Helper.CleanThemes import basic_processing
 import pickle
 
 def save_DIM_themes(anchor_groups):

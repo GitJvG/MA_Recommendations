@@ -1,6 +1,6 @@
 import sys
 import os
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 sys.path.append(project_root)
 import re
 from Env import Env
@@ -206,9 +206,15 @@ def advanced_clean(genres):
 
 if __name__ == "__main__":
     genres = [
-        'Heavy Metal', 
-        'Melodic/Experimental bluegrass/blues with rock, dance and thrash influences']
+        'Heavy/Speed Metal', 
+        'Melodic/Experimental bluegrass/blues with rock, dance and thrash influences',
+        'Atmospheric Death/Doom Metal, Progressive Rock, World music',
+        'Thrash metal']
+    
     for genre in genres: 
         single_primals, primal, prefixes = advanced_clean(genre)
-        print(f"Input: {genre}\nPrimary genre: {single_primals}\nPrefixes: {prefixes}")
-    
+        
+        print(f"Input: {genre}")
+        print(f"Primary genres: {single_primals}")
+        print(f"All detected primal genres: {primal}")
+        print(f"Prefix: {prefixes if prefixes else 'None'}\n")

@@ -4,10 +4,10 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from Add_Proc.ThemeDict import update_pickle as Theme_Anchors
-from Add_Proc.DIM_Theme import main as theme_main
-from Add_Proc.DIM_GenrePrefix import main as genre_main
-from Add_Proc.candidates import main as canidates
+from Scripts.Add_Proc.ThemeDict import update_pickle as Theme_Anchors
+from Scripts.Add_Proc.DIM_Theme import main as theme_main
+from Scripts.Add_Proc.DIM_GenrePrefix import main as genre_main
+from Scripts.Add_Proc.candidates import main as canidates
 
 def main():
     Theme_Anchors() # Scans Details dataset for new themes, performs analysis and creates theme anchors with fuzzy matching.
