@@ -96,7 +96,7 @@ class YTDLP:
 class SCRAPE:
     @staticmethod
     def get_playlist_videos(playlist_url):
-        YTDLP.get_playlist_videos(playlist_url)
+        return YTDLP.get_playlist_videos(playlist_url)
 
     @staticmethod
     def get_video(search_query):
