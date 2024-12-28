@@ -59,8 +59,12 @@
                 <td>{{ album.year }}</td>  
                 <td>{{ album.reviews }}</td>  
                 <td>
-                    <button class="btn btn-primary btn-sm" onclick="fetchVideo('{{ name }}', '{{ album.album_name }}', '{{ album.type }}')">Watch</button>
-                    <div id="video-placeholder-{{ album.album_name|replace(' ', '_') }}"></div>
+                    <button class="btn btn-primary btn-sm watch-video" 
+                    data-name="{{ name }}" 
+                    data-album="{{ album.album_name }}" 
+                    data-type="{{ album.type }}">
+                Watch
+            </button>
                 </td>
             </tr>
             {% endfor %}

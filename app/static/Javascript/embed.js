@@ -23,3 +23,13 @@ function fetchVideo(bandName, albumName, AlbumType) {
       console.error('Error fetching YouTube video:', error);
     });
 }
+
+document.querySelectorAll('.watch-video').forEach(button => {
+  button.addEventListener('click', event => {
+      const name = button.dataset.name;
+      const album = button.dataset.album;
+      const type = button.dataset.type;
+
+      fetchVideo(name, album, type);
+  });
+});
