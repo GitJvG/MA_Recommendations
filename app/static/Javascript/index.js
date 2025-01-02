@@ -38,8 +38,65 @@ function loadBandData(route, containerSelector, rowsCount = 1) {
                     container.appendChild(bandCard); // Append all cards to the same container
                 });
             }
+            const rightArrowButton = document.createElement("div");
+            rightArrowButton.className = "right-arrow-button";
+            rightArrowButton.innerHTML = '→';
+            rightArrowButton.addEventListener('click', () => {
+                container.scrollBy({
+                    left: 200,
+                    behavior: 'smooth'
+                });
+            });
 
-            // Set the number of rows in a CSS variable
+            // Create the left arrow button
+            const leftArrowButton = document.createElement("div");
+            leftArrowButton.className = "left-arrow-button";
+            leftArrowButton.innerHTML = '←';
+            leftArrowButton.addEventListener('click', () => {
+                container.scrollBy({
+                    left: -200,
+                    behavior: 'smooth'
+                });
+            });
+
+            container.appendChild(leftArrowButton);
+            container.appendChild(rightArrowButton);
+
+            function updateArrowVisibility() {
+                const scrollLeft = container.scrollLeft;
+                const maxScrollLeft = container.scrollWidth - container.clientWidth;
+            
+                if (scrollLeft < maxScrollLeft && isHovered) {
+                    rightArrowButton.style.display = 'block';
+                } else {
+                    rightArrowButton.style.display = 'none';
+                }
+            
+                if (scrollLeft > 0 && isHovered) {
+                    leftArrowButton.style.display = 'block';
+                } else {
+                    leftArrowButton.style.display = 'none';
+                }
+            }
+            
+            let isHovered = false;
+            
+            rightArrowButton.style.display = 'none';
+            leftArrowButton.style.display = 'none';
+            
+            container.addEventListener('mouseenter', () => {
+                isHovered = true;
+                updateArrowVisibility();
+            });
+            
+            container.addEventListener('mouseleave', () => {
+                isHovered = false;
+                updateArrowVisibility();
+            });
+            
+            container.addEventListener('scroll', updateArrowVisibility);
+            updateArrowVisibility();
+            
             container.style.setProperty('--rows-count', rowsCount);
         })
         .catch(error => {
