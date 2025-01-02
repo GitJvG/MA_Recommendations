@@ -1,11 +1,13 @@
 <body>
-    <h1>Import YouTube Playlist</h1>
+    <div class="header-container">
+        <h1>YouTube Playlist</h1>
 
-    <form id="youtube-import-form" method="POST" action="{{ url_for('extension.youtube_import') }}">
-        <label for="playlist_url">YouTube Playlist URL:</label>
-        <input type="text" id="playlist_url" name="playlist_url" required>
-        <button type="submit">Import</button>
-    </form>
+        <form id="youtube-import-form" method="POST" action="{{ url_for('extension.youtube_import') }}">
+            <label for="playlist_url">YouTube Playlist URL:</label>
+            <input type="text" id="playlist_url" name="playlist_url" required>
+            <button type="submit">Import</button>
+        </form>
+    </div>
 
     <div id="results-container"></div>
 </body>

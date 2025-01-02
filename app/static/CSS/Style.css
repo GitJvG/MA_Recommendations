@@ -4,12 +4,15 @@ body {
     overflow-x: hidden;
 }
 
+.main-container {
+    max-width: 1980px;
+}
+
 #main-content {
     margin-left: 250px;
     margin-right: 250px;
     padding-left: 40px;
-    padding-right: 40px;
-    width: calc(100% - 500px);
+    width: calc(100% - 250px);
     max-width: 100%;
     box-sizing: border-box;
 }
@@ -445,4 +448,14 @@ header.navbar .form-inline button {
     border-color: #007bff;
     cursor: default;
     pointer-events: none;
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#youtube-import-form {
+    right: 0px;
 }
