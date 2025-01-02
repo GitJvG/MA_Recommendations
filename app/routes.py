@@ -1,7 +1,7 @@
-from flask import Blueprint, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, request, redirect, url_for, jsonify
 from flask_login import login_required, current_user
-from sqlalchemy import func, desc, and_, or_
-from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db  # Import your User model and db instance
+from sqlalchemy import func, and_, or_
+from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db
 from app.utils import render_with_base, Like_bands, liked_bands
 import random
 import asyncio
@@ -359,7 +359,7 @@ def query():
 
     partial_matches = (
         db.session.query(band.band_id, band.name, band.genre, band.country)
-        .filter(band.name.ilike(f'% {query} %'))
+        .filter(or_(band.name.ilike(f'% {query} %'), band.name.ilike(f'{query} %')))
     )
 
     exact_matches_page = exact_matches.paginate(page=page, per_page=per_page, error_out=False)
