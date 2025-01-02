@@ -1,4 +1,5 @@
-# Metal-Archives Scraper
+
+# Metal-Archives Scraper and Recommender
 
 ## Access Scraped Datasets
 You can download the full set of scraped datasets from the link below:
@@ -59,12 +60,11 @@ Scrapes data for:
 ## Supporting Scripts
 
 - **Refresh**:  
-  Updates all final datasets incrementally by checking the last scraped date (stored in `metadata.csv`) and fetching new/modified bands from the recently added/modified page on Metal-Archives.
+  Updates all final datasets incrementally by checking the last scraped datetime (stored in `metadata.csv`) and fetching new/modified bands from the recently modified page on Metal-Archives.
 
 - **FullScraper**:  
   Fully scrapes Metallum from scratch. Starts by quickly scraping all bands and some basic data after which it scrapes corresponding band specific pages: Similar bands, Band details & Band discography.
   - Note: The initial basic data scraping is much more efficient and only takes about 17 minutes, the band specific page scraping takes about 16 hours for each distinct page. All in all it could take up to 48.5 hours to scrape all of metallum on these topics.
-  
 
-
-
+## Recommendation model
+Candidates are generated based on user feedback and item features with Faiss-CPU. At it's core this is a Approximate nearest neighbor model. To further improve recommendations a deep-ranking model should be added to rank the generated candidates. The recommendation model is implemented in `Scripts/Add_Proc/candidates.py`.
