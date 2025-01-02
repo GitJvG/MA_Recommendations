@@ -13,3 +13,4 @@ app/static/images/
 app/run.bat
 item.csv
 archive/
+app/client_secret.json

@@ -83,7 +83,8 @@ window.create_like_dislike = function create_like_dislike(band) {
     `;
 }
 
-window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl) {
+window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl, video_url) {
+    // videoEmbedUrl can be either a video or playlist url, video_url is always a video (used for adding to playlist, but less complete than videoEmbedUrl)
     const videoWrapper = document.createElement('div');
     videoWrapper.classList.add('floating-video-wrapper');
   
@@ -101,9 +102,18 @@ window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl) {
     closeBtn.addEventListener('click', function () {
       videoWrapper.remove();
     });
+
+    const addToPlaylistBtn = document.createElement('button');
+    addToPlaylistBtn.classList.add('add-to-playlist-btn');
+    addToPlaylistBtn.textContent = 'Add to Playlist';
+
+    addToPlaylistBtn.addEventListener('click', function () {
+        openPlaylistModal(videoEmbedUrl);
+    });
   
     videoWrapper.appendChild(iframe);
     videoWrapper.appendChild(closeBtn);
+    videoWrapper.appendChild(addToPlaylistBtn)
   
     document.body.appendChild(videoWrapper);
     makeResizable(videoWrapper);
@@ -142,4 +152,91 @@ function makeResizable(wrapper) {
       isResizing = false;
       document.body.style.cursor = 'auto';
     });
+}
+
+function openPlaylistModal(video_url) {
+    let modal = document.getElementById('playlist-modal');
+    if (!modal) {
+      // Create modal element
+      modal = document.createElement('div');
+      modal.id = 'playlist-modal';
+      modal.style.position = 'fixed';
+      modal.style.top = '50%';
+      modal.style.left = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      modal.style.background = '#fff';
+      modal.style.border = '1px solid #ccc';
+      modal.style.padding = '20px';
+      modal.style.zIndex = '1000';
+      modal.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+      modal.style.display = 'none'; // Hidden by default
+  
+      // Modal title
+      const modalTitle = document.createElement('h3');
+      modalTitle.textContent = 'Select a Playlist';
+  
+      // Playlist list container
+      const playlistList = document.createElement('ul');
+      playlistList.id = 'playlist-list';
+  
+      // Close button
+      const closeModalBtn = document.createElement('button');
+      closeModalBtn.textContent = 'Close';
+      closeModalBtn.style.marginTop = '10px';
+      closeModalBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+  
+      // Append elements to modal
+      modal.appendChild(modalTitle);
+      modal.appendChild(playlistList);
+      modal.appendChild(closeModalBtn);
+  
+      // Append modal to document body
+      document.body.appendChild(modal);
+    }
+  
+    // Make modal visible
+    modal.style.display = 'block';
+
+    fetch('/api/get_user_playlists')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const playlistList = document.getElementById('playlist-list');
+                playlistList.innerHTML = '';
+
+                data.playlists.forEach(playlist => {
+                    const li = document.createElement('li');
+                    li.textContent = playlist.title;
+                    li.dataset.playlistId = playlist.id;
+
+                    li.addEventListener('click', () => addVideoToPlaylist(playlist.id, video_url));
+                    playlistList.appendChild(li);
+                });
+            } else {
+                alert(`Failed to fetch playlists: ${data.error}`);
+            }
+        })
+        .catch(err => console.error('Error fetching playlists:', err));
+}
+
+function addVideoToPlaylist(playlistId, videoId) {
+    fetch('/api/add_video_to_playlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, playlistId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Video added successfully!');
+        } else {
+            alert(`Failed to add video: ${data.error}`);
+        }
+
+        const modal = document.getElementById('playlist-modal');
+        modal.style.display = 'none';
+    })
+    .catch(err => console.error('Error adding video:', err));
 }

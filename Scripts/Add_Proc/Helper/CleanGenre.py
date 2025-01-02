@@ -53,33 +53,6 @@ def handle_prefix_and_hybrids(genre):
     # Now, return the combination of prefix and genre
     return f"{prefix} {mod_genre}".strip() if prefix else mod_genre
 
-def replace_wrong_comma(genre):
-    """Replaces element comma with 'and' to prevent unintended splitting."""
-    def replace_with_and(match):
-        return match.group(0).replace(',', ' and')
-
-    genre = re.sub(r'with(.*?)(and)', replace_with_and, genre)
-    return genre
-
-def basic_processing(genre):
-    genres = genre.lower()
-    genres = re.sub(r'\(.*?\)', '', genres) # removes anything between parenthesis
-    genres = re.sub(r'\s?/\s?', '/', genres) # Removes spaces before and after '/'
-    genres = re.sub(r'\s+', ' ', genres) # Reduce consecutive spaces to one space
-    genres = re.sub(r'[^\x20-\x7E]', '', genres) # Removes non-ASCII
-    genres = re.sub(r';', ',', genres) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
-    genres = re.sub(r'[()]+', '', genres).strip() # Removes remaining parenthesis
-
-    # Remove 'Metal' (or ' Metal' if followed by '/' to create new hybrids, i.e. death metal/black metal-> death/black)
-    genres = re.sub(r'(?<!-)\s?/?\bmetal\b(?!-)', '', genres).strip() 
-    # Finally remove any remaining common unwanted words
-    for word in env.unwanted:
-        genres = re.sub(rf'(?<!-)\s?\b{word}\b(?!-)', '', genres)
-
-    genres = replace_wrong_comma(genres)
-
-    return genres
-
 def elements(genre):
     """Removes 'with influences' endings and returns the genre and the elements separately in a comma-separated format."""
     # Split on commas or semicolons
@@ -117,6 +90,33 @@ def elements(genre):
     element_output = ', '.join(sorted(element_parts)) if element_parts else None
 
     return cleaned_genre_output, element_output
+
+def replace_wrong_comma(genre):
+    """Replaces element comma with 'and' to prevent unintended splitting."""
+    def replace_with_and(match):
+        return match.group(0).replace(',', ' and')
+
+    genre = re.sub(r'with(.*?)(and)', replace_with_and, genre)
+    return genre
+
+def basic_processing(genre):
+    genres = genre.lower()
+    genres = re.sub(r'\(.*?\)', '', genres) # removes anything between parenthesis
+    genres = re.sub(r'\s?/\s?', '/', genres) # Removes spaces before and after '/'
+    genres = re.sub(r'\s+', ' ', genres) # Reduce consecutive spaces to one space
+    genres = re.sub(r'[^\x20-\x7E]', '', genres) # Removes non-ASCII
+    genres = re.sub(r';', ',', genres) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
+    genres = re.sub(r'[()]+', '', genres).strip() # Removes remaining parenthesis
+
+    # Remove 'Metal' (or ' Metal' if followed by '/' to create new hybrids, i.e. death metal/black metal-> death/black)
+    genres = re.sub(r'(?<!-)\s?/?\bmetal\b(?!-)', '', genres).strip() 
+    # Finally remove any remaining common unwanted words
+    for word in env.unwanted:
+        genres = re.sub(rf'(?<!-)\s?\b{word}\b(?!-)', '', genres)
+
+    genres = replace_wrong_comma(genres)
+
+    return genres
 
 def part_exceptions(split_parts):
     # Last word except for when it is an exception ('age' in 'new age' then take last 2)
@@ -216,5 +216,5 @@ if __name__ == "__main__":
         
         print(f"Input: {genre}")
         print(f"Primary genres: {single_primals}")
-        print(f"All detected primal genres: {primal}")
+        print(f"Hybrid genres: {primal}")
         print(f"Prefix: {prefixes if prefixes else 'None'}\n")

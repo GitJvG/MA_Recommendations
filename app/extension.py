@@ -1,13 +1,15 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, request, redirect, url_for, jsonify, session
 from app.models import discography, band, users
 from flask_login import login_required, current_user
 from app.utils import render_with_base, Like_bands, liked_bands
 import re
 import unicodedata
 from sqlalchemy import and_, func
-from app import db
+from app import db, client_secrets_file
 from collections import defaultdict
 from app.YT import YT
+import google.auth
+from google_auth_oauthlib.flow import Flow
 
 extension = Blueprint('extension', __name__)
 
@@ -126,3 +128,61 @@ def youtube_import():
 def youtube_search():
     search_query = request.args.get('q')
     return YT.get_video(search_query)
+
+@extension.route('/api/get_user_playlists', methods=['GET'])
+def get_user_playlists():
+    response = YT.get_user_playlists()
+    return jsonify(response)
+
+@extension.route('/api/add_video_to_playlist', methods=['POST'])
+def add_video_to_playlist():
+    data = request.json
+    video_id = data.get('videoId')
+    playlist_id = data.get('playlistId')
+
+    if not video_id or not playlist_id:
+        return jsonify({'success': False, 'error': 'Missing video or playlist ID'}), 400
+
+    response = YT.add_video_to_playlist(playlist_id, video_id)
+    return jsonify(response)
+
+@extension.route('/google_login')
+def login():
+    scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+    flow = Flow.from_client_secrets_file(client_secrets_file, scopes=scopes)
+    
+    flow.redirect_uri = url_for('oauth2callback', _external=True)
+    
+    authorization_url, state = flow.authorization_url(
+        access_type='offline', include_granted_scopes='true'
+    )
+    
+    session['state'] = state
+    
+    return redirect(authorization_url)
+
+@extension.route('/oauth2callback')
+def oauth2callback():
+    scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+    authorization_response = request.url
+    
+    flow = Flow.from_client_secrets_file(client_secrets_file, scopes=scopes)
+    flow.redirect_uri = url_for('oauth2callback', _external=True)
+    
+    flow.fetch_token(authorization_response=authorization_response)
+    
+    credentials = flow.credentials
+    
+    session['credentials'] = credentials_to_dict(credentials)
+    
+    return "Authentication successful!"
+
+def credentials_to_dict(credentials):
+    return {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }

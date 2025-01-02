@@ -7,16 +7,65 @@ import re
 from typing import Optional, Type, Union
 
 class YTAPI:
-    def __init__(self):
-        self.youtube = youtube_client.get_client()
+    youtube = youtube_client.get_client()
+
+    def get_user_playlists():
+        youtube = youtube_client.get_client(authenticated=True)
+        try:
+            response = youtube.playlists().list(
+                part="snippet",
+                mine=True,
+                maxResults=50
+            ).execute()
+
+            playlists = []
+            for item in response.get('items', []):
+                playlists.append({
+                    'id': item['id'],
+                    'title': item['snippet']['title']
+                })
+
+            return {'success': True, 'playlists': playlists}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    @classmethod
+    def add_video_to_playlist(cls, playlist_id, video_id):
+        try:
+            request_body = {
+                "snippet": {
+                    "playlistId": playlist_id,
+                    "resourceId": {
+                        "kind": "youtube#video",
+                        "videoId": video_id
+                    }
+                }
+            }
+
+            response = cls.youtube.playlistItems().insert(
+                part="snippet",
+                body=request_body
+            ).execute()
+
+            return {
+                'success': True,
+                'message': 'Video added successfully!',
+                'response': response
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
         
-    def get_playlist_videos(self, playlist_url):
+    @classmethod
+    def get_playlist_videos(cls, playlist_url):
         playlist_id = playlist_url.split('list=')[-1]
         video_details = []
         next_page_token = None
 
         while True:
-            playlist_items_request = self.youtube.playlistItems().list(
+            playlist_items_request = cls.youtube.playlistItems().list(
                 part='snippet',
                 playlistId=playlist_id,
                 maxResults=200,
@@ -35,9 +84,10 @@ class YTAPI:
 
         return video_details
     
-    def get_video(self, search_query):
+    @classmethod
+    def get_video(cls, search_query):
         try:
-            search_response = self.youtube.search().list(
+            search_response = cls.youtube.search().list(
                 part="snippet",
                 q=search_query,
                 type="video",
@@ -93,6 +143,14 @@ class YTDLP:
             else:
                 return jsonify({'error': 'No video found'}), 404
             
+    @staticmethod
+    def add_video_to_playlist(playlist_url):
+        return YTAPI.add_video_to_playlist(playlist_url)
+    
+    @staticmethod
+    def get_user_playlists():
+        return YTAPI.get_user_playlists()
+            
 class SCRAPE:
     @staticmethod
     def get_playlist_videos(playlist_url):
@@ -134,5 +192,13 @@ class SCRAPE:
                     'playlist_url': None,
                     'video_url': None
                 })
+    
+    @staticmethod
+    def add_video_to_playlist(playlist_url):
+        return YTAPI.add_video_to_playlist(playlist_url)
+    
+    @staticmethod
+    def get_user_playlists():
+        return YTAPI.get_user_playlists()
             
 YT: Optional[Type[Union[YTDLP, YTAPI, SCRAPE]]] = globals()[backend]
