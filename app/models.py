@@ -4,7 +4,6 @@ from flask_login import UserMixin
 class band(db.Model):
     __tablename__ = 'band'
     band_id = db.Column("band_id", db.BigInteger, primary_key=True)
-    url = db.Column("url", db.Text, nullable=True)
     name = db.Column("name", db.Text, nullable=True)
     country = db.Column("country", db.Text, nullable=True)
     genre = db.Column("genre", db.Text, nullable=True)
