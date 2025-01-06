@@ -142,7 +142,12 @@ def extract_primal(genre):
     # Handling hybrids and single genres
     for part in parts:
         # Check if the part contains a '/'
-        if '/' in part.split()[-1]:
+        if '/' not in part.split()[-1]:
+            # Process as a single non-hybrid genre
+            count = part_exceptions(part.split())
+            primal_genre = ' '.join(part.split()[-count:])
+            prefix = ', '.join(part.split()[:-count])
+        else:
             subparts = part.rsplit('/', 1) # Only split at the final / as those before can be hybrid prefixes
 
             # For each subgenre, determine how many parts to take based on part_exceptions
@@ -159,11 +164,6 @@ def extract_primal(genre):
             # Reassemble the hybrid genre with '/' after processing
             primal_genre = f"{part_before}/{part_after}"
             prefix = ', '.join(subparts[0].split()[:-count_before]) # part before what was kept
-        else:
-            # Process as a single non-hybrid genre
-            count = part_exceptions(part.split())
-            primal_genre = ' '.join(part.split()[-count:])
-            prefix = ', '.join(part.split()[:-count])
 
         primal_genres.add(primal_genre)
         prefixes.add(prefix)
