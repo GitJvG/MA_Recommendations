@@ -1,16 +1,27 @@
 """Incremental updater scrapes based on year, month, and time. Last scraped time is only updated at the end of a successful refresh"""
 import os
 import sys
-
+import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Scripts.utils import remove_dupes_and_deletions, update_metadata, get_time
 from Env import Env
+from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
 from Scripts.Components.BandScraper import Full_scrape
 from Scripts.Components.SimilarScraper import refresh as ReSim
 from Scripts.Components.AlbumScraper import refresh as ReAlb
 from Scripts.Components.DetailScraper import refresh as ReDet
 
 env = Env.get_instance()
+
+def get_common_date():
+    metadata = pd.read_csv(env.meta)
+    filtered_metadata = metadata[metadata['name'] != 'MA_Bands.csv']
+    unique_dates = filtered_metadata['date'].dropna().unique()
+    
+    if len(unique_dates) == 1:
+        return env.simi
+    else:
+        return None
 
 
 def refresh():
@@ -19,9 +30,16 @@ def refresh():
     time = get_time()
     csv_files = [env.band, env.simi, env.disc, env.deta, env.meta, env.memb]
     Full_scrape()
-    ReSim()
-    ReAlb()
-    ReDet()
+    
+    # Use the same modified bands list for all files if all files share the same last scraping date
+    common_date = get_common_date()
+    if common_date:
+        band_ids_to_scrape = Modified_based_list(common_date, False)
+    else: band_ids_to_scrape = None
+
+    ReSim(band_ids_to_scrape=band_ids_to_scrape)
+    ReAlb(band_ids_to_scrape=band_ids_to_scrape)
+    ReDet(band_ids_to_scrape=band_ids_to_scrape)
     for csv in csv_files: remove_dupes_and_deletions(csv)
     for csv in csv_files: update_metadata(csv)
     # Only updating time when everything succesfully refreshed.

@@ -91,20 +91,22 @@ def Update_list(output_path):
         last_scraped_time = None
 
     urls_to_scrape = determine_urls_to_scrape(last_scraped_date, env.url_modi)
-    
+    all_band_ids = set()
+
     # Loop through each URL and scrape data
     for i, url in enumerate(urls_to_scrape):
         is_final_month = (i == len(urls_to_scrape) - 1)
         last_scraped_day = last_scraped_date.day if is_final_month else None
-        last_scraped_time = last_scraped_time
         
         print(f"Fetching bands for URL: {url}")
-        bands_ids = Modified_Set(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month, last_scraped_time=last_scraped_time)
-    
-    return list(bands_ids)
+        band_ids = Modified_Set(url, last_scraped_day=last_scraped_day, is_final_month=is_final_month, last_scraped_time=last_scraped_time)
+        all_band_ids.update(band_ids)
 
-def Modified_based_list(target_path, complete = False):
-    band_ids_to_process = Update_list(target_path)
+    return list(all_band_ids)
+
+def Modified_based_list(target_path, complete = False, band_ids_to_process=None):
+    if not band_ids_to_process:
+        band_ids_to_process = Update_list(target_path)
 
     if complete:
         all_band_ids = set(pd.read_csv(env.band)['band_id'])

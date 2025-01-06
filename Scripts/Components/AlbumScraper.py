@@ -40,9 +40,9 @@ def fetch_album_data(band_id):
         return df
     return pd.DataFrame(columns=['name', 'type', 'year', 'reviews', 'band_id', 'review_count', 'review_score'])
 
-def refresh():
+def refresh(band_ids_to_scrape=None):
     # Complete false because many bands don't have any discog entries.
-    band_ids_to_process = Modified_based_list(env.disc, complete=False)
+    band_ids_to_process = Modified_based_list(env.disc, complete=False, band_ids_to_process=band_ids_to_scrape)
     # Because discog currently doesn't have a reliable unique id combination (that could be de-duplicated afterwards), all to be processed ids are first deleted.
     df = pd.read_csv(env.disc)
     df = df[~df["band_id"].isin(band_ids_to_process)]
