@@ -29,8 +29,7 @@ def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     app = create_app()
     with app.app_context():
-        models = [model] or [band, theme, prefix, genre, hgenre, discography, similar_band, details, member, genres, themes, candidates]
-
+        models = model if model else [band, theme, prefix, genre, hgenre, discography, similar_band, details, member, genres, themes, candidates]
 
         for model in models:
             df = dataframes.get(model.__name__)()
