@@ -89,7 +89,7 @@ def dissect_genre(genre):
     genre = re.sub(r"\s?'n'\s?roll", '', genre)
     parts = [part.split('with')[0].strip() for part in genre.split(',')]
 
-    primal_genres = set()
+    hybrid_genre = set()
     prefixes = set()
 
     for part in parts:
@@ -97,8 +97,8 @@ def dissect_genre(genre):
         if '/' not in partslist[-1]:
 
             count = part_exceptions(partslist)
-            primal_genre = ' '.join(partslist[-count:])
-            prefixList = partslist[:-count]
+            primary_genre = ' '.join(partslist[-count:])
+            prefixlist = partslist[:-count]
         else:
             subparts = part.rsplit('/', 1) # Only split at the final / as earlier ones can be hybrid prefixes
 
@@ -107,33 +107,33 @@ def dissect_genre(genre):
             
             part_before = ' '.join(subparts[0].split()[-count_before:])
             part_after = ' '.join(subparts[1].split()[-count_after:])
-            primal_genre = f"{part_before}/{part_after}"
+            primary_genre = f"{part_before}/{part_after}"
 
-            prefixList = subparts[0].split()[:-count_before]
+            prefixlist = subparts[0].split()[:-count_before]
 
-        primal_genres.add(primal_genre)
-        for prefix in prefixList:
+        hybrid_genre.add(primary_genre)
+        for prefix in prefixlist:
             prefixes.add(prefix)
 
     def split_and_strip(parts):
         return {x.strip() for part in parts for x in part.split('/') if x.strip()}
 
-    split_primal_genres = split_and_strip(primal_genres)
-    split_prefixes = split_and_strip(prefixes)
+    genre = split_and_strip(hybrid_genre)
+    prefixes = split_and_strip(prefixes)
 
-    return split_primal_genres, primal_genres, split_prefixes
+    return genre, hybrid_genre, prefixes
 
-def advanced_clean_flat(genres):
+def process_genres(genres):
     """Returns a flattened list for bridge table creation."""
     try:
         genre = basic_processing(genres)
-        single_primals, primal, prefixes = dissect_genre(genre)
+        genre, hybrid_genre, prefixes = dissect_genre(genre)
 
         results = []
-        if single_primals:
-            results.extend([(item.strip(), 'single_primal') for item in single_primals])
-        if primal:
-            results.extend([(item.strip(), 'primal') for item in primal])
+        if genre:
+            results.extend([(item.strip(), 'genre') for item in genre])
+        if hybrid_genre:
+            results.extend([(item.strip(), 'hybrid_genre') for item in hybrid_genre])
         if prefixes:
             results.extend([(item.strip(), 'prefix') for item in prefixes])
 
