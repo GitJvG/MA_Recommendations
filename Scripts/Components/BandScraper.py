@@ -18,19 +18,23 @@ def make_request(url, params=None):
     return r.json()
 
 def parse_bands(data):
-        data['NameLink'] = data['NameLink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
-        data['url'] = data['NameLink'].apply(extract_href)
-        data['name'] = data['NameLink'].apply(extract_text)
+        data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
+        data['url'] = data['namelink'].apply(extract_href)
+        data['name'] = data['namelink'].apply(extract_text)
         data['band_id'] = data['url'].apply(extract_url_id)
-        data = data[['url','name','country','genre','band_id']]
+        data = data[['name','country','genre','band_id']]
         return data
 
 def parse_labels(data):
-    data['']
+    data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
+    data['url'] = data['namelink'].apply(extract_href)
+    data['name'] = data['namelink'].apply(extract_text)
+    data['label_id'] = data['url'].apply(extract_url_id)
+    data = data[['name','country','genre','label_id']]
 
 mapping = {
-        env.url_band: {"csv": env.band, "parser": parse_bands},
-        env.url_label: {"csv": env.labe, "parser": parse_labels},
+        env.url_band: {"csv": env.band, "parser": parse_bands, "columns": ['namelink', 'country', 'genre', 'status']},
+        env.url_label: {"csv": env.labe, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'website', 'shopping']},
     }
 
 def scrape_bands(url=env.url_band, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
@@ -42,7 +46,8 @@ def scrape_bands(url=env.url_band, letters='NBR A B C D E F G H I J K L M N O P 
         }
         return make_request(url + letter, params=payload)
 
-    column_names = ['NameLink', 'country', 'genre', 'status']
+    column_names = mapping[url]["columns"]
+
     data = DataFrame()
 
     for letter in letters:
@@ -91,7 +96,6 @@ def Full_scrape(url=env.url_band):
         print('Error: Invalid url was passed. Only pass the bands or labels alphabetical list urls.')
         return
         
-    csv = mapping[url]["data"]
     data = scrape_bands(url=url)
 
     if data.empty:
@@ -99,6 +103,8 @@ def Full_scrape(url=env.url_band):
         return
     
     parser = mapping[url]["parser"]
+    csv = mapping[url]["data"]
+
     print('Parsing')
     data = parser(data)
     data.to_csv(csv, index=False, mode='w')
