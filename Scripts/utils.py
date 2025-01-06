@@ -41,6 +41,7 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
     
     # Initialize a list of lists, each one to collect data for an output file
     all_data = [[] for _ in output_files]
+    to_be_processed_count = len(items_to_process)
     processed_count = 0
     lock = Lock()
 
@@ -48,7 +49,6 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
         nonlocal processed_count
         with lock:
             processed_count += 1
-            print(f"Processed {processed_count} items.")
     
     with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_band_id = {executor.submit(function, band_id, **kwargs): band_id for band_id in items_to_process}
@@ -71,6 +71,7 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
 
                 # Intermediate saving for each batch
                 if processed_count % batch_size == 0:
+                    print(f"Processed {processed_count}/{to_be_processed_count} items.")
                     for i, data_list in enumerate(all_data):
                         if data_list:
                             save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
