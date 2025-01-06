@@ -6,53 +6,6 @@ import re
 from Env import Env
 env = Env.get_instance()
 
-def handle_prefix_and_hybrids(genre):
-    """Handles a genre with a prefix and returns possible combinations in a comma-separated format."""
-    genre = re.sub(rf'(?<!-)\s?\b{'with'}\b(?!-)', '', genre)
-    # Strip the genre of any leading or trailing spaces
-    genre = genre.strip()
-    
-    # If the genre contains a slash ('/'), it could be a hybrid genre
-    if '/' in genre:
-        # Check if the part before the slash looks like a valid prefix
-        parts = genre.split(' ')
-        prefix = ''
-        mod_genre = genre
-        
-        # We treat the first part before '/' as a prefix only if it doesn't look like a hybrid genre
-        # Example: "melodic death/doom" -> "melodic" is the prefix, "death/doom" is the hybrid
-        if len(parts) > 1 and parts[0].isalpha():  # Only treat the first part as a prefix if it's a word
-            prefix = parts[0]
-            mod_genre = genre[len(prefix):].strip()  # Remove prefix to leave the hybrid genre
-        
-        hybrid_parts = mod_genre.split('/')
-        
-        combinations = set()
-        
-        for part in hybrid_parts:
-            part = part.strip()  # Remove any unwanted spaces around each part
-            if part:
-                combinations.add(f"{prefix} {part}".strip())  # Add prefix + single genre part
-        
-        # Add the full hybrid combination
-        combinations.add(f"{prefix} {mod_genre}".strip())
-        
-        # Return all combinations as a comma-separated string
-        return ', '.join(sorted(combinations))
-    
-    # Otherwise, treat it as a single genre without a hybrid
-    parts = genre.split()
-    prefix = ''
-    mod_genre = genre.strip()
-    
-    # If there's more than one part, consider it as a prefix + single genre
-    if len(parts) > 1:
-        prefix = ' '.join(parts[:-1]).strip()  # Everything except the last word is the prefix
-        mod_genre = parts[-1].strip()  # The last part is the main genre
-    
-    # Now, return the combination of prefix and genre
-    return f"{prefix} {mod_genre}".strip() if prefix else mod_genre
-
 def replace_wrong_comma(genre):
     """Replaces element comma with 'and' to prevent unintended splitting."""
     def replace_with_and(match):
@@ -131,90 +84,60 @@ def part_exceptions(split_parts):
         result = 1
     return result
 
-def extract_primal(genre):
+def dissect_genre(genre):
     """Extracts the primal genre, checking for hybrid and non-hybrid genres."""
     genre = re.sub(r"\s?'n'\s?roll", '', genre)
-    # Split by comma and for each part only keep what is before 'with'
     parts = [part.split('with')[0].strip() for part in genre.split(',')]
 
-    primal_genres = set()  # To store the primal genres
+    primal_genres = set()
     prefixes = set()
-    # Handling hybrids and single genres
-    for part in parts:
-        # Check if the part contains a '/'
-        if '/' not in part.split()[-1]:
-            # Process as a single non-hybrid genre
-            count = part_exceptions(part.split())
-            primal_genre = ' '.join(part.split()[-count:])
-            prefix = ', '.join(part.split()[:-count])
-        else:
-            subparts = part.rsplit('/', 1) # Only split at the final / as those before can be hybrid prefixes
 
-            # For each subgenre, determine how many parts to take based on part_exceptions
+    for part in parts:
+        partslist = part.split()
+        if '/' not in partslist[-1]:
+
+            count = part_exceptions(partslist)
+            primal_genre = ' '.join(partslist[-count:])
+            prefixList = partslist[:-count]
+        else:
+            subparts = part.rsplit('/', 1) # Only split at the final / as earlier ones can be hybrid prefixes
+
             count_before = part_exceptions(subparts[0].strip().split())
             count_after = part_exceptions(subparts[1].strip().split())
             
-            # Extract the relevant parts from the original part
-            # Get the first part before '/', and take the appropriate number of words from the start
             part_before = ' '.join(subparts[0].split()[-count_before:])
-
-            # Get the second part after '/', and take the appropriate number of words from the end
             part_after = ' '.join(subparts[1].split()[-count_after:])
-
-            # Reassemble the hybrid genre with '/' after processing
             primal_genre = f"{part_before}/{part_after}"
-            prefix = ', '.join(subparts[0].split()[:-count_before]) # part before what was kept
+
+            prefixList = subparts[0].split()[:-count_before]
 
         primal_genres.add(primal_genre)
-        prefixes.add(prefix)
-        
-    primal_genre = ', '.join(sorted(primal_genres))
-    prefixes = ', '.join(sorted(prefixes))
-   
-    # Split hybrid primals and prefixes
-    split_parts = [part.strip() for part in primal_genre.split(',')]
+        for prefix in prefixList:
+            prefixes.add(prefix)
 
-    split_hybrid = set()
-    for part in split_parts:
-        # Splits on / and strips and filters out empty parts
-        split_hybrid_parts = [x.strip() for x in part.split('/') if x.strip()]
-        for x in split_hybrid_parts: split_hybrid.add(x)
-    split_primal_genres = ', '.join(sorted(split_hybrid))
+    def split_and_strip(parts):
+        return {x.strip() for part in parts for x in part.split('/') if x.strip()}
 
-    split_prefixes = [part.strip() for part in prefixes.split(',')]
+    split_primal_genres = split_and_strip(primal_genres)
+    split_prefixes = split_and_strip(prefixes)
 
-    hybrid_prefix = set()
-    for prefixes in split_prefixes:
-        split_prefix_parts = [x.strip() for x in prefixes.split('/') if x.strip()]  
-        for x in split_prefix_parts:
-            hybrid_prefix.add(x)
+    return split_primal_genres, primal_genres, split_prefixes
 
-    split_prefixes = ', '.join(sorted(hybrid_prefix))
-
-    return primal_genre, split_primal_genres, split_prefixes
-    
-def advanced_clean(genres):
-    """single_primals, primal, prefixes"""
+def advanced_clean_flat(genres):
+    """Returns a flattened list for bridge table creation."""
     try:
         genre = basic_processing(genres)
-        primal, single_primals, prefixes = extract_primal(genre)
+        single_primals, primal, prefixes = dissect_genre(genre)
 
-        return single_primals, primal, prefixes if prefixes else None
+        results = []
+        if single_primals:
+            results.extend([(item.strip(), 'single_primal') for item in single_primals])
+        if primal:
+            results.extend([(item.strip(), 'primal') for item in primal])
+        if prefixes:
+            results.extend([(item.strip(), 'prefix') for item in prefixes])
+
+        return results
     except Exception as e:
         print(f"Error processing genre: {genres} - {e}")
         raise
-
-if __name__ == "__main__":
-    genres = [
-        'Heavy/Speed Metal', 
-        'Melodic/Experimental bluegrass/blues with rock, dance and thrash influences',
-        'Atmospheric Death/Doom Metal, Progressive Rock, World music',
-        'Thrash metal']
-    
-    for genre in genres: 
-        single_primals, primal, prefixes = advanced_clean(genre)
-        
-        print(f"Input: {genre}")
-        print(f"Primary genres: {single_primals}")
-        print(f"All detected primal genres: {primal}")
-        print(f"Prefix: {prefixes if prefixes else 'None'}\n")
