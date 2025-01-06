@@ -50,6 +50,7 @@ class Env:
         self.band = yaml_conf['paths']['MA_BANDS']
         self.deta = yaml_conf['paths']['MA_DETAILS']
         self.memb = yaml_conf['paths']['MA_MEMBER']
+        self.labe = yaml_conf['paths']['MA_LABEL']
 
         self.meta_key = yaml_conf['keys'][self.meta]
         self.simi_key = yaml_conf['keys'][self.simi]
@@ -60,6 +61,7 @@ class Env:
 
         self.url_modi = yaml_conf['urls']['MODIFIED']
         self.url_band = yaml_conf['urls']['BANDS']
+        self.url_label = yaml_conf['urls']['LABELS']
         self.retries = yaml_conf['scraper']['RETRIES']
         self.delay = yaml_conf['scraper']['DELAY']
 

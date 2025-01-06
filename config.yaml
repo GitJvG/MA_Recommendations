@@ -5,6 +5,8 @@ paths:
   MA_DISCOG: &MA_DISCOG "Datasets/MA_Discog.csv"
   MA_DETAILS: &MA_DETAILS "Datasets/MA_Details.csv"
   MA_MEMBER: &MA_MEMBER "Datasets/MA_Member.csv"
+  MA_LABEL: &MA_LABEL "Datasets/MA_Label.csv"
+  
   GENRE: "M_Datasets/genre.csv"
   HGENRE: "M_Datasets/hgenres.csv"
   PREFIX: "M_Datasets/prefix.csv"
@@ -29,6 +31,7 @@ python:
 urls:
   MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
   BANDS: "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
+  LABELS: "https://www.metal-archives.com/label/ajax-letter/json/1/1/"
 
 scraper:
   RETRIES: 10

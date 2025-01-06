@@ -17,14 +17,30 @@ def make_request(url, params=None):
     r.raise_for_status()
     return r.json()
 
-def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
+def parse_bands(data):
+        data['NameLink'] = data['NameLink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
+        data['url'] = data['NameLink'].apply(extract_href)
+        data['name'] = data['NameLink'].apply(extract_text)
+        data['band_id'] = data['url'].apply(extract_url_id)
+        data = data[['url','name','country','genre','band_id']]
+        return data
+
+def parse_labels(data):
+    data['']
+
+mapping = {
+        env.url_band: {"csv": env.band, "parser": parse_bands},
+        env.url_label: {"csv": env.labe, "parser": parse_labels},
+    }
+
+def scrape_bands(url=env.url_band, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,
             'iDisplayStart': start,
             'iDisplayLength': length
         }
-        return make_request(env.url_band + letter, params=payload)
+        return make_request(url + letter, params=payload)
 
     column_names = ['NameLink', 'country', 'genre', 'status']
     data = DataFrame()
@@ -67,21 +83,25 @@ def scrape_bands(letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y 
             print(f"HTTP error occurred while fetching letter '{letter}': {e}")
             continue  # Skip to the next letter
 
-    if not data.empty:
-        print('Parsing')
-        data['NameLink'] = data['NameLink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
-        data['url'] = data['NameLink'].apply(extract_href)
-        data['name'] = data['NameLink'].apply(extract_text)
-        data['band_id'] = data['url'].apply(extract_url_id)
-        data = data[['url','name','country','genre','band_id']]
         return data
-    else:
-        print("No data retrieved.")
+
+def Full_scrape(url=env.url_band):
+    """url can be env.url_band or env.url_labe."""
+    if not url in mapping:
+        print('Error: Invalid url was passed. Only pass the bands or labels alphabetical list urls.')
+        return
+        
+    csv = mapping[url]["data"]
+    data = scrape_bands(url=url)
+
+    if data.empty:
+        print('An empty dataframe was received before parsing.')
         return
     
-def Full_scrape():
-    data = scrape_bands()
-    data.to_csv(env.band, index=False, mode='w')
+    parser = mapping[url]["parser"]
+    print('Parsing')
+    data = parser(data)
+    data.to_csv(csv, index=False, mode='w')
     update_metadata(os.path.basename(env.band))
     print('Done!')
     
