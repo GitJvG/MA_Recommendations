@@ -41,11 +41,11 @@ def scrape_band_data(band_id):
 
 def refresh(band_ids_to_scrape=None):
     band_ids_to_process = Modified_based_list(env.simi, complete=False, band_ids_to_process=band_ids_to_scrape)
-    Parallel_processing(band_ids_to_process, 200, env.simi, scrape_band_data)
+    Parallel_processing(band_ids_to_process, env.batch_size, env.simi, scrape_band_data)
     
 def main():
     band_ids_to_process = Main_based_scrape(env.simi, False)
-    Parallel_processing(band_ids_to_process, 200, env.simi, scrape_band_data)
+    Parallel_processing(band_ids_to_process, env.batch_size, env.simi, scrape_band_data)
 
 if __name__ == "__main__":
     main()

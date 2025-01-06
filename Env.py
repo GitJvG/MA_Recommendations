@@ -64,6 +64,7 @@ class Env:
         self.url_label = yaml_conf['urls']['LABELS']
         self.retries = yaml_conf['scraper']['RETRIES']
         self.delay = yaml_conf['scraper']['DELAY']
+        self.batch_size = yaml_conf['scraper']['BATCH_SIZE']
 
         self.genre = yaml_conf['paths']['GENRE']
         self.hgenre = yaml_conf['paths']['HGENRE']

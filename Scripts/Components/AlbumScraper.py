@@ -48,12 +48,12 @@ def refresh(band_ids_to_scrape=None):
     df = df[~df["band_id"].isin(band_ids_to_process)]
     df.to_csv(env.disc, index=False)
 
-    Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
+    Parallel_processing(band_ids_to_process, env.batch_size, env.disc, fetch_album_data)
     
 def main():
     """Main function to process all band IDs."""
     band_ids_to_process = Main_based_scrape(env.disc)
-    Parallel_processing(band_ids_to_process, 200, env.disc, fetch_album_data)
+    Parallel_processing(band_ids_to_process, env.batch_size, env.disc, fetch_album_data)
 
 if __name__ == "__main__":
     print(fetch_album_data(1))

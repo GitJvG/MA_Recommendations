@@ -89,12 +89,12 @@ def get_band_data(band_id):
     
 def main():
     band_ids_to_process = set(Main_based_scrape(env.deta) + Main_based_scrape(env.memb))
-    Parallel_processing(band_ids_to_process, 500, [env.deta, env.memb], get_band_data)
+    Parallel_processing(band_ids_to_process, env.batch_size, [env.deta, env.memb], get_band_data)
 
 def refresh(band_ids_to_scrape=None):
     # Complete = true because all band ids in main should at least have a profile
     band_ids_to_process = Modified_based_list(env.deta, complete=True, band_ids_to_process=band_ids_to_scrape)
-    Parallel_processing(band_ids_to_process, 500, [env.deta, env.memb], get_band_data)
+    Parallel_processing(band_ids_to_process, env.batch_size, [env.deta, env.memb], get_band_data)
 
 if __name__ == "__main__":
     print(get_band_data(1))
