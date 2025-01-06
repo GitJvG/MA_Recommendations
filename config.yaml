@@ -1,3 +1,13 @@
+scraper:
+  RETRIES: 10
+  DELAY: 0.3
+  BATCH_SIZE: 1000
+
+urls:
+  MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
+  BANDS: "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
+  LABELS: "https://www.metal-archives.com/label/ajax-letter/json/1/1/"
+
 paths:
   MA_BANDS: &MA_BANDS "Datasets/MA_Bands.csv"
   METADATA: &METADATA "Datasets/metadata.csv"
@@ -24,19 +34,6 @@ keys:
   *MA_DETAILS: ['band_id']
   *MA_MEMBER: ['band_id', 'member_id']
   *METADATA: ['name']
-
-python:
-  PYTHONPATH: "."
-
-urls:
-  MODIFIED: "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
-  BANDS: "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
-  LABELS: "https://www.metal-archives.com/label/ajax-letter/json/1/1/"
-
-scraper:
-  RETRIES: 10
-  DELAY: 0.3
-  BATCH_SIZE: 500
 
 website:
 # Backend for importing playlist data and embedding videos. Options: "YTDLP", "YTAPI" and "SCRAPE". 
