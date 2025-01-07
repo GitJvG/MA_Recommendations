@@ -50,7 +50,7 @@ class Env:
         self.band = yaml_conf['paths']['MA_BANDS']
         self.deta = yaml_conf['paths']['MA_DETAILS']
         self.memb = yaml_conf['paths']['MA_MEMBER']
-        self.labe = yaml_conf['paths']['MA_LABEL']
+        self.label = yaml_conf['paths']['MA_LABEL']
 
         self.meta_key = yaml_conf['keys'][self.meta]
         self.simi_key = yaml_conf['keys'][self.simi]

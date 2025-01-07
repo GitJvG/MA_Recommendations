@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
 from app import create_app, db
-from app.models import member, details, similar_band, discography, band, genre, prefix, genres, theme, themes, candidates, hgenre
+from app.models import member, details, similar_band, discography, band, genre, prefix, genres, theme, themes, candidates, hgenre, label
 from sqlalchemy import text
 from Env import Env
 env = Env.get_instance()
@@ -22,14 +22,15 @@ dataframes = {
     genres.__name__: lambda: pd.read_csv(env.genres, header=0),
     theme.__name__: lambda: pd.read_csv(env.theme, header=0),
     themes.__name__: lambda: pd.read_csv(env.themes, header=0),
-    candidates.__name__: lambda: pd.read_csv(env.candidates, header=0)
+    candidates.__name__: lambda: pd.read_csv(env.candidates, header=0),
+    label.__name__: lambda: pd.read_csv(env.label, header=0)
 }
 
 def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     app = create_app()
     with app.app_context():
-        models = model if model else [band, theme, prefix, genre, hgenre, discography, similar_band, details, member, genres, themes, candidates]
+        models = model if model else [label, band, theme, prefix, genre, hgenre, discography, similar_band, details, member, genres, themes, candidates]
 
         for model in models:
             df = dataframes.get(model.__name__)()

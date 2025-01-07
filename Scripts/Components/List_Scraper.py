@@ -43,7 +43,7 @@ def parse_labels(data):
 
 mapping = {
         env.url_band: {"csv": env.band, "parser": parse_bands, "columns": ['namelink', 'country', 'genre', 'status']},
-        env.url_label: {"csv": env.labe, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'country', 'website', 'shopping']},
+        env.url_label: {"csv": env.label, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'country', 'website', 'shopping']},
     }
 
 def scrape_json(url, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):

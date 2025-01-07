@@ -109,8 +109,8 @@ class candidates(db.Model):
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)
     band_id = db.Column('band_id', db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
 
-class labels(db.Model):
-    __tablename__ = 'labels'
+class label(db.Model):
+    __tablename__ = 'label'
     label_id = db.Column('label_id', db.BigInteger, primary_key=True, nullable=False)
     name = db.Column('name', db.Text, nullable=False)
     country = db.Column('country', db.Text, nullable=True)
