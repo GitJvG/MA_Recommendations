@@ -43,7 +43,7 @@ def Like_bands(user_id, band_id, action):
         elif action == 'dislike':
             existing_preference.liked = False
             existing_preference.liked_date = now
-        elif action == 'remind':
+        elif action == 'remind_me':
             if existing_preference.remind_me:
                 existing_preference.remind_me = False
                 existing_preference.remind_me_date = now
@@ -55,8 +55,9 @@ def Like_bands(user_id, band_id, action):
             new_preference = users(user_id=user_id, band_id=band_id, liked=True, remind_me=False, liked_date=now)
         elif action == 'dislike':
             new_preference = users(user_id=user_id, band_id=band_id, liked=False, remind_me=False, liked_date=now)
-        elif action == 'remind':
+        elif action == 'remind_me':
             new_preference = users(user_id=user_id, band_id=band_id, liked=None, remind_me=True, remind_me_date=now)
+        print(action)
         db.session.add(new_preference)
 
     db.session.commit()
