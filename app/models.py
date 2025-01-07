@@ -11,12 +11,13 @@ class band(db.Model):
 class discography(db.Model):
     __tablename__ = 'discography'
     band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
-    name = db.Column("name", db.Text, primary_key=True, nullable=False)
-    type = db.Column("type", db.Text, primary_key=True, nullable=False)
-    year = db.Column("year", db.Integer, primary_key=True, nullable=False)
+    name = db.Column("name", db.Text, nullable=False)
+    type = db.Column("type", db.Text, nullable=False)
+    year = db.Column("year", db.Integer, nullable=False)
     reviews = db.Column("reviews", db.Text, nullable=True)
     review_count = db.Column("review_count", db.Integer, nullable=True)
     review_score = db.Column("review_score", db.Integer, nullable=True)
+    album_id = db.Column('album_id', db.Integer, primary_key=True, nullable=False)
 
 class similar_band(db.Model):
     __tablename__ = 'similar_band'
@@ -107,3 +108,10 @@ class candidates(db.Model):
     __tablename__ = 'candidates'
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)
     band_id = db.Column('band_id', db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
+
+class labels(db.Model):
+    __tablename__ = 'labels'
+    label_id = db.Column('label_id', db.BigInteger, primary_key=True, nullable=False)
+    name = db.Column('name', db.Text, nullable=False)
+    country = db.Column('country', db.Text, nullable=False)
+    genre = db.Column('genre', db.Text, nullable=False)
