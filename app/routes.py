@@ -5,6 +5,7 @@ from .models import user, band, users, discography, similar_band, details, genre
 from app.utils import render_with_base, Like_bands, liked_bands
 import random
 import asyncio
+import aiohttp
 from datetime import datetime
 from app.YT import YT
 from math import ceil
@@ -387,7 +388,7 @@ def band_detail(band_id):
     vdetail = db.session.get(details, band_id)
     name = db.session.get(band, band_id).name
     feedback = db.session.query(users.liked, users.remind_me).filter(and_(users.user_id == current_user.id, users.band_id == band_id)).first()
-    vdiscography = discography.query.filter_by(band_id=band_id).all()
+    vdiscography = db.session.query(discography).filter_by(band_id=band_id).all()
 
     types = {album.type for album in vdiscography}
 
@@ -424,9 +425,6 @@ def get_similar_bands(band_id):
             band_data["liked"] = band_data["band_id"] in liked_set
 
     return jsonify(similar_bands)
-
-import asyncio
-import aiohttp
 
 async def fetch_head(url):
     async with aiohttp.ClientSession() as session:
