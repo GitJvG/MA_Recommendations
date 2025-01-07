@@ -4,7 +4,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.append(project_root)
 
 import pandas as pd
-from Scripts.utils import Parallel_processing, Main_based_scrape, fetch
+from Scripts.utils import Parallel_processing, Main_based_scrape, fetch, extract_url_id
 from Env import Env
 from bs4 import BeautifulSoup
 from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
@@ -15,21 +15,27 @@ def fetch_band_stats(soup, band_id):
     """Helper function to extract band stats (general information) from the soup."""
     band_stats = soup.find('div', id='band_stats')
     results = {}
-    
-    # Loop through all dt elements to collect data
-    for dt in band_stats.find_all('dt'):
+    dt = band_stats.find_all('dt')
+    for dt in dt[:-2] + dt[-1:]: # all but label
         key = dt.text.strip().replace(':', '')
-        value = dt.find_next('dd').text.strip()  # Get the corresponding dd text
+        value = dt.find_next('dd').text.strip()
         
         # Clean up the value further
-        value = ' '.join(value.split())  # Replace multiple spaces/newlines with a single space
-        results[key] = value  # Store the result in the dictionary
-    
+        value = ' '.join(value.split())
+        results[key] = value
+
+    label_dd = band_stats.find_all('dd')[-2] # just the label
+    link = label_dd.find('a')
+
+    results['label'] = link.text.strip() if link else ''
+    results['label_id'] = extract_url_id(link['href']) if link else ''
+
     # Add the band ID to the results dictionary
     results['band_id'] = band_id
+
     results = pd.DataFrame([results])
     results.columns = ['country','location','status','year_formed','genre','themes',
-                       'label','years_active','band_id']
+                       'years_active','label','label_id','band_id']
     return results
 
 def fetch_band_members(soup, band_id):
@@ -96,4 +102,4 @@ def refresh(band_ids_to_scrape=None):
     Parallel_processing(band_ids_to_process, env.batch_size, [env.deta, env.memb], get_band_data)
 
 if __name__ == "__main__":
-    print(get_band_data(1))
+    main()
