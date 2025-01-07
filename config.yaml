@@ -17,14 +17,14 @@ paths:
   MA_MEMBER: &MA_MEMBER "Datasets/MA_Member.csv"
   MA_LABEL: &MA_LABEL "Datasets/MA_Label.csv"
 
-  GENRE: "M_Datasets/genre.csv"
-  HGENRE: "M_Datasets/hgenres.csv"
-  PREFIX: "M_Datasets/prefix.csv"
-  GENRES: "M_Datasets/genres.csv"
-  THEME: "M_Datasets/theme.csv"
-  DIM_THEME_DICT: "M_Datasets/Temp/DIM_Theme_Dict.pkl"
-  THEMES: "M_Datasets/themes.csv"
-  CANDIDATES: "M_Datasets/candidates.csv"
+  GENRE: "Datasets/genre.csv"
+  HGENRE: "Datasets/hgenres.csv"
+  PREFIX: "Datasets/prefix.csv"
+  GENRES: "Datasets/genres.csv"
+  THEME: "Datasets/theme.csv"
+  DIM_THEME_DICT: "Datasets/Temp/DIM_Theme_Dict.pkl"
+  THEMES: "Datasets/themes.csv"
+  CANDIDATES: "Datasets/candidates.csv"
   CONFIG: "Config.json"
 
 keys:

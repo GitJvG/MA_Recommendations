@@ -35,6 +35,7 @@ class details(db.Model):
     genre = db.Column("genre", db.Text, nullable=True)
     themes = db.Column("themes", db.Text, nullable=True)
     label = db.Column("label", db.Text, nullable=True)
+    label_id = db.Column("label_id", db.BigInteger, nullable=True)
     years_active = db.Column("years_active", db.Text, nullable=True)
 
 class member(db.Model):

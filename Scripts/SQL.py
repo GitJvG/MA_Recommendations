@@ -14,7 +14,7 @@ dataframes = {
     member.__name__: lambda: pd.read_csv(env.memb, header=0),
     details.__name__: lambda: pd.read_csv(env.deta, header=0),
     similar_band.__name__: lambda: pd.read_csv(env.simi, header=0),
-    discography.__name__: lambda: pd.read_csv(env.disc, header=0),
+    discography.__name__: lambda: pd.read_csv(env.disc, header=0, keep_default_na=False, na_values=['']),
     band.__name__: lambda: pd.read_csv(env.band, header=0),
     genre.__name__: lambda: pd.read_csv(env.genre, header=0),
     hgenre.__name__: lambda: pd.read_csv(env.hgenre, header=0),
