@@ -13,14 +13,21 @@ This project contains a collection of scripts designed to scrape various parts o
 
 ## Scrapers
 
-- **BandScraper → `MA_Bands.csv`**:  
-  Scrapes data for:
-  - Band URL
+- **List_Scraper → `MA_Bands.csv, MA_Label.csv`**:
+Scrapes data for:
+- **`MA_Bands.csv`**  
   - Band Name
   - Country
   - Genre
   - Band ID
-    - optionally Status
+
+- **`MA_Label.csv`**  
+  - Label Id
+  - Name
+  - Country
+  - Genre
+  - Status
+
 
 - **SimilarScraper → `MA_Similar.csv`**:  
   Scrapes data for:
@@ -30,6 +37,7 @@ This project contains a collection of scripts designed to scrape various parts o
 
 - **AlbumScraper → `MA_Discog.csv`**:  
   Scrapes data for:
+  - Album ID
   - Album Name
   - Type
   - Year
@@ -46,8 +54,9 @@ Scrapes data for:
    - Formed in  
    - Genre  
    - Themes  
-   - Label  
-   - Years active  
+   - Years active
+   - Label
+   - Label ID
    - Band ID  
 
 - **`MA_Member.csv`**  
@@ -64,7 +73,7 @@ Scrapes data for:
 
 - **FullScraper**:  
   Fully scrapes Metallum from scratch. Starts by quickly scraping all bands and some basic data after which it scrapes corresponding band specific pages: Similar bands, Band details & Band discography.
-  - Note: The initial basic data scraping is much more efficient and only takes about 17 minutes, the band specific page scraping takes about 16 hours for each distinct page. All in all it could take up to 48.5 hours to scrape all of metallum on these topics.
+  - Note: The initial basic data scraping is much more efficient and only a few minutes, the band specific page scraping takes about 15-20 hours for each distinct page. All in all it could take up to 48.5 hours to scrape all of metallum on these topics.
 
 ## Recommendation model
 Candidates are generated based on user feedback and item features with Faiss-CPU. At it's core this is a Approximate nearest neighbor model. To further improve recommendations a deep-ranking model should be added to rank the generated candidates. The recommendation model is implemented in `Scripts/Add_Proc/candidates.py`.
