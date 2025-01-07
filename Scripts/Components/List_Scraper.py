@@ -1,10 +1,14 @@
-import time
+import sys
 import os
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(project_root)
+
+import time
 import requests
 from pandas import DataFrame
 import json
 import pandas as pd
-from Scripts.utils import extract_url_id, update_metadata
+from Scripts.utils import extract_url_id, Parallel_processing, fetch
 from Env import Env
 from Scripts.Components.Helper.HTML_Scraper import extract_href, extract_text
 from bs4 import BeautifulSoup
@@ -18,51 +22,53 @@ def make_request(url, params=None):
     return r.json()
 
 def parse_bands(data):
-        data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
-        data['url'] = data['namelink'].apply(extract_href)
-        data['name'] = data['namelink'].apply(extract_text)
-        data['band_id'] = data['url'].apply(extract_url_id)
-        data = data[['name','country','genre','band_id']]
-        return data
+    data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
+    data['url'] = data['namelink'].apply(extract_href)
+    data['name'] = data['namelink'].apply(extract_text)
+    data['band_id'] = data['url'].apply(extract_url_id)
+    data = data[['name','country','genre','band_id']]
+    return data
 
 def parse_labels(data):
     data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
     data['url'] = data['namelink'].apply(extract_href)
     data['name'] = data['namelink'].apply(extract_text)
     data['label_id'] = data['url'].apply(extract_url_id)
-    data = data[['name','country','genre','label_id']]
+    data['genre'] = data['genre'].apply(lambda html: BeautifulSoup(html, 'html.parser')).apply(extract_text)
+    data['status'] = data['status'].apply(lambda html: BeautifulSoup(html, 'html.parser')).apply(extract_text)
+    data['country'] = data['country'].apply(lambda html: BeautifulSoup(html, 'html.parser')).apply(extract_text)
+
+    data = data[['label_id', 'name','country','genre', 'status']]
+    return data
 
 mapping = {
         env.url_band: {"csv": env.band, "parser": parse_bands, "columns": ['namelink', 'country', 'genre', 'status']},
-        env.url_label: {"csv": env.labe, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'website', 'shopping']},
+        env.url_label: {"csv": env.labe, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'country', 'website', 'shopping']},
     }
 
-def scrape_bands(url=env.url_band, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
+def scrape_json(url, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,
             'iDisplayStart': start,
             'iDisplayLength': length
         }
-        return make_request(url + letter, params=payload)
+        return fetch(url + letter, delay_between_requests=1, type='json', params=payload)
 
     column_names = mapping[url]["columns"]
-
     data = DataFrame()
 
     for letter in letters:
-        print('Current letter = ', letter)
         try:
             js = get_url(letter=letter, start=0, length=length)
             n_records = js['iTotalRecords']
             n_chunks = (n_records // length) + 1
-            print('Total records = ', n_records)
 
             # Retrieve chunks
             for i in range(n_chunks):
                 start = length * i
                 end = min(start + length, n_records)
-                print('Fetching band entries ', start, 'to ', end)
+                print(f'Fetching entries {start} to {end}/{n_records} for letter: {letter}')
 
                 for attempt in range(env.retries):
                     time.sleep(env.delay)
@@ -90,27 +96,35 @@ def scrape_bands(url=env.url_band, letters='NBR A B C D E F G H I J K L M N O P 
 
         return data
 
-def Full_scrape(url=env.url_band):
-    """url can be env.url_band or env.url_labe."""
+def Alphabetical_List_Scraper(letters = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split(), **kwargs):
+    if kwargs['url']: 
+        url = kwargs['url']
+    else:
+        print('missing mandatory url kwarg')
+        return
     if not url in mapping:
         print('Error: Invalid url was passed. Only pass the bands or labels alphabetical list urls.')
         return
         
-    data = scrape_bands(url=url)
+    data = scrape_json(url=url, letters=letters)
 
     if data.empty:
         print('An empty dataframe was received before parsing.')
         return
     
     parser = mapping[url]["parser"]
-    csv = mapping[url]["data"]
-
-    print('Parsing')
     data = parser(data)
-    data.to_csv(csv, index=False, mode='w')
-    update_metadata(os.path.basename(env.band))
-    print('Done!')
+
+    return data
+
+def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split(), batch_size=False):
+    output = mapping[url]["csv"]
+    Parallel_processing(items_to_process=letters, 
+                        batch_size=batch_size,
+                        output_files=output,
+                        function=Alphabetical_List_Scraper,
+                        url=url
+    )
     
-# Call the function
 if __name__ == "__main__":
-    Full_scrape()
+    Parrallel_Alphabetical_List_Scraper(env.url_label)

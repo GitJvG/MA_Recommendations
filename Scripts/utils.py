@@ -5,8 +5,38 @@ from threading import Lock
 from datetime import datetime
 import pytz
 from Env import Env
+import requests
+import time
 
 env = Env.get_instance()
+
+def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=env.head, type='text', params=None):
+    session = requests.Session()
+    session.headers.update(headers)
+    session.cookies.update(env.cook)
+    
+    for attempt in range(retries):
+        try:
+            response = session.get(url, params=params)
+            time.sleep(delay_between_requests)
+
+            if response.status_code == 200:
+                if type == 'text':
+                    return response.text
+                elif type == 'json':
+                    return response.json()
+            else:
+
+                print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
+                sleep_time = 2.5 ** attempt
+                time.sleep(sleep_time)
+        except requests.RequestException as e:
+
+            print(f"Request failed for {url}: {e}. Attempt {attempt + 1}")
+            time.sleep(2 ** attempt)
+    
+    print(f"Failed to retrieve {url}.")
+    return None
 
 def get_last_scraped_date(file_path, filename):
     try:
@@ -51,14 +81,12 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
             processed_count += 1
     
     with ThreadPoolExecutor(max_workers=3) as executor:
-        future_to_band_id = {executor.submit(function, band_id, **kwargs): band_id for band_id in items_to_process}
+        future_to_items = {executor.submit(function, items, **kwargs): items for items in items_to_process}
 
-        for future in as_completed(future_to_band_id):
-            band_id = future_to_band_id[future]
+        for future in as_completed(future_to_items):
+            itemid = future_to_items[future]
             try:
                 result = future.result()  # Get result(s) from the function
-                
-                update_processed_count()
                 
                 # If function returns a single DataFrame, wrap it in a tuple for consistency
                 if isinstance(result, pd.DataFrame):
@@ -69,15 +97,16 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
                     if not df.empty:
                         all_data[i].append(df)
 
-                # Intermediate saving for each batch
-                if processed_count % batch_size == 0:
-                    print(f"Processed {processed_count}/{to_be_processed_count} items.")
-                    for i, data_list in enumerate(all_data):
-                        if data_list:
-                            save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
-                            data_list.clear()  # Clear data after saving
+                if batch_size:
+                    update_processed_count()
+                    if processed_count % batch_size == 0:
+                        print(f"Processed {processed_count}/{to_be_processed_count} items.")
+                        for i, data_list in enumerate(all_data):
+                            if data_list:
+                                save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
+                                data_list.clear()  # Clear data after saving
             except Exception as e:
-                print(f"Error processing band ID {band_id}: {e}")
+                print(f"Error processing item {itemid}: {e}")
 
     # Final save for any remaining data
     for i, data_list in enumerate(all_data):
@@ -146,9 +175,11 @@ def remove_dupes_and_deletions(file_path):
 def Main_based_scrape(target_path):
     """Scrapes all ids existing in the main MA_bands, not in the target file"""
     all_band_ids = set(pd.read_csv(env.band)['band_id'])
-    processed_set = set(pd.read_csv(target_path)['band_id'])
-
-    band_ids_to_process = list(all_band_ids - processed_set)
+    if not os.path.exists(target_path):
+        band_ids_to_process = all_band_ids
+    else:
+        processed_set = set(pd.read_csv(target_path)['band_id'])
+        band_ids_to_process = list(all_band_ids - processed_set)
 
     return band_ids_to_process
 
@@ -159,3 +190,13 @@ def get_time():
     time = time.strftime("%H:%M")
 
     return time
+
+def get_common_date():
+    metadata = pd.read_csv(env.meta)
+    filtered_metadata = metadata[metadata['name'] != 'MA_Bands.csv']
+    unique_dates = filtered_metadata['date'].dropna().unique()
+    
+    if len(unique_dates) == 1:
+        return env.simi
+    else:
+        return None

@@ -4,8 +4,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.append(project_root)
 
 import pandas as pd
-from Scripts.Components.Helper.HTML_Scraper import fetch
-from Scripts.utils import Parallel_processing, Main_based_scrape
+from Scripts.utils import Parallel_processing, Main_based_scrape, fetch
 from Env import Env
 from bs4 import BeautifulSoup
 from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list

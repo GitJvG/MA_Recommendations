@@ -3,33 +3,22 @@ import os
 import sys
 import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Scripts.utils import remove_dupes_and_deletions, update_metadata, get_time
+from Scripts.utils import remove_dupes_and_deletions, update_metadata, get_time, get_common_date
 from Env import Env
 from Scripts.Components.Helper.ModifiedUpdater import Modified_based_list
-from Scripts.Components.BandScraper import Full_scrape
+from Scripts.Components.List_Scraper import Parrallel_Alphabetical_List_Scraper
 from Scripts.Components.SimilarScraper import refresh as ReSim
 from Scripts.Components.AlbumScraper import refresh as ReAlb
 from Scripts.Components.DetailScraper import refresh as ReDet
 
 env = Env.get_instance()
 
-def get_common_date():
-    metadata = pd.read_csv(env.meta)
-    filtered_metadata = metadata[metadata['name'] != 'MA_Bands.csv']
-    unique_dates = filtered_metadata['date'].dropna().unique()
-    
-    if len(unique_dates) == 1:
-        return env.simi
-    else:
-        return None
-
-
 def refresh():
     # Time handling is done at this level to ensure consistency between files on consecutive refreshes.
     # Time is set before all scraping, leading to some repeats on consecutive refreshes, this is done to ensure data-integrity and consistency.
     time = get_time()
     csv_files = [env.band, env.simi, env.disc, env.deta, env.meta, env.memb]
-    Full_scrape()
+    Parrallel_Alphabetical_List_Scraper(env.url_band)
     
     # Use the same modified bands list for all files if all files share the same last scraping date
     common_date = get_common_date()

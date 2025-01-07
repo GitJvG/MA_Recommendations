@@ -33,6 +33,7 @@ keys:
   *MA_DISCOG: ['album_id', 'band_id']
   *MA_DETAILS: ['band_id']
   *MA_MEMBER: ['band_id', 'member_id']
+  *MA_LABEL: ['label_id']
   *METADATA: ['name']
 
 website:

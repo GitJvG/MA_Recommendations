@@ -113,5 +113,6 @@ class labels(db.Model):
     __tablename__ = 'labels'
     label_id = db.Column('label_id', db.BigInteger, primary_key=True, nullable=False)
     name = db.Column('name', db.Text, nullable=False)
-    country = db.Column('country', db.Text, nullable=False)
-    genre = db.Column('genre', db.Text, nullable=False)
+    country = db.Column('country', db.Text, nullable=True)
+    genre = db.Column('genre', db.Text, nullable=True)
+    status = db.Column('status', db.Text, nullable=True)

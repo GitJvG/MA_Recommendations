@@ -1,7 +1,9 @@
-from .Components import BandScraper, AlbumScraper, SimilarScraper, DetailScraper
+from .Components import AlbumScraper, List_Scraper, SimilarScraper, DetailScraper
+from Env import Env
+env = Env.get_instance()
 
 def FullScrape():
-    BandScraper.Full_scrape()
+    List_Scraper.Parrallel_Alphabetical_List_Scraper(env.url_band)
     """BandScraper should take about 30 minutes"""
     print('Full list of bands scraped')
     AlbumScraper.main()

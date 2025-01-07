@@ -1,33 +1,6 @@
-import requests
-import time
 from bs4 import BeautifulSoup
 from Env import Env
 env = Env.get_instance()
-
-def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=env.head):
-    session = requests.Session()
-    session.headers.update(headers)
-    session.cookies.update(env.cook)
-    
-    for attempt in range(retries):
-        try:
-            response = session.get(url)
-            time.sleep(delay_between_requests)
-
-            if response.status_code == 200:
-                return response.text
-            else:
-
-                print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
-                sleep_time = 2 ** attempt
-                time.sleep(sleep_time)
-        except requests.RequestException as e:
-
-            print(f"Request failed for {url}: {e}. Attempt {attempt + 1}")
-            time.sleep(2 ** attempt)
-    
-    print(f"Failed to retrieve {url}.")
-    return None
 
 def parse_table(html, table_id=None, table_class=None, row_selector='tr', column_extractors=None):
     soup = BeautifulSoup(html, 'html.parser')
