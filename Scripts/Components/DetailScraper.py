@@ -27,7 +27,7 @@ def fetch_band_stats(soup, band_id):
     label_dd = band_stats.find_all('dd')[-2] # just the label
     link = label_dd.find('a')
 
-    results['label'] = link.text.strip() if link else ''
+    results['label'] = link.text.strip() if link else label_dd.text.strip()
     results['label_id'] = extract_url_id(link['href']) if link else ''
 
     # Add the band ID to the results dictionary
