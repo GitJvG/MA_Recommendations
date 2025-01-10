@@ -11,7 +11,9 @@ import pandas as pd
 from Scripts.utils import extract_url_id, Parallel_processing, fetch
 from Env import Env
 from Scripts.Components.Helper.HTML_Scraper import extract_href, extract_text
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+import warnings
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 env = Env.get_instance()
 letters = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()
