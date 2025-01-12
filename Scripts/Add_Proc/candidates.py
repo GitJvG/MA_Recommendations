@@ -10,13 +10,28 @@ from app.models import band as Band, genres as Genres, genre as Genre, hgenre as
 import pandas as pd
 import faiss
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from datetime import datetime
 from sqlalchemy import func, and_
 from Env import Env
 env = Env.get_instance()
 
 today = datetime.today()
+
+def one_hot_encode(df, columns):
+    unique_categories = {col: np.unique(df[col]) for col in columns}
+    category_to_index = {col: {category: idx for idx, category in enumerate(unique_categories[col])} 
+                        for col in columns}
+    encoded = []
+    
+    for col in columns:
+        indices = np.array([category_to_index[col][val] for val in df[col]])
+
+        one_hot = np.zeros((len(df), len(category_to_index[col])))
+        one_hot[np.arange(len(df)), indices] = 1
+        
+        encoded.append(one_hot)
+    
+    return np.hstack(encoded)
 
 def get_review_data():
     # Aggregate review counts and scores in the query itself
@@ -110,11 +125,11 @@ def create_item_embeddings_with_faiss(item):
     categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres']
     numerical_columns = ['score', 'review_count', 'median_score']
 
-    encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-    categorical_embeddings = encoder.fit_transform(item[categorical_columns])
 
-    scaler = StandardScaler()
-    numerical_embeddings = scaler.fit_transform(item[numerical_columns])
+    categorical_embeddings = one_hot_encode(item, categorical_columns)
+
+    # Standardscaling numerical cols
+    numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
     item_embeddings_dense = np.hstack([
         categorical_embeddings.astype('float32'),
