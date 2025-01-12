@@ -11,10 +11,12 @@ import pandas as pd
 from Scripts.utils import extract_url_id, Parallel_processing, fetch
 from Env import Env
 from Scripts.Components.Helper.HTML_Scraper import extract_href, extract_text
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+import warnings
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 env = Env.get_instance()
-length = 500  # max number of bands in a single view
+letters = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()
 
 def make_request(url, params=None):
     r = requests.get(url, params=params, headers=env.head, cookies=env.cook)
@@ -42,11 +44,13 @@ def parse_labels(data):
     return data
 
 mapping = {
-        env.url_band: {"csv": env.band, "parser": parse_bands, "columns": ['namelink', 'country', 'genre', 'status']},
-        env.url_label: {"csv": env.label, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'country', 'website', 'shopping']},
+        env.url_band: {"csv": env.band, "parser": parse_bands, "columns": ['namelink', 'country', 'genre', 'status'], "length": 500},
+        env.url_label: {"csv": env.label, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'country', 'website', 'shopping'], "length": 200},
     }
 
-def scrape_json(url, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()):
+def scrape_json(url, letters=letters):
+    column_names = mapping[url]["columns"]
+    length = mapping[url]["length"]
     def get_url(letter, start=0, length=length):
         payload = {
             'sEcho': 0,
@@ -55,7 +59,6 @@ def scrape_json(url, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W 
         }
         return fetch(url + letter, delay_between_requests=1, type='json', params=payload)
 
-    column_names = mapping[url]["columns"]
     data = DataFrame()
 
     for letter in letters:
@@ -96,7 +99,7 @@ def scrape_json(url, letters='NBR A B C D E F G H I J K L M N O P Q R S T U V W 
 
         return data
 
-def Alphabetical_List_Scraper(letters = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split(), **kwargs):
+def Alphabetical_List_Scraper(letters=letters, **kwargs):
     if kwargs['url']: 
         url = kwargs['url']
     else:
@@ -117,8 +120,9 @@ def Alphabetical_List_Scraper(letters = 'A B C D E F G H I J K L M N O P Q R S T
 
     return data
 
-def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split(), batch_size=False):
-    output = mapping[url]["csv"]
+def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters=letters, batch_size=False, output=None):
+    if not output:
+        output = mapping[url]["csv"]
     Parallel_processing(items_to_process=letters, 
                         batch_size=batch_size,
                         output_files=output,
