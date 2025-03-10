@@ -16,7 +16,7 @@ import warnings
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 env = Env.get_instance()
-letters = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()
+letters = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z # ~'.split()
 
 def make_request(url, params=None):
     r = requests.get(url, params=params, headers=env.head, cookies=env.cook)
