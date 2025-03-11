@@ -13,8 +13,8 @@ class discography(db.Model):
     band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
     album_id = db.Column('album_id', db.Integer, primary_key=True, nullable=False)
     name = db.Column("name", db.Text, nullable=False)
-    type = db.Column("type", db.Text, nullable=False)
-    year = db.Column("year", db.Integer, nullable=False)
+    type = db.Column("type", db.Text, nullable=True)
+    year = db.Column("year", db.Integer, nullable=True)
     reviews = db.Column("reviews", db.Text, nullable=True)
     review_count = db.Column("review_count", db.Integer, nullable=True)
     review_score = db.Column("review_score", db.Integer, nullable=True)
@@ -73,7 +73,6 @@ class genre(db.Model):
     genre_id = db.Column("id", db.BigInteger, primary_key=True, autoincrement=True)
     name = db.Column("name", db.Text, unique=True, nullable=False)
     type = db.Column("type", db.String(10), nullable=False)
-
 
 class hgenre(db.Model):
     __tablename__ = 'hgenre'
