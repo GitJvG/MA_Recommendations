@@ -56,6 +56,9 @@ def save_progress(new_data, output_file):
     df_new = pd.DataFrame(new_data)
 
     if os.path.exists(output_file):
+        df_existing = pd.read_csv(output_file, nrows=1)
+        df_new = df_new[df_existing.columns]
+        
         df_new.to_csv(output_file, mode='a', header=False, index=False)
     else:
         # If the file doesn't exist, create it and write the new data
