@@ -1,11 +1,11 @@
 from flask import render_template, request, jsonify
 import json
-from datetime import datetime
 from app import db
 from app.models import users
+from datetime import datetime
+from app.cache_manager import cache_manager
 
-
-def render_with_base(content_template, sidebar_html=None, title=None, **variables):
+def render_with_base(content_template, sidebar_html=None, title=None, main_content_class='', **variables):
     js_files = JSON(content_template)
     auto_title = Title(content_template)
     website_name = 'Amplifier Worship'
@@ -19,9 +19,10 @@ def render_with_base(content_template, sidebar_html=None, title=None, **variable
             'title': title,
             'website_name': website_name,
             'sidebar': sidebar_html,
+            'main_content_class': main_content_class
         })
     # Regular requests directly append the required javascript scripts as a parameter which is interpret by jinja.
-    return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title, website_name=website_name)
+    return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title, website_name=website_name, main_content_class=main_content_class)
 
 def JSON(attribute, path='app/Javascript.json'):
         with open(path, 'r') as file:
@@ -31,6 +32,13 @@ def JSON(attribute, path='app/Javascript.json'):
 
 def Title(content_template):
      return f"{content_template[:-5].replace("_", " ").title()} - Amplifier Worship"
+
+def liked_bands(current_user_id):
+    liked_bands = db.session.query(users.band_id).filter(
+    users.user_id == current_user_id,
+    users.liked == True
+    ).all()
+    return set(band_id[0] for band_id in liked_bands)
 
 def Like_bands(user_id, band_id, action):
     now = datetime.now().replace(microsecond=0)
@@ -57,14 +65,8 @@ def Like_bands(user_id, band_id, action):
             new_preference = users(user_id=user_id, band_id=band_id, liked=False, remind_me=False, liked_date=now)
         elif action == 'remind_me':
             new_preference = users(user_id=user_id, band_id=band_id, liked=None, remind_me=True, remind_me_date=now)
-        print(action)
         db.session.add(new_preference)
 
     db.session.commit()
-
-def liked_bands(current_user_id):
-    liked_bands = db.session.query(users.band_id).filter(
-    users.user_id == current_user_id,
-    users.liked == True
-    ).all()
-    return set(band_id[0] for band_id in liked_bands)
+    if action == 'remind_me':
+        cache_manager.reset_cache('/ajax/remind')
