@@ -14,14 +14,12 @@
     "my_bands.html": [
         "/static/Javascript/my_bands.js",
         "/static/Javascript/like_button.js"
-
     ],
     "search.html": [
         "/static/Javascript/search_results.js"
     ],
     "index.html": [
-        "/static/Javascript/index.js",
-        "/static/Javascript/thumbnail.js"
+        "/static/Javascript/index.js"
     ],
     "import.html": [
         "/static/Javascript/import.js"
