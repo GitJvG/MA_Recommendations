@@ -23,13 +23,20 @@ if (!window.likeButtonListenerAdded) {
             })
             .then(data => {
                 if (data.status === 'success') {
-                    document.querySelectorAll(`.like-btn[data-band-id="${bandId}"]`).forEach(btn => {
-                        const currentState = btn.classList.contains('active') ? 'active' : 'inactive';
-                        const newState = currentState === 'active' ? 'inactive' : 'active';
-        
-                        btn.classList.remove(currentState);
-                        btn.classList.add(newState);
-                    });
+                    const likeBtn = document.querySelector(`.like-btn[data-band-id="${bandId}"][data-action="like"]`);
+                    const dislikeBtn = document.querySelector(`.like-btn[data-band-id="${bandId}"][data-action="dislike"]`);
+    
+                    if (action === 'like') {
+                        likeBtn.classList.add('active');
+                        likeBtn.classList.remove('inactive');
+                        dislikeBtn.classList.remove('active');
+                        dislikeBtn.classList.add('inactive');
+                    } else if (action === 'dislike') {
+                        dislikeBtn.classList.add('active');
+                        dislikeBtn.classList.remove('inactive');
+                        likeBtn.classList.remove('active');
+                        likeBtn.classList.add('inactive');
+                    }
                 }
             })
             .catch(error => {
