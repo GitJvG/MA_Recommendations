@@ -346,7 +346,8 @@ def band_detail(band_id):
     name = db.session.get(band, band_id).name
     feedback = db.session.query(users.liked, users.remind_me).filter(and_(users.user_id == current_user.id, users.band_id == band_id)).first()
     vdiscography = db.session.query(discography).filter_by(band_id=band_id).all()
-    vsimilar = db.session.query(similar_band.similar_id, band.name, band.country, band.genre, details.status, details.label).join(band, band.band_id == similar_band.similar_id).join(details, details.band_id == similar_band.similar_id).filter(similar_band.band_id==band_id).all()
+    vsimilar = db.session.query(similar_band.similar_id, band.name, band.country, band.genre, details.status, details.label).join(band, band.band_id == similar_band.similar_id) \
+        .join(details, details.band_id == similar_band.similar_id).filter(similar_band.band_id==band_id).order_by(similar_band.score.desc()).all()
     types = {album.type for album in vdiscography}
 
     albums = [
@@ -373,28 +374,6 @@ def band_detail(band_id):
 
     return render_with_base('band_detail.html', band=vdetail, name=name, feedback=feedback, albums=albums, types=types, similar=similar, title=name)
 
-@main.route('/ajax/similar_bands/<int:band_id>', methods=['GET'])
-def get_similar_bands(band_id):
-
-    similar_band_ids = db.session.query(
-        similar_band.similar_id,
-        similar_band.score
-    ).filter(similar_band.band_id == band_id) \
-     .order_by(similar_band.score.desc()) \
-     .limit(20).all()
-
-    similar_bands = []
-    liked_set = liked(current_user)
-    for similar_band_id, score in similar_band_ids:
-        band_data = get_band_data(similar_band_id)
-
-        if band_data:
-            band_data['score'] = score
-            similar_bands.append(band_data)
-            band_data["liked"] = band_data["band_id"] in liked_set
-
-    return jsonify(similar_bands)
-
 async def fetch_head(url):
     async with aiohttp.ClientSession() as session:
         async with session.head(url) as response:
@@ -404,7 +383,7 @@ async def fetch_head(url):
 async def get_band_logo(band_id):
     band_id_str = str(band_id)
     digits = "/".join(band_id_str[:4])
-    file_extensions = ['jpg', 'png', 'gif']
+    file_extensions = ['jpg', 'png', 'gif', 'jpeg']
     
     urls = [f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.{ext}" for ext in file_extensions]
 
