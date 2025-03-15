@@ -1,18 +1,20 @@
-<button class="btn btn-success btn-sm like-btn 
-    {% if feedback.liked %}disabled{% endif %}" 
-    data-band-id="{{ band.band_id }}" 
-    data-action="like">
-    Like
-</button>
-<button class="btn btn-danger btn-sm like-btn 
-    {% if feedback.liked == false %}disabled{% endif %}" 
-    data-band-id="{{ band.band_id }}" 
-    data-action="dislike">
-    Dislike
-</button>
-<button class="btn btn-primary btn-sm remind-btn 
-    {% if feedback.remind_me %} active {% else %} inactive {% endif %}btn-primary"
-    data-band-id="{{ band.band_id }}" 
-    data-action="remind">
-    Remind
-</button>
+<div class="feedback container">
+    <button class="btn feedback like-btn 
+        {% if feedback.liked %} active {% else %} inactive {% endif %}" 
+        data-band-id="{{ band.band_id }}" 
+        data-action="like">
+        Like
+    </button>
+    <button class="btn feedback like-btn 
+        {% if feedback.liked == false %} active {% else %} inactive {% endif %}" 
+        data-band-id="{{ band.band_id }}" 
+        data-action="dislike">
+        Dislike
+    </button>
+    <button class="btn feedback remind-btn 
+        {% if feedback.remind_me %} active {% else %} inactive {% endif %}"
+        data-band-id="{{ band.band_id }}" 
+        data-action="remind">
+        Remind
+    </button>
+</div>

@@ -61,13 +61,17 @@ def scrape_json(url, letters=letters):
 
     data = DataFrame()
 
+    if isinstance(letters, (list, tuple)):
+        letters = letters
+    else:
+        letters = [letters]
+
     for letter in letters:
         try:
             js = get_url(letter=letter, start=0, length=length)
             n_records = js['iTotalRecords']
             n_chunks = (n_records // length) + 1
 
-            # Retrieve chunks
             for i in range(n_chunks):
                 start = length * i
                 end = min(start + length, n_records)
@@ -77,11 +81,9 @@ def scrape_json(url, letters=letters):
                     time.sleep(env.delay)
                     try:
                         js = get_url(letter=letter, start=start, length=length)
-
                         df_chunk = DataFrame(js['aaData'], columns=column_names)
-                        # Append chunk to the main data DataFrame
                         data = pd.concat([data, df_chunk], ignore_index=True)
-                        break  # Exit retry loop if successful
+                        break
 
                     except json.JSONDecodeError:
                         print('JSONDecodeError on attempt ', attempt + 1, ' of 10.')
@@ -91,11 +93,11 @@ def scrape_json(url, letters=letters):
                         continue
                     except requests.HTTPError as e:
                         print(f"HTTP error occurred: {e}")
-                        break  # Exit the loop on HTTP error
+                        break
 
         except requests.HTTPError as e:
             print(f"HTTP error occurred while fetching letter '{letter}': {e}")
-            continue  # Skip to the next letter
+            continue
 
         return data
 

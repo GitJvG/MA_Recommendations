@@ -5,14 +5,19 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from Env import load_config, Env
 from sqlalchemy import inspect
-from .API import YouTubeClient
+import YTMAPI.ytmusicapi as ytm
 
 backend = Env.get_instance().ytbackend
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-youtube_client = YouTubeClient() if backend == 'YTAPI' else False
+if backend == 'YTAPI':
+    from .API import YouTubeClient
+    youtube_client = YouTubeClient()
+else: 
+    youtube_client = False
 run_once_lock = threading.Lock()
+ytm = ytm.YTMusic('browser.json')
 
 def create_app(test_config=None):
     app = Flask(__name__)

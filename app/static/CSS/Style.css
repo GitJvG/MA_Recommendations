@@ -1,53 +1,112 @@
+html {
+    height: 100%;
+}
+
 body {
-    background-color: white !important;
-    color: #343a40;
+    background-color: #0E1013;
+    color: white;
     overflow-x: hidden;
+    font-family: 'Roboto', sans-serif;
+    height: 100%;
 }
 
 .main-container {
     display: flex;
     justify-content: center;
-    margin-left: 250px;
+    margin-left: 200px;
+    padding-left: 50px;
+    margin-top: 60px;
     box-sizing: border-box;
+    background-color: #0E1013;
+    height: 100%;
 }
 
 #main-content {
     margin: 0px;
-    max-width: 2500px;
-    width: calc(100% - 250px);
+    max-width: 100%;
+    width: calc(100%);
+    margin-right: 250px;
+    
+}
+
+#main-content.index {
+    margin-right: 0px !important;
 }
 
 header.navbar {
+    position: fixed;
+    top: 0;
+    width: calc(100% - 80px);
     max-height: 100px;
+    min-height:60px;
     height: auto;
     padding-left: 40px;
     padding-right: 40px;
-    background-color: #e9ecef !important;
+    background-color: #0E1013;
+    display: flex;
+    justify-content: space-between;
+    z-index: 5;
+    align-items: center;
 }
 
-header.navbar .navbar-brand img {
-    max-height: 80px;
-    object-fit: contain;
+.navbar-brand {
+    display: flex;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none !important;
+    text-anchor: inherit;
 }
 
-header.navbar .form-inline {
-    flex-grow: 1;
-    justify-content: right;
+.navbar-nav.flex-column {
+    margin-top: 20px;
 }
 
-header.navbar .form-inline input {
+.nav-link {
+    color: white;
+    text-decoration: none;
+}
+
+.nav-item {
+    list-style: none;
+    margin: 5px;
+    margin-left: 0px;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+form {
+    display: flex;
+    justify-content: flex-end;
     max-width: 400px;
+    flex-grow: 1;
 }
 
-header.navbar .form-inline button {
-    padding: 10px 15px;
-    color: black;
-    border-color: black;
-    border-width: 2px;
+#gloabl_search {
+    background-color: #0E1013;
+    color: white;
+    padding: 8px 12px;
+    border: 1px solid white;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    flex-grow: 1;
 }
 
-.nav-link { 
-    padding-left: 0}
+h2 {
+    margin-top: 20px;
+    margin-bottom:20px;
+}
+
+#sidebar {
+    padding-top: 60px;
+    position: fixed;
+    top: 0px;
+    bottom: 0;
+    width: 200px;
+    background-color: #0E1013;
+}
 
 .rightside {
     position: fixed;
@@ -55,7 +114,6 @@ header.navbar .form-inline button {
     top: 100px;
     bottom: 0;
     width: 200px;
-    background-color: white !important;
     overflow: hidden;
     display: flex;
 }
@@ -74,7 +132,7 @@ header.navbar .form-inline button {
     display: flex;
     min-height: 100px;
     flex-direction: column;
-    align-items: center;
+    align-items: left;
     justify-content: center;
     padding: 15px;
     border: 1px solid #ddd;
@@ -90,33 +148,11 @@ header.navbar .form-inline button {
 }
 
 .band-box a {
-    color: #333;
-    text-align: center;
+    text-align: left;
     font-size: 12px !important;
     margin: 0;
     padding-left: 0;
     padding-right: 0;
-}
-
-#sidebar {
-    position: fixed;
-    top: 100px;
-    bottom: 0;
-    width: 200px;
-    background-color: #e9ecef !important;
-}
-
-.navbar-nav {
-    width: 100%;
-    position: absolute;
-    top: 0;
-    padding-left: 40px;
-}
-
-.nav-item {
-    margin: 5px;
-    display: fixed;
-    justify-content: flex-start;
 }
 
 .alert {
@@ -188,7 +224,6 @@ header.navbar .form-inline button {
     padding-bottom: 10px;
     width: 100%;
     box-sizing: border-box;
-    scroll-snap-type: x mandatory;
     scrollbar-width: none;
 }
 
@@ -302,9 +337,8 @@ header.navbar .form-inline button {
 }
 
 .liked {
-    border-bottom: 5px solid green;
+    border-bottom: 5px solid white;
 }
-
 
 .floating-video {
     position: fixed;
@@ -440,7 +474,7 @@ header.navbar .form-inline button {
     left: 0;
     right: 0;
     color: white;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.6);
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -451,7 +485,7 @@ header.navbar .form-inline button {
 
 .band-name, .genre {
     margin: 0;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: bold;
 }
 
@@ -487,4 +521,75 @@ header.navbar .form-inline button {
 
 #youtube-import-form {
     right: 0px;
+}
+
+.table {
+    width: 100%;
+    text-align: left;
+
+}
+
+.mb li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    padding: 5px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button[type="submit"] {
+    font-size: 1.1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.title {
+    width: 100%;
+}
+
+.btn {
+    padding: 5px;
+    min-width: 60px;
+    background-color: whitesmoke;
+    border-radius: 5px;
+}
+
+.show {display:block;} 
+
+
+
+#similartit, #similarBandsTable {
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    border-top: 3px solid;
+    padding-top: 20px;
 }

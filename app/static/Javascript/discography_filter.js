@@ -51,9 +51,9 @@ function filter() {
     // Function to update the title text
     function updateTitle(selectedTypes) {
         if (selectedTypes.length === 0) {
-            filterTitle.textContent = "Filtered: None";  // Display default message if no filter is selected
+            filterTitle.textContent = "None";  // Display default message if no filter is selected
         } else {
-            filterTitle.textContent = "Filtered: " + selectedTypes.join(", ");  // Display selected types as a comma-separated list
+            filterTitle.textContent = selectedTypes.join(", ");  // Display selected types as a comma-separated list
         }
     }
 

@@ -28,7 +28,7 @@
     </div>
 </div>
 <div class="custom-dropdown">
-    <button id="discographyFilterBtn" class="filter-btn"><div id="filterTitle">Filtered: None</div></button>
+    <button id="discographyFilterBtn" class="filter-btn"><div id="filterTitle">None</div></button>
     <div id="dropdownMenu" class="dropdown-menu">
         <div>
             <label><input type="checkbox" value="all"> All</label>
@@ -40,38 +40,67 @@
         {% endfor %}
     </div>
 </div>
+{% if albums %}
+<table class="table" id="discographyTable">
+    <thead>
+        <tr>
+            <th>Album Name</th>
+            <th>Type</th>
+            <th>Year</th>
+            <th>Reviews</th>
+            <th>Video</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for album in albums %}
+        <tr data-type="{{ album.type }}">
+            <td>{{ album.album_name }}</td>
+            <td>{{ album.type }}</td> 
+            <td>{{ album.year }}</td>  
+            <td>{{ album.reviews }}</td>  
+            <td>
+                <button class="btn watch-video" 
+                data-name="{{ name }}" 
+                data-album="{{ album.album_name }}" 
+                data-type="{{ album.type }}">
+            Watch
+        </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No discography available for this band.</p>
+{% endif %}
 
-    {% if albums %}
-    <table class="table" id="discographyTable">
-        <thead>
-            <tr>
-                <th>Album Name</th>
-                <th>Type</th>
-                <th>Year</th>
-                <th>Reviews</th>
-                <th>Video</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for album in albums %}
-            <tr data-type="{{ album.type }}">
-                <td>{{ album.album_name }}</td>
-                <td>{{ album.type }}</td> 
-                <td>{{ album.year }}</td>  
-                <td>{{ album.reviews }}</td>  
-                <td>
-                    <button class="btn btn-primary btn-sm watch-video" 
-                    data-name="{{ name }}" 
-                    data-album="{{ album.album_name }}" 
-                    data-type="{{ album.type }}">
-                Watch
-            </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No discography available for this band.</p>
-    {% endif %}
+{% if similar %}
+<h2 id='similartit'>Similar Bands</h2>
+<table class="table" id="similarBandsTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Genre</th>
+            <th>Label</th>
+            <th>Country</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sim in similar %}
+        <tr>
+            <td>
+            <a href="/band/{{ sim.id }}" class="nav-link ajax-link">{{ sim.name }}</a>
+            </td>
+            <td>{{ sim.status }}</td>
+            <td>{{ sim.genre }}</td>
+            <td>{{ sim.label }}</td>
+            <td>{{ sim.country }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No similar bands found.</p>
+{% endif %}
 </div>

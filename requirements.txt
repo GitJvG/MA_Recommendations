@@ -15,5 +15,6 @@ psycopg2==2.9.10
 faiss_cpu==1.8.0.post1
 yt-dlp==2024.12.23
 nltk==3.9.1
+rapidfuzz==3.11.0
 # Optional official API use
 #google-api-python-client==2.158.0

@@ -56,6 +56,9 @@ def save_progress(new_data, output_file):
     df_new = pd.DataFrame(new_data)
 
     if os.path.exists(output_file):
+        df_existing = pd.read_csv(output_file, nrows=1)
+        df_new = df_new[df_existing.columns]
+        
         df_new.to_csv(output_file, mode='a', header=False, index=False)
     else:
         # If the file doesn't exist, create it and write the new data
@@ -157,20 +160,22 @@ def unique_columns(path):
 
 def remove_dupes_and_deletions(file_path):
     """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
-    filename = os.path.basename(file_path)
-    unique_cols = unique_columns(file_path)
-
-    df = pd.read_csv(file_path)
-    df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
     if file_path != env.meta:
-        ids_to_delete = list_to_delete(file_path)
-        if file_path == env.simi:
-            df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete) & ~df_updated['similar_id'].isin(ids_to_delete)]
-        else:
-            df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete)]
+        filename = os.path.basename(file_path)
+        unique_cols = unique_columns(file_path)
+
+        df = pd.read_csv(file_path, keep_default_na=False, na_values=[''])
+        df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
+
+        if file_path != env.label:
+            ids_to_delete = list_to_delete(file_path)
+            if file_path == env.simi:
+                df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete) & ~df_updated['similar_id'].isin(ids_to_delete)]
+            else:
+                df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete)]
         df_updated.to_csv(file_path, mode='w', header=True, index=False)
     
-    print(f"Duplicates removed and progress saved for {filename}.")
+        print(f"Duplicates removed and progress saved for {filename}.")
 
 def Main_based_scrape(target_path):
     """Scrapes all ids existing in the main MA_bands, not in the target file"""

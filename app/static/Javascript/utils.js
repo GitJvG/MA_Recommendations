@@ -1,5 +1,3 @@
-import { checkAndUpdateBands } from './rightside.js'
-
 export function fetchContent(url, isPopState = false) {
     fetch(url, {
         method: 'GET',
@@ -41,11 +39,17 @@ function updatePageContent(url, response, isPopState) {
         document.getElementById('sidebar').innerHTML = response.sidebar;
     }
 
+    const mainContent = document.getElementById('main-content');
+
+    mainContent.classList.remove("index");
+    if (response.main_content_class.trim() !== "") {
+        mainContent.classList.add(response.main_content_class);
+    }
+
     if (!isPopState && window.location.href !== url) {
         history.pushState({ path: url }, '', url);
         console.log('pushed', url)
     };
-    checkAndUpdateBands();
 }
 
 function executeScripts(jsFiles) {
@@ -69,7 +73,7 @@ window.create_like_dislike = function create_like_dislike(band) {
             <p>Status: ${band.liked === true ? 'Liked' : 'Not Liked'}</p>
         </div>
         <div>
-            <button class="btn btn-success btn-sm like-btn ${band.liked ? 'disabled' : ''}" 
+            <button class="btn btn-success btn-sm like-btn ${band.liked ? 'active' : ''}" 
                     data-band-id="${band.band_id}" 
                     data-action="like">
                 Like

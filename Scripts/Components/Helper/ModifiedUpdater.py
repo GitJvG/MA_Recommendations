@@ -95,7 +95,7 @@ def Update_list(output_path):
 
     # Loop through each URL and scrape data
     for i, url in enumerate(urls_to_scrape):
-        is_final_month = (i == len(urls_to_scrape) - 1)
+        is_final_month = (i == 0)
         last_scraped_day = last_scraped_date.day if is_final_month else None
         
         print(f"Fetching bands for URL: {url}")

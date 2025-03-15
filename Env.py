@@ -58,6 +58,7 @@ class Env:
         self.band_key = yaml_conf['keys'][self.band]
         self.deta_key = yaml_conf['keys'][self.deta]
         self.memb_key = yaml_conf['keys'][self.memb]
+        self.label_key = yaml_conf['keys'][self.label]
 
         self.url_modi = yaml_conf['urls']['MODIFIED']
         self.url_band = yaml_conf['urls']['BANDS']

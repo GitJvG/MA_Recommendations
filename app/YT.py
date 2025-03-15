@@ -1,11 +1,24 @@
 import requests
-from yt_dlp import YoutubeDL
 from bs4 import BeautifulSoup
-from app import youtube_client, backend
+from app import youtube_client, backend, ytm
 from flask import jsonify
 import re
 from typing import Optional, Type, Union
 
+if backend == 'YTDLP' or backend == 'SCRAPE':
+    try:
+        from yt_dlp import YoutubeDL
+    except ImportError as e:
+        print(e)
+
+class YTM:
+    def get_user_playlists(count):
+        records = ytm.get_library_playlists(count)
+        return records
+    
+    def add_to_playlist(playlist_id, video_id):
+        ytm.add_playlist_items(playlist_id, video_id)
+                                           
 class YTAPI:
     def __init__(self):
         self.youtube = youtube_client.get_client()
