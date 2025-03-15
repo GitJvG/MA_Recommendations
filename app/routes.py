@@ -3,6 +3,8 @@ from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_
 from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db
 from app.utils import render_with_base, Like_bands, liked_bands
+from app.cache_manager import cache_manager
+from app.queries import Above_avg_albums, Max_albums, New_albums
 import random
 import asyncio
 import aiohttp
@@ -16,6 +18,9 @@ from .auth import auth as auth_blueprint
 from .extension import extension as extension_blueprint
 main.register_blueprint(auth_blueprint)
 main.register_blueprint(extension_blueprint)
+
+today = datetime.today().date()
+random.seed(today.year * 100 + today.month * 10 + today.day)
 
 def liked(current_user):
     if current_user.is_authenticated:
@@ -49,69 +54,72 @@ def get_band_data(band_id):
 
     return None
 
-@main.route('/', methods=['GET'])
-def index():
-    return render_with_base('index.html')
-
-@main.route('/ajax/featured')
-def featured():
-    if not hasattr(featured, "_cache"):
-        featured._cache = {"date": None, "data": None}
-
-    today = datetime.today().date()
-    random.seed(today.year * 10000 + today.month * 100 + today.day)
-
-    if featured._cache["date"] == today and featured._cache["data"]:
-        result = featured._cache["data"]
+def get_cache(route_name):
+    if cache_manager.is_cache_valid(route_name):
+        result = cache_manager.get_cache(route_name)["data"]
         for vband in result:
             vband["liked"] = vband["band_id"] in liked(current_user)
         random.shuffle(result)
-        return jsonify(result)
-
-    bands_2024 = db.session.query(band.band_id).join(discography).filter(discography.year == 2024).all()
-    band_ids_2024 = [band[0] for band in bands_2024]
-
-    bands_with_scores = db.session.query(
-        band.band_id,
-        func.sum(similar_band.score).label('total_score')
-    ).join(similar_band, band.band_id == similar_band.band_id).filter(band.band_id.in_(band_ids_2024)) \
-        .group_by(band.band_id).order_by(func.sum(similar_band.score).desc()).all()
+        return result
+    else:
+        return False
     
-    top_bands = bands_with_scores[:min(len(bands_with_scores), 200)]
-    selected_bands = random.sample(top_bands, min(20, len(top_bands)))
+async def fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result):
+    if album_name:
+        video_query = f"{band_name} {album_name} {'Full Album' if album_type == 'Full-length' else album_type}"
 
+        video_response = await asyncio.to_thread(YT.get_video, video_query)
+        
+        if 'video_url' in video_response.json:
+            result.append({
+                "band_id": band_id,
+                "name": band_name,
+                "album_name": album_name,
+                "album_type": album_type,
+                "genre": band_genre,
+                "liked": band_id in liked(current_user),
+                "video_url": video_response.json['video_url'],
+                "playlist_url": video_response.json['playlist_url'] if video_response.json['playlist_url'] else False
+            })
+
+async def fetch_top_albums_with_videos(top_albums):
     result = []
-    for vband in selected_bands:
-        band_data = get_band_data(vband.band_id)
-        if band_data:
-            band_data["liked"] = vband.band_id in liked(current_user)
-            result.append(band_data)
+    tasks = []
 
-    featured._cache["date"] = today
-    featured._cache["data"] = result
+    for band_id, album_name, album_type, band_name, band_genre in top_albums:
+        task = fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result)
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
+    return result
+
+@main.route('/', methods=['GET'])
+def index():
+    return render_with_base('index.html', main_content_class="index")
+
+@main.route('/ajax/featured')
+async def featured():
+    route_name = request.path
+    cache = get_cache(route_name)
+    if cache:
+        return jsonify(cache)
+
+    Albums = New_albums()
+    result = await fetch_top_albums_with_videos(Albums)
+    cache_manager.set_cache(route_name, result)
 
     return jsonify(result)
 
 @main.route('/ajax/recommended')
 def recommended():
+    route_name = request.path
     if current_user.is_authenticated:
-        if not hasattr(recommended, "_cache"):
-            recommended._cache = {"date": None, "data": None}
+        cache = get_cache(route_name)
+        if cache:
+            return jsonify(cache)
 
-        today = datetime.today().date()
-        random.seed(today.year * 10000 + today.month * 100 + today.day)
-
-        if recommended._cache["date"] == today and recommended._cache["data"]:
-            result = recommended._cache["data"]
-            for vband in result:
-                vband["liked"] = vband["band_id"] in liked(current_user)
-            random.shuffle(result)
-            return jsonify(result)
-
-        bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
-        .join(band, band.band_id == candidates.band_id).all()
-
-        selected_bands = random.sample(bands, 100)
+        selected_bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
+        .join(band, band.band_id == candidates.band_id).order_by(func.random()).limit(30).all()
 
         result = []
         for vband in selected_bands:
@@ -120,43 +128,29 @@ def recommended():
                 band_data["liked"] = vband.band_id in liked(current_user)
                 result.append(band_data)
 
-        recommended._cache["date"] = today
-        recommended._cache["data"] = result
+        cache_manager.set_cache(route_name, result)
 
         return jsonify(result)
     else:
         return jsonify([])
 
 @main.route('/ajax/remind')
-def fetch_remind():
+async def fetch_remind():
     if current_user.is_authenticated:
-        if not hasattr(fetch_remind, "_cache"):
-            fetch_remind._cache = {"date": None, "data": None}
+        route_name = request.path
 
-        today = datetime.today().date()
-        random.seed(today.year * 10000 + today.month * 100 + today.day)
-
-        if fetch_remind._cache["date"] == today and fetch_remind._cache["data"]:
-            result = fetch_remind._cache["data"]
-            for vband in result:
-                vband["liked"] = vband["band_id"] in liked(current_user)
-            random.shuffle(result)
-            return jsonify(result)
+        cache = get_cache(route_name)
+        if cache:
+            return jsonify(cache)
 
         bands = db.session.query(users.band_id).filter(and_(users.user_id == current_user.id, users.remind_me == True)) \
-        .join(band, band.band_id == users.band_id).all()
+        .join(band, band.band_id == users.band_id).order_by(func.random()).limit(30).all()
 
-        selected_bands = random.sample(bands, min(50, len(bands)))
+        selected_band_ids = [vband[0] for vband in bands]
+        Albums = Max_albums(selected_band_ids)
 
-        result = []
-        for vband in selected_bands:
-            band_data = get_band_data(vband.band_id)
-            if band_data:
-                band_data["liked"] = vband.band_id in liked(current_user)
-                result.append(band_data)
-
-        fetch_remind._cache["date"] = today
-        fetch_remind._cache["data"] = result
+        result = await fetch_top_albums_with_videos(Albums)
+        cache_manager.set_cache(route_name, result)
 
         return jsonify(result)
     else:
@@ -165,84 +159,47 @@ def fetch_remind():
 @main.route('/ajax/recommended_albums')
 async def fetch_albums():
     if current_user.is_authenticated:
-        if not hasattr(fetch_albums, "_cache"):
-            fetch_albums._cache = {"date": None, "data": None}
+        route_name = request.path
 
-        today = datetime.today().date()
-        random.seed(today.year * 10000 + today.month * 100 + today.day)
-
-        if fetch_albums._cache["date"] == today and fetch_albums._cache["data"]:
-            result = fetch_albums._cache["data"]
-            for vband in result:
-                vband["liked"] = vband["band_id"] in liked(current_user)
-                random.shuffle(result)
-            return jsonify(result)
+        cache = get_cache(route_name)
+        if cache:
+            return jsonify(cache)
 
         bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
-            .join(band, band.band_id == candidates.band_id).all()
+            .join(band, band.band_id == candidates.band_id).order_by(func.random()).limit(27).all()
 
-        selected_bands = random.sample(bands, 10)
-        selected_band_ids = [vband[0] for vband in selected_bands]
+        selected_band_ids = [vband[0] for vband in bands]
+        Albums = Max_albums(selected_band_ids)
 
-        max_scores_subquery = db.session.query(
-            discography.band_id,
-            func.max(discography.review_score * discography.review_count).label('max_album_score')
-        ) \
-            .filter(discography.band_id.in_(selected_band_ids)) \
-            .filter(discography.review_score > 0) \
-            .group_by(discography.band_id) \
-            .subquery()
-
-        top_albums = db.session.query(
-            discography.band_id,
-            discography.name,
-            discography.type,
-            band.name.label('band_name'),
-            band.genre
-        ) \
-            .join(band, band.band_id == discography.band_id) \
-            .join(max_scores_subquery, max_scores_subquery.c.band_id == discography.band_id) \
-            .filter(discography.review_score * discography.review_count == max_scores_subquery.c.max_album_score) \
-            .all()
-
-        async def fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result):
-            if album_name:
-                video_query = f"{band_name} {album_name} {'Full Album' if album_type == 'Full-length' else album_type}"
-
-                video_response = await asyncio.to_thread(YT.get_video, video_query)
-                
-                if 'video_url' in video_response.json:
-                    result.append({
-                        "band_id": band_id,
-                        "name": band_name,
-                        "album_name": album_name,
-                        "album_type": album_type,
-                        "genre": band_genre,
-                        "liked": band_id in liked(current_user),
-                        "video_url": video_response.json['video_url'],
-                        "playlist_url": video_response.json['playlist_url'] if video_response.json['playlist_url'] else False
-                    })
-
-        async def fetch_top_albums_with_videos(top_albums):
-            result = []
-            tasks = []
-
-            for band_id, album_name, album_type, band_name, band_genre in top_albums:
-                task = fetch_video_for_album(band_id, album_name, album_type, band_name, band_genre, result)
-                tasks.append(task)
-
-            await asyncio.gather(*tasks)
-            return result
-
-        result = await fetch_top_albums_with_videos(top_albums)
-
-        fetch_albums._cache["date"] = today
-        fetch_albums._cache["data"] = result
+        result = await fetch_top_albums_with_videos(Albums)
+        cache_manager.set_cache(route_name, result)
 
         return jsonify(result)
     else:
         return jsonify([])
+    
+@main.route('/ajax/known_albums')
+async def fetch_known_albums():
+    if current_user.is_authenticated:
+        route_name = request.path
 
+        cache = get_cache(route_name)
+        if cache:
+            return jsonify(cache)
+
+        bands = db.session.query(users.band_id).filter(users.user_id == current_user.id) \
+            .join(band, band.band_id == users.band_id).order_by(func.random()).limit(27).all()
+
+        selected_band_ids = [vband[0] for vband in bands]
+        Albums = Above_avg_albums(selected_band_ids)
+
+        result = await fetch_top_albums_with_videos(Albums)
+        cache_manager.set_cache(route_name, result)
+
+        return jsonify(result)
+    else:
+        return jsonify([])
+    
 @main.route('/like_band', methods=['POST'])
 def like_band():
     if not current_user.is_authenticated:
@@ -270,7 +227,7 @@ def my_bands():
             users.liked_date
         )
         .join(users, users.band_id == band.band_id)
-        .filter(users.user_id == user_id)
+        .filter(users.user_id == user_id).order_by(users.liked_date.desc()).limit(50)
         .all()
     )
 
@@ -389,7 +346,7 @@ def band_detail(band_id):
     name = db.session.get(band, band_id).name
     feedback = db.session.query(users.liked, users.remind_me).filter(and_(users.user_id == current_user.id, users.band_id == band_id)).first()
     vdiscography = db.session.query(discography).filter_by(band_id=band_id).all()
-
+    vsimilar = db.session.query(similar_band.similar_id, band.name, band.country, band.genre, details.status, details.label).join(band, band.band_id == similar_band.similar_id).join(details, details.band_id == similar_band.similar_id).filter(similar_band.band_id==band_id).all()
     types = {album.type for album in vdiscography}
 
     albums = [
@@ -402,7 +359,19 @@ def band_detail(band_id):
         for album in vdiscography
     ]
 
-    return render_with_base('band_detail.html', band=vdetail, name=name, feedback=feedback, albums=albums, types=types, title=name)
+    similar = [
+        {
+            'id': sim.similar_id,
+            'name': sim.name,
+            'country': sim.country,
+            'genre': sim.genre,
+            'label': sim.label,
+            'status': sim.status
+        }
+        for sim in vsimilar
+    ]
+
+    return render_with_base('band_detail.html', band=vdetail, name=name, feedback=feedback, albums=albums, types=types, similar=similar, title=name)
 
 @main.route('/ajax/similar_bands/<int:band_id>', methods=['GET'])
 def get_similar_bands(band_id):
