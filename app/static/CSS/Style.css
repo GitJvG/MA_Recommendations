@@ -16,9 +16,6 @@ body {
     margin-left: 200px;
     padding-left: 50px;
     margin-top: 60px;
-    box-sizing: border-box;
-    background-color: #0E1013;
-    height: 100%;
 }
 
 #main-content {
@@ -26,7 +23,6 @@ body {
     max-width: 100%;
     width: calc(100%);
     margin-right: 250px;
-    
 }
 
 #main-content.index {
@@ -39,7 +35,6 @@ header.navbar {
     width: calc(100% - 80px);
     max-height: 100px;
     min-height:60px;
-    height: auto;
     padding-left: 40px;
     padding-right: 40px;
     background-color: #0E1013;
@@ -106,16 +101,6 @@ h2 {
     bottom: 0;
     width: 200px;
     background-color: #0E1013;
-}
-
-.rightside {
-    position: fixed;
-    right: 0;
-    top: 100px;
-    bottom: 0;
-    width: 200px;
-    overflow: hidden;
-    display: flex;
 }
 
 .band-container {
@@ -294,19 +279,16 @@ h2 {
     padding: 0.5rem 1rem;
     font-size: 16px;
     font-weight: 600;
-    color: #495057;
-    background-color: #ffffff;
-    border: 1px solid #ced4da;
+    background-color: white;
+    border: 1px solid white;
     border-radius: 0.25rem;
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s ease;
 }
 
 .filter-btn:hover,
 .filter-btn:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+    box-shadow: 0 0 0 2px white;
 }
 
 .dropdown-menu {
@@ -314,43 +296,21 @@ h2 {
     top: 100%;
     left: 0;
     right: 0;
-    background-color: #ffffff;
-    border: 1px solid #ced4da;
+    background-color: #000000;
+    box-shadow: inset 0 0 0 1px white, 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     border-radius: 0.25rem;
     display: none;
     max-height: 200px;
     overflow-y: auto;
-    z-index: 1000;
     margin-top: 0.5rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     padding: 0.5rem;
 }
 
 .dropdown-menu label {
     display: block;
-    margin-bottom: 10px;
     cursor: pointer;
     font-size: 16px;
-    font-weight: 500;
-    color: #495057;
-    transition: background-color 0.3s ease;
 }
-
-.liked {
-    border-bottom: 5px solid white;
-}
-
-.floating-video {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 560px;
-    height: 315px;
-    z-index: 9999;
-    border: none;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-}
-
 
 .close-btn {
     position: absolute;
@@ -374,36 +334,13 @@ h2 {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    z-index: 9999;
-    border: 2px solid #ccc;
-    border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-    background-color: white;
 }
 
 .floating-video-wrapper iframe {
     border: none;
-    display: block;
     width: 100%;
     height: 100%;
-}
-
-.close-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: #ff0000;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 18px;
-    width: 25px;
-    height: 25px;
-    cursor: pointer;
-}
-
-.close-btn:hover {
-    background-color: #cc0000;
 }
 
 .resizer {
@@ -417,16 +354,15 @@ h2 {
 }
 
 .header {
-    top: 0;
-    padding: 0;
-    margin: 0;
+    padding-top: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .title {
-    margin: 0;
+    align-self: stretch;
+    margin: 0px;
 }
 
 .band-logo {
@@ -453,7 +389,6 @@ h2 {
 }
 
 .album-thumbnail {
-    flex: 0 0 auto;
     width: 250px;
     height: 140px;
     object-fit: cover;
@@ -462,10 +397,6 @@ h2 {
 
 .album-card {
     position: relative;
-    width: 250px;
-    margin: 15px;
-    padding: 0; 
-    margin: 0;
 }
 
 .overlay {
@@ -476,10 +407,7 @@ h2 {
     color: white;
     background: rgba(0, 0, 0, 0.6);
     text-align: center;
-    display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
     text-decoration: none;
 }
 
@@ -526,7 +454,6 @@ h2 {
 .table {
     width: 100%;
     text-align: left;
-
 }
 
 .mb li {
@@ -571,10 +498,6 @@ button[type="submit"] {
     margin-top: 20px;
 }
 
-.title {
-    width: 100%;
-}
-
 .btn {
     padding: 5px;
     min-width: 60px;
@@ -583,7 +506,6 @@ button[type="submit"] {
 }
 
 .show {display:block;} 
-
 
 
 #similartit, #similarBandsTable {
