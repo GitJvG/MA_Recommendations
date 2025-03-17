@@ -9,6 +9,7 @@ if (!window.AjaxDefListenerAdded) {
             e.preventDefault();
             const url = link.getAttribute('href');
             fetchContent(url);
+            window.scrollTo(0, 0);
         }
     });
 }
