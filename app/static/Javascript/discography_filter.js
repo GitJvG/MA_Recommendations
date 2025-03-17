@@ -2,34 +2,28 @@ function filter() {
     const discographyFilterBtn = document.getElementById('discographyFilterBtn');
     const dropdownMenu = document.getElementById('dropdownMenu');
     const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
-    const filterTitle = document.getElementById('filterTitle');  // Reference to the title element
+    const filterTitle = document.getElementById('filterTitle');
 
-    // Function to toggle the dropdown visibility
     discographyFilterBtn.addEventListener('click', function () {
         dropdownMenu.classList.toggle('show');
     });
 
-    // Function to filter discography based on selected types
     function filterDiscography() {
         const selectedTypes = Array.from(checkboxes)
             .filter(checkbox => checkbox.checked)
             .map(checkbox => checkbox.value);
 
-        // Get the "All" checkbox and update its behavior
-        const allCheckbox = dropdownMenu.querySelector('input[value="all"]');
+        const allCheckbox = dropdownMenu.querySelector('input[value="All"]');
 
         if (allCheckbox.checked) {
-            // If "All" is checked, automatically deselect other checkboxes
             checkboxes.forEach(checkbox => {
-                if (checkbox.value !== 'all') checkbox.checked = false;
+                if (checkbox.value !== 'All') checkbox.checked = false;
             });
-        } else if (selectedTypes.includes('all')) {
-            // Remove "all" from selectedTypes if other checkboxes are selected
-            const index = selectedTypes.indexOf('all');
+        } else if (selectedTypes.includes('All')) {
+            const index = selectedTypes.indexOf('All');
             selectedTypes.splice(index, 1);
         }
 
-        // Update the title to show the selected types
         updateTitle(selectedTypes);
 
         const rows = document.querySelectorAll('#discographyTable tbody tr');
@@ -37,13 +31,13 @@ function filter() {
         rows.forEach(function (row) {
             const rowType = row.getAttribute('data-type');
             if (
-                selectedTypes.length === 0 || // If no specific type is selected
-                selectedTypes.includes('all') || // 'All' is selected
-                selectedTypes.includes(rowType) // Row matches selected type
+                selectedTypes.length === 0 ||
+                selectedTypes.includes('All') ||
+                selectedTypes.includes(rowType)
             ) {
                 row.style.display = '';
             } else {
-                row.style.display = 'none';
+                row.style.display = 'All';
             }
         });
     }
@@ -51,7 +45,7 @@ function filter() {
     // Function to update the title text
     function updateTitle(selectedTypes) {
         if (selectedTypes.length === 0) {
-            filterTitle.textContent = "None";  // Display default message if no filter is selected
+            filterTitle.textContent = "All";  // Display default message if no filter is selected
         } else {
             filterTitle.textContent = selectedTypes.join(", ");  // Display selected types as a comma-separated list
         }
@@ -60,37 +54,32 @@ function filter() {
     // Add event listener to each checkbox for filtering
     checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener('change', function() {
-            // If "All" is clicked, handle it separately
-            const allCheckbox = dropdownMenu.querySelector('input[value="all"]');
-            if (checkbox.value === 'all') {
+            const allCheckbox = dropdownMenu.querySelector('input[value="All"]');
+            if (checkbox.value === 'All') {
                 if (checkbox.checked) {
-                    // Select all checkboxes when "All" is selected
                     checkboxes.forEach(chk => {
                         if (chk !== checkbox) chk.checked = true;
                     });
                 } else {
-                    // If "All" is deselected, deselect all other checkboxes if nothing else is checked
                     if (Array.from(checkboxes).every(chk => chk !== checkbox && !chk.checked)) {
-                        checkbox.checked = true;  // Re-select "All" if nothing else is selected
+                        checkbox.checked = true;
                     }
                 }
             } else {
-                // If any other checkbox is clicked, deselect "All"
-                const allCheckbox = dropdownMenu.querySelector('input[value="all"]');
+                const allCheckbox = dropdownMenu.querySelector('input[value="All"]');
                 allCheckbox.checked = false;
             }
-            filterDiscography();  // Call filter function after checkbox change
+            filterDiscography();
         });
     });
 
-    // Close dropdown if clicked outside
     document.addEventListener('click', function (event) {
         if (!event.target.closest('.custom-dropdown')) {
             dropdownMenu.classList.remove('show');
         }
     });
 
-    filterDiscography();  // Apply the filter on load
+    filterDiscography();
 }
 
 filter();
