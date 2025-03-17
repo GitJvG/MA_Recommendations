@@ -124,12 +124,19 @@ class SCRAPE:
             return jsonify({'error': 'Failed to retrieve content'}), 404
         
         soup = BeautifulSoup(response.text, 'html.parser')
+        javascript = str(soup.find_all('script'))
 
-        # Look for the first "url":"/watch?" occurrence (can be video or playlist)
-        url_match = re.search(r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=[a-zA-Z0-9_-]+|\\u0026list=[a-zA-Z0-9_-]+)?)", str(soup))
+        secondaryContents = None
+        if '"secondaryContents"' in javascript:
+            secondaryContents = javascript[javascript.find('"secondaryContents"'):]
+
+        regex = r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=[a-zA-Z0-9_-]+|\\u0026list=[a-zA-Z0-9_-]+)?)"
+        if secondaryContents:
+            url_match = re.search(regex, secondaryContents) or re.search(regex, javascript)
+        else:
+            url_match = re.search(regex, javascript)
 
         if url_match:
-            # Extract the first result (for playlists it's /watch?v=FirstVideoID\u0026list=PlaylistID)
             First_result = url_match.group(1)
 
             video_id = re.search(r"v=([a-zA-Z0-9_-]+)", First_result)
