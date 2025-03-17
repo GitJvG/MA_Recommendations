@@ -19,8 +19,5 @@
         "port": "",
         "database": ""
     },
-    "Secret_Key": "",
-    "SQL_Url": "",
-    "SSLcert": "",
-    "SSLkey": ""
+    "Firefox_cookies.sqlite": "Optional: Used for cookiegrabber.py which can fetch metallum cookies from your personal firefox profile"
 }

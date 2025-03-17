@@ -40,6 +40,7 @@ class Env:
         try:
             self.head = load_config('headers')
             self.cook = load_config('cookies')
+            self.fire = load_config('Firefox_cookies.sqlite')
 
         except ValueError as e:
             print(f"Error: {e}")
