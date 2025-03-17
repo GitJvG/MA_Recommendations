@@ -126,7 +126,7 @@ class SCRAPE:
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Look for the first "url":"/watch?" occurrence (can be video or playlist)
-        url_match = re.search(r"\"url\":\"(/watch\?v=[a-zA-Z0-9_-]+(?:&list=[a-zA-Z0-9_-]+|\\u0026list=[a-zA-Z0-9_-]+)?)\"", str(soup))
+        url_match = re.search(r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=[a-zA-Z0-9_-]+|\\u0026list=[a-zA-Z0-9_-]+)?)", str(soup))
 
         if url_match:
             # Extract the first result (for playlists it's /watch?v=FirstVideoID\u0026list=PlaylistID)
