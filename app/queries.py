@@ -1,9 +1,6 @@
-from sqlalchemy import func, and_, or_, exists
+from sqlalchemy import func
 from .models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db
-from app.cache_manager import cache_manager
 from datetime import datetime
-from app.YT import YT
-from math import ceil
 from datetime import datetime
 
 def get_band_genres_subquery():
@@ -158,6 +155,4 @@ def New_albums(min_year=datetime.today().year-1):
     ).filter(Pop_bands.c.row_num == 1).order_by(None).order_by(func.random()).limit(5).all()
 
     final_query = query + top_albums
-    print(query)
-    print(top_albums)
     return final_query
