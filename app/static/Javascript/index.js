@@ -208,7 +208,7 @@ function getYouTubeVideoId(url) {
 }
 
 function refresh() {
-    loadData("/ajax/featured", ".band-cards", "album");
+    loadData("/ajax/featured", ".featured-cards", "album");
     loadData("/ajax/recommended_albums", ".album-cards", "album", 3);
     loadData("/ajax/remind", ".reminder-cards", "album");
     loadData("/ajax/known_albums", ".known_album-cards", "album", 3)
