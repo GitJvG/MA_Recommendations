@@ -188,6 +188,7 @@ async def fetch_known_albums():
             return jsonify(cache)
 
         bands = db.session.query(users.band_id).filter(users.user_id == current_user.id) \
+            .filter(users.liked == True) \
             .join(band, band.band_id == users.band_id).order_by(func.random()).limit(27).all()
 
         selected_band_ids = [vband[0] for vband in bands]
