@@ -51,6 +51,7 @@ class Env:
         self.deta = yaml_conf['paths']['MA_DETAILS']
         self.memb = yaml_conf['paths']['MA_MEMBER']
         self.label = yaml_conf['paths']['MA_LABEL']
+        self.reviews = yaml_conf['paths']['MA_REVIEWS']
 
         self.meta_key = yaml_conf['keys'][self.meta]
         self.simi_key = yaml_conf['keys'][self.simi]
@@ -59,10 +60,12 @@ class Env:
         self.deta_key = yaml_conf['keys'][self.deta]
         self.memb_key = yaml_conf['keys'][self.memb]
         self.label_key = yaml_conf['keys'][self.label]
+        self.reviews_key = yaml_conf['keys'][self.reviews]
 
         self.url_modi = yaml_conf['urls']['MODIFIED']
         self.url_band = yaml_conf['urls']['BANDS']
         self.url_label = yaml_conf['urls']['LABELS']
+        self.url_reviews = yaml_conf['urls']['REVIEWS']
         self.retries = yaml_conf['scraper']['RETRIES']
         self.delay = yaml_conf['scraper']['DELAY']
         self.batch_size = yaml_conf['scraper']['BATCH_SIZE']
