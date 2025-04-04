@@ -1,0 +1,18 @@
+{% if request.endpoint == 'main.index' or request.endpoint == 'main.index' %}
+<script type="module" src="/static/Javascript/index.js" data-dynamic-script="true"></script>
+{% elif request.endpoint == 'main.search_results' %}
+<script type="module" src="/static/Javascript/search_results.js" data-dynamic-script="true"></script>
+{% elif request.endpoint == 'main.band_detail' %}
+<script src="/static/Javascript/Band_logo.js" data-dynamic-script="true"></script>
+<script src="/static/Javascript/embed.js" data-dynamic-script="true"></script>
+<script src="/static/Javascript/discography_filter.js" data-dynamic-script="true"></script>
+<script src="/static/Javascript/like_button.js" data-dynamic-script="true"></script>
+<script type='module' src="/static/Javascript/Band_Picks.js" data-dynamic-script="true"></script>
+{% elif request.endpoint == 'auth.profile' or request.endpoint == 'auth.register' %}
+<script src="/static/Javascript/genreselection.js" data-dynamic-script="true"></script>
+{% elif request.endpoint == 'main.my_bands' or request.endpoint == 'main.get_bands' %}
+<script src="/static/Javascript/my_bands.js" data-dynamic-script="true"></script>
+<script src="/static/Javascript/like_button.js" data-dynamic-script="true"></script>
+{% elif request.endpoint == 'main.import' or 'extension.youtube_import' %}
+<script src="/static/Javascript/import.js" data-dynamic-script="true"></script>
+{% endif %}
