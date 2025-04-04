@@ -13,39 +13,41 @@
     <link rel="manifest" href="{{ url_for('static', filename='images/favicon/site.webmanifest') }}">
 </head>
 <body>
-    <header class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
-            <a class="navbar-brand ajax-link" href="{{ url_for('main.index') }}">
-                <span class="Logo_text">{{ website_name }}</span>
-            </a>
-            <form class="form-inline" method="POST" action="{{ url_for('main.search') }}">
-                <input class="searchbox" type="search" id=gloabl_search name="q" placeholder="Search bands..." aria-label="Search">
-            </form>        
-    </header>
-
-    <div class="d-flex">
-        {% include 'sidebar.html' %}
-    </div>
-    <div class="main-container">
-        <div id="main-content" class="{{ main_content_class | default('') }}">
-            <!-- Full render -->
-            {% if content_template %}
-                {% include content_template %}
-            {% endif %}
-            <!-- Partial render -->
-            {% block content %}
-            {% endblock %}
+    <div class="viewport">
+        <header class="navbar navbar-expand-lg">
+                <a class="navbar-brand ajax-link" href="{{ url_for('main.index') }}">
+                    <span class="Logo_text">{{ website_name }}</span>
+                </a>
+                <form class="form-inline" method="POST" action="{{ url_for('main.search') }}">
+                    <input class="searchbox" type="search" id=gloabl_search name="q" placeholder="Search bands..." aria-label="Search">
+                </form>        
+        </header>
+        <div class="d-flex">
+            {% include 'sidebar.html' %}
         </div>
+        <div class="main-container">
+            <div id="main-content" class="{{ main_content_class | default('') }}">
+                <!-- Full render -->
+                {% if content_template %}
+                    {% include content_template %}
+                {% endif %}
+                <!-- Partial render -->
+                {% block content %}
+                {% endblock %}
+            </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-        <script type="module" src="/static/Javascript/partial-ajax.js"></script>
-        <script type="module" src="/static/Javascript/ajax-form.js"></script>
-        <!-- Full render javascript injection -->
-        {% if js_files %}
-            {% for js_file in js_files %}
-                <script src="{{ js_file }}"></script>
-            {% endfor %}
-        {% endif %}
-        <div id="notification"></div>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+            <script type="module" src="/static/Javascript/partial-ajax.js"></script>
+            <script type="module" src="/static/Javascript/ajax-form.js"></script>
+            <script type="module" src="/static/Javascript/utils.js"></script>
+            <!-- Full render javascript injection -->
+            {% if js_files %}
+                {% for js_file in js_files %}
+                    <script type="module" src="{{ js_file }}" data-dynamic-script="true"></script>
+                {% endfor %}
+            {% endif %}
+            <div id="notification"></div>
+        </div>
     </div>
 </body>
 </html>
