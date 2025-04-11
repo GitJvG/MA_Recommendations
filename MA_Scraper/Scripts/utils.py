@@ -83,7 +83,7 @@ def remove_dupes_and_deletions(file_path):
     
         print(f"Duplicates removed and progress saved for {filename}.")
 
-def save_progress(new_data, output_file):
+def save_progress(new_data, output_file, final=False):
     df_new = pd.DataFrame(new_data)
 
     if os.path.exists(output_file):
@@ -91,6 +91,9 @@ def save_progress(new_data, output_file):
         df_new = df_new[df_existing.columns]
         
         df_new.to_csv(output_file, mode='a', header=False, index=False)
+
+        if final:
+            remove_dupes_and_deletions(output_file)
     else:
         # If the file doesn't exist, create it and write the new data
         df_new.to_csv(output_file, mode='w', header=True, index=False)
@@ -145,10 +148,7 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
     # Final save for any remaining data
     for i, data_list in enumerate(all_data):
         if data_list:
-            save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
-    
-    for output_file in output_files:
-        remove_dupes_and_deletions(output_file)
+            save_progress(pd.concat(data_list, ignore_index=True), output_files[i], final=True)
 
 def update_metadata(file_path=None, time=None):
     try:
