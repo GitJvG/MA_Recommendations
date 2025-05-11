@@ -101,8 +101,8 @@ function createAlbumCard(album) {
     genre.textContent = `${album.genre}`;
     genre.className = "genre";
 
-    overlaytext.appendChild(bandName);
     overlaytext.appendChild(AlbumName);
+    overlaytext.appendChild(bandName);
     bandLink.appendChild(overlaytext);
     overlay.appendChild(bandLink);
     albumLink.appendChild(albumImage);

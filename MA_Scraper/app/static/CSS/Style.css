@@ -202,33 +202,17 @@ h3 {
     border-radius: 10px;
 }
 
-.overlay {
-    left: 0;
-    right: 0;
-    align-content: center;
-    flex-direction: column;
-    text-decoration: none;
-    background-color: unset !important;
-}
-
 .overlay-text {
-    display: flex;
-    flex-direction: column;
     font-weight: bold;
-    background-color: unset !important;
-    
     .album {
-        order: 1;
         font-size: var(--font-medium)
     };
     .band-name {
-        order: 2;
         font-size: calc(var(--font-small) *1.1);
     };
 }
 
 .overlay-text * {
-    background-color: unset !important;
     margin: 0px;
 }
 
