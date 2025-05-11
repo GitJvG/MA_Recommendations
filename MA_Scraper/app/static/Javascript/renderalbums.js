@@ -53,7 +53,10 @@ export function loadData(route, containerSelector, type, bands=null, count=null)
 }
 
 function createAlbumCard(album) {
+    const albumContainer = document.createElement("div");
     const albumCard = document.createElement("div");
+
+    albumContainer.className = "album-container"
     albumCard.className = "album-card";
 
     let videoEmbedUrl = album.playlist_url || album.video_url;
@@ -101,15 +104,14 @@ function createAlbumCard(album) {
     overlaytext.appendChild(bandName);
     overlaytext.appendChild(AlbumName);
     bandLink.appendChild(overlaytext);
-
     overlay.appendChild(bandLink);
-
     albumLink.appendChild(albumImage);
-    albumLink.appendChild(overlay);
 
     albumCard.appendChild(albumLink);
+    albumContainer.appendChild(albumCard)
+    albumContainer.appendChild(overlay);
 
-    return albumCard;
+    return albumContainer;
 }
 
 function addScrolling(container) {
