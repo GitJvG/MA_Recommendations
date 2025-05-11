@@ -37,7 +37,7 @@ function filter() {
             ) {
                 row.style.display = '';
             } else {
-                row.style.display = 'All';
+                row.style.display = 'none';
             }
         });
     }

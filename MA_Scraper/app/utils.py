@@ -24,7 +24,7 @@ def render_with_base(content_template, sidebar_html=None, title=None, main_conte
     # Regular requests directly append the required javascript scripts as a parameter which is interpret by jinja.
     return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title, website_name=website_name, main_content_class=main_content_class)
 
-def JSON(attribute, path=rf'src/MA_Scraper/app/Javascript.json'):
+def JSON(attribute, path=rf'MA_Scraper/app/Javascript.json'):
         #TO
         with open(path, 'r') as file:
             config = json.load(file)

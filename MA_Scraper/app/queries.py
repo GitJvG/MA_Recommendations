@@ -13,7 +13,7 @@ def get_band_genres_subquery():
         ).join(genres, genres.band_id == band.band_id).join(genre, (genre.genre_id == genres.item_id) & (genre.type == genres.type)).group_by(band.band_id).subquery()
 
 def Above_avg_albums(band_ids, picks_per_band=1):
-    albums_subquery = db.session.query(
+    ranked_albums_subquery = db.session.query(
         discography.band_id,
         discography.name,
         discography.type,
@@ -29,27 +29,65 @@ def Above_avg_albums(band_ids, picks_per_band=1):
     .filter(discography.type.in_(["Full-length", "Split", "EP"])) \
     .subquery()
 
-    albums_with_row_num = db.session.query(
-        albums_subquery.c.band_id,
-        albums_subquery.c.name,
-        albums_subquery.c.type,
-        albums_subquery.c.band_name,
-        albums_subquery.c.genre,
+    # Subquery to rank albums within each band based on weighted score (descending)
+    ranked_albums_with_row_num = db.session.query(
+        ranked_albums_subquery.c.band_id,
+        ranked_albums_subquery.c.name,
+        ranked_albums_subquery.c.type,
+        ranked_albums_subquery.c.band_name,
+        ranked_albums_subquery.c.genre,
+        ranked_albums_subquery.c.weighted_score,
+        ranked_albums_subquery.c.avg_weighted_score,
         func.row_number().over(
-            partition_by=albums_subquery.c.band_id,
-            order_by=func.random()
-        ).label('row_num')
-    ).filter(
-        albums_subquery.c.weighted_score >= albums_subquery.c.avg_weighted_score
+            partition_by=ranked_albums_subquery.c.band_id,
+            order_by=ranked_albums_subquery.c.weighted_score.desc()
+        ).label('rank')
     ).subquery()
 
-    selected_albums = db.session.query(
-        albums_with_row_num.c.band_id,
-        albums_with_row_num.c.name,
-        albums_with_row_num.c.type,
-        albums_with_row_num.c.band_name,
-        albums_with_row_num.c.genre
-    ).filter(albums_with_row_num.c.row_num <= picks_per_band).all()
+    selected_albums = []
+    for band_id in band_ids:
+        # Get above-average albums for the current band
+        above_avg_albums = db.session.query(
+            ranked_albums_with_row_num.c.band_id,
+            ranked_albums_with_row_num.c.name,
+            ranked_albums_with_row_num.c.type,
+            ranked_albums_with_row_num.c.band_name,
+            ranked_albums_with_row_num.c.genre
+        ).filter(
+            ranked_albums_with_row_num.c.band_id == band_id,
+            ranked_albums_with_row_num.c.weighted_score >= ranked_albums_with_row_num.c.avg_weighted_score
+        ).limit(picks_per_band).all()
+
+        num_above_avg = len(above_avg_albums)
+        selected_albums.extend(above_avg_albums)
+
+        if num_above_avg < picks_per_band:
+            below_avg_needed = picks_per_band - num_above_avg
+
+            below_avg_ranked = db.session.query(
+                ranked_albums_subquery.c.band_id,
+                ranked_albums_subquery.c.name,
+                ranked_albums_subquery.c.type,
+                ranked_albums_subquery.c.band_name,
+                ranked_albums_subquery.c.genre,
+                func.row_number().over(
+                    partition_by=ranked_albums_subquery.c.band_id,
+                    order_by=func.random()
+                ).label('random_rank')
+            ).filter(
+                ranked_albums_subquery.c.band_id == band_id,
+                ranked_albums_subquery.c.weighted_score < ranked_albums_subquery.c.avg_weighted_score
+            ).subquery()
+
+            below_avg_albums = db.session.query(
+                below_avg_ranked.c.band_id,
+                below_avg_ranked.c.name,
+                below_avg_ranked.c.type,
+                below_avg_ranked.c.band_name,
+                below_avg_ranked.c.genre
+            ).filter(below_avg_ranked.c.random_rank <= below_avg_needed).all()
+
+            selected_albums.extend(below_avg_albums)
 
     return selected_albums
 

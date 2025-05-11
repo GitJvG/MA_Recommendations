@@ -28,10 +28,9 @@ export function loadData(route, containerSelector, type, bands=null, count=null)
             }
             const rowsCount = data.rowsCount;
             const items = data.data
-            const itemsPerRow = Math.ceil(items.length / rowsCount);
 
             for (let i = 1; i <= rowsCount; i++) {
-                const rowData = items.slice((i - 1) * itemsPerRow, i * itemsPerRow);
+                const rowData = items.slice((i - 1) * count, i * count);
 
                 rowData.forEach(item => {
                     let card;
@@ -46,7 +45,7 @@ export function loadData(route, containerSelector, type, bands=null, count=null)
             }
 
             container.style.setProperty('--rows-count', rowsCount);
-            container.style.setProperty('--albums-per-row', itemsPerRow);
+            container.style.setProperty('--albums-per-row', count);
         })
         .catch(error => {
             console.error(`Error loading data from ${route}:`, error);
@@ -84,16 +83,25 @@ function createAlbumCard(album) {
     bandLink.href = `/band/${album.band_id}`;
     bandLink.className = "overlay ajax-link";
 
+    const overlaytext = document.createElement("div");
+    overlaytext.className = "overlay-text";
+
     const bandName = document.createElement("p");
-    bandName.textContent = `${album.name} - ${album.album_name}`;
+    bandName.textContent = `${album.name}`;
     bandName.className = "band-name";
+
+    const AlbumName = document.createElement("p");
+    AlbumName.textContent = `${album.album_name}`;
+    AlbumName.className = "album";
 
     const genre = document.createElement("p");
     genre.textContent = `${album.genre}`;
     genre.className = "genre";
 
-    bandLink.appendChild(bandName);
-    bandLink.appendChild(genre);
+    overlaytext.appendChild(bandName);
+    overlaytext.appendChild(AlbumName);
+    bandLink.appendChild(overlaytext);
+
     overlay.appendChild(bandLink);
 
     albumLink.appendChild(albumImage);
