@@ -1,8 +1,6 @@
 import { fetchContent } from "./utils.js";
-console.log(window.SubmitButtonListenerAdded)
 if (!window.SubmitButtonListenerAdded) {
     window.SubmitButtonListenerAdded = true;
-    console.log(window.SubmitButtonListenerAdded)
     document.addEventListener('submit', function (e) {
         if (e.target.tagName === 'FORM') {
             e.preventDefault();

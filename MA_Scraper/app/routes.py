@@ -386,7 +386,6 @@ async def fetch_image(url):
 async def get_band_logo(band_id):
     stored_logo = db.session.get(band_logo, band_id)
     if stored_logo and stored_logo.data and stored_logo.content_type:
-        print(True)
         return Response(stored_logo.data, mimetype=stored_logo.content_type)
 
     band_id_str = str(band_id)
