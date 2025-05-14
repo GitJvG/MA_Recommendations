@@ -1,4 +1,5 @@
 from MA_Scraper.app import db
+from sqlalchemy.sql import func
 from flask_login import UserMixin
 
 class band(db.Model):
@@ -116,3 +117,10 @@ class label(db.Model):
     country = db.Column('country', db.Text, nullable=True)
     genre = db.Column('genre', db.Text, nullable=True)
     status = db.Column('status', db.Text, nullable=True)
+
+class band_logo(db.Model):
+    __tablename__ = 'band_logo'
+    band_id = db.Column('band_id', db.BigInteger, primary_key=True, nullable=False)
+    data = db.Column('data', db.LargeBinary, nullable=False)
+    retrieved_at = db.Column('retrieved_at', db.DateTime(timezone=True), default=func.now())
+    content_type = db.Column('content_type', db.String(50), nullable=False)

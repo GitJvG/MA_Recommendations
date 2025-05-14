@@ -69,7 +69,7 @@ def create_app(test_config=None):
 
     # Import models here to avoid circular imports
     with app.app_context():
-        from MA_Scraper.app.models import user, band, similar_band, discography, details, users, member, genre, prefix, genres, theme, themes, candidates
+        from MA_Scraper.app.models import user, band, similar_band, discography, details, users, member, genre, prefix, genres, theme, themes, candidates, band_logo
 
         # User Loader function for Flask-Login
         @login_manager.user_loader

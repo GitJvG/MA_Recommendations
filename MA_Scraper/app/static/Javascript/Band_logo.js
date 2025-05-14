@@ -5,12 +5,19 @@ function ajax_logo() {
 
     if (bandId && logoImg) {
         const url = `/ajax/band_logo/${bandId}`;
-        
+
         fetch(url)
-            .then(response => response.json())
+            .then(response => {
+                if (response.ok && response.headers.get('Content-Type').startsWith('image/')) {
+                    return response.blob();
+                } else {
+                    return response.json();
+                }
+            })
             .then(data => {
-                if (data) {
-                    logoImg.src = data;
+                if (data instanceof Blob) {
+                    const imageUrl = URL.createObjectURL(data);
+                    logoImg.src = imageUrl;
                     logoImg.alt = `Logo for band ID ${bandId}`;
                 } else {
                     logoImg.alt = 'Logo not available';
@@ -23,4 +30,4 @@ function ajax_logo() {
     }
 };
 
-ajax_logo()
+ajax_logo();

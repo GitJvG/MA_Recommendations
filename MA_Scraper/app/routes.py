@@ -1,7 +1,7 @@
-from flask import Blueprint, request, url_for, jsonify, g
+from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_
-from MA_Scraper.app.models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, db
+from MA_Scraper.app.models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, band_logo, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
 from MA_Scraper.app.queries import Above_avg_albums, Max_albums, New_albums
@@ -366,21 +366,43 @@ def band_detail(band_id):
 
 async def fetch_head(url):
     async with aiohttp.ClientSession() as session:
-        async with session.head(url) as response:
-            return response.status, url
+        try:
+            async with session.head(url, allow_redirects=True) as response:
+                return response.status, url
+        except aiohttp.ClientError:
+            return None, None
+
+async def fetch_image(url):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.read(), response.content_type
+                return None, None
+        except aiohttp.ClientError:
+            return None, None
 
 @main.route('/ajax/band_logo/<int:band_id>')
 async def get_band_logo(band_id):
+    stored_logo = db.session.get(band_logo, band_id)
+    if stored_logo and stored_logo.data and stored_logo.content_type:
+        print(True)
+        return Response(stored_logo.data, mimetype=stored_logo.content_type)
+
     band_id_str = str(band_id)
     digits = "/".join(band_id_str[:4])
     file_extensions = ['jpg', 'png', 'gif', 'jpeg']
-    
     urls = [f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.{ext}" for ext in file_extensions]
 
     responses = await asyncio.gather(*[fetch_head(url) for url in urls])
 
-    for response, ext in zip(responses, file_extensions):
-        if response[0] == 200:
-            return jsonify(response[1])
-    
+    for (status, resolved_url), ext in zip(responses, file_extensions):
+        if status == 200:
+            image_data, content_type = await fetch_image(resolved_url)
+            if image_data and content_type:
+                new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
+                db.session.add(new_logo)
+                db.session.commit()
+                return Response(image_data, mimetype=content_type)
+
     return jsonify('')
