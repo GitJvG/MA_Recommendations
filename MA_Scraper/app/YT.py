@@ -135,17 +135,15 @@ class SCRAPE:
     def get_video(search_query):
         """Scrape YouTube search results to extract video and playlist info."""
         query = '+'.join(search_query.split())
-        
         url = f'https://www.youtube.com/results?search_query={query}'
 
         response = requests.get(url)
-        
         if response.status_code != 200:
             return jsonify({'error': 'Failed to retrieve content'}), 404
         
         soup = BeautifulSoup(response.text, 'html.parser')
         javascript = str(soup.find_all('script'))
-
+        javascript = javascript.encode().decode('unicode_escape')
         secondaryContents = None
         if '"secondaryContents"' in javascript:
             secondaryContents = javascript[javascript.find('"secondaryContents"'):]
@@ -153,15 +151,19 @@ class SCRAPE:
         regex = r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=(?!RD)[a-zA-Z0-9_-]+|\\u0026list=(?!RD)[a-zA-Z0-9_-]+)?)"
         # Old method without RD filter included unviewable mix playlists
         # regex = r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=[a-zA-Z0-9_-]+|\\u0026list=[a-zA-Z0-9_-]+)?)"
-
+        secondarysource = False
         if secondaryContents:
-            url_match = re.search(regex, secondaryContents) or re.search(regex, javascript)
+            secondary = re.search(regex, secondaryContents)
+            if secondary:
+                url_match = secondary
+                secondarysource = True
+            else:
+                url_match = re.search(regex, javascript)
         else:
             url_match = re.search(regex, javascript)
 
         if url_match:
             First_result = url_match.group(1)
-
             video_id = re.search(r"v=([a-zA-Z0-9_-]+)", First_result)
             playlist_id = re.search(r"list=([a-zA-Z0-9_-]+)", First_result)
 
@@ -170,9 +172,15 @@ class SCRAPE:
                 thumbnail_url = False
                 if playlist_id:
                     playlist_id = playlist_id.group(1)
-                    playlist_url = f"https://www.youtube.com/playlist?list={playlist_id}"
-                    thumbnail_url = YTDLP.get_playlist_thumbnail(playlist_url)
+                    if secondarysource:
+                        string_before_video = secondaryContents[:url_match.start()]
+                    else:
+                        string_before_video = javascript[:url_match.start()]
+
+                    thumbnail_url_pattern = r"\"url\":\"(https?:\/\/[^\"]+)\""
+                    thumbnail_url = re.findall(thumbnail_url_pattern, string_before_video)[-1]
                 thumbnail_url = thumbnail_url if thumbnail_url else f"https://i.ytimg.com/vi/{video_id}/0.jpg"
+
                 return jsonify({
                     'playlist_url': f'https://www.youtube.com/embed/videoseries?list={playlist_id}' if playlist_id else None,
                     'video_url': f'https://www.youtube.com/embed/{video_id}',
