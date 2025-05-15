@@ -394,14 +394,14 @@ async def get_band_logo(band_id):
     urls = [f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.{ext}" for ext in file_extensions]
 
     responses = await asyncio.gather(*[fetch_head(url) for url in urls])
-
-    for (status, resolved_url), ext in zip(responses, file_extensions):
-        if status == 200:
-            image_data, content_type = await fetch_image(resolved_url)
-            if image_data and content_type:
-                new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
-                db.session.add(new_logo)
-                db.session.commit()
-                return Response(image_data, mimetype=content_type)
+    for attempt in range(2):
+        for (status, resolved_url), ext in zip(responses, file_extensions):
+            if status == 200:
+                image_data, content_type = await fetch_image(resolved_url)
+                if image_data and content_type:
+                    new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
+                    db.session.add(new_logo)
+                    db.session.commit()
+                    return Response(image_data, mimetype=content_type)
 
     return jsonify('')
