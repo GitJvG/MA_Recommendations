@@ -142,23 +142,16 @@ class SCRAPE:
             return jsonify({'error': 'Failed to retrieve content'}), 404
         
         soup = BeautifulSoup(response.text, 'html.parser')
-        javascript = str(soup.find_all('script'))
-        javascript = javascript.encode().decode('unicode_escape')
+        javascript = str(soup.find_all('script')).encode().decode('unicode_escape')
         secondaryContents = None
         if '"secondaryContents"' in javascript:
             secondaryContents = javascript[javascript.find('"secondaryContents"'):]
 
-        regex = r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=(?!RD)[a-zA-Z0-9_-]+|\\u0026list=(?!RD)[a-zA-Z0-9_-]+)?)"
+        regex = r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=(?!RD)[a-zA-Z0-9_-]+)?)"
         # Old method without RD filter included unviewable mix playlists
         # regex = r"\"url\":\"(\/watch\?v=[a-zA-Z0-9_-]+(?:&list=[a-zA-Z0-9_-]+|\\u0026list=[a-zA-Z0-9_-]+)?)"
-        secondarysource = False
         if secondaryContents:
-            secondary = re.search(regex, secondaryContents)
-            if secondary:
-                url_match = secondary
-                secondarysource = True
-            else:
-                url_match = re.search(regex, javascript)
+            url_match = re.search(regex, secondaryContents) or re.search(regex, javascript)
         else:
             url_match = re.search(regex, javascript)
 
@@ -172,13 +165,12 @@ class SCRAPE:
                 thumbnail_url = False
                 if playlist_id:
                     playlist_id = playlist_id.group(1)
-                    if secondarysource:
-                        string_before_video = secondaryContents[:url_match.start()]
-                    else:
-                        string_before_video = javascript[:url_match.start()]
+                    
+                    thumbnail_url_pattern = rf"(https?:\/\/i9\.ytimg\.com\/s_p\/{playlist_id}\/[^\"]+)"
+                    thumbnail_match = re.search(thumbnail_url_pattern, javascript)
+                    if thumbnail_match:
+                        thumbnail_url = thumbnail_match.group(1)
 
-                    thumbnail_url_pattern = r"\"url\":\"(https?:\/\/[^\"]+)\""
-                    thumbnail_url = re.findall(thumbnail_url_pattern, string_before_video)[-1]
                 thumbnail_url = thumbnail_url if thumbnail_url else f"https://i.ytimg.com/vi/{video_id}/0.jpg"
 
                 return jsonify({
