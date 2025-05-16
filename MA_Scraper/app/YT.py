@@ -4,6 +4,7 @@ from MA_Scraper.app import youtube_client, backend, ytm
 from flask import jsonify
 import re
 from typing import Optional, Type, Union
+from urllib.parse import quote_plus
 
 if backend == 'YTDLP' or backend == 'SCRAPE':
     try:
@@ -134,8 +135,7 @@ class SCRAPE:
     @staticmethod
     def get_video(search_query):
         """Scrape YouTube search results to extract video and playlist info."""
-        query = '+'.join(search_query.split())
-        url = f'https://www.youtube.com/results?search_query={query}'
+        url = f'https://www.youtube.com/results?search_query={quote_plus(search_query)}'
 
         response = requests.get(url)
         if response.status_code != 200:
