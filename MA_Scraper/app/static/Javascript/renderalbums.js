@@ -69,7 +69,7 @@ function createAlbumCard(album) {
     albumImage.src = videoEmbedUrl
         ? thumbnail_url
         : "path/to/placeholder_image.jpg";
-    albumImage.alt = `Thumbnail for ${album.album_name}`;
+    albumImage.alt = ``;
     albumImage.classList.add("album-thumbnail");
 
     albumImage.addEventListener("click", function (event) {
