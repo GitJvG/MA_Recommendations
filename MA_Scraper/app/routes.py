@@ -12,6 +12,7 @@ from datetime import datetime
 from MA_Scraper.app.YT import YT
 from math import ceil
 from functools import wraps
+import requests
 
 main = Blueprint('main', __name__)
 
@@ -80,7 +81,7 @@ async def fetch_video_for_album(band_id, album_name, album_type, band_name, band
     if album_name:
         video_query = f"{band_name} {album_name} {'Full Album' if album_type == 'Full-length' else album_type}"
 
-        video_response = await asyncio.to_thread(YT.get_video, video_query)
+        video_response = await YT.get_video(video_query)
         
         if 'video_url' in video_response.json:
             result.append({
@@ -364,44 +365,41 @@ def band_detail(band_id):
 
     return render_with_base('band_detail.html', band=vdetail, name=name, feedback=feedback, albums=albums, types=types, similar=similar, title=name)
 
-async def fetch_head(url):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.head(url, allow_redirects=True) as response:
-                return response.status, url
-        except aiohttp.ClientError:
-            return None, None
+async def fetch_head(session: aiohttp.ClientSession, url: str):
+    async with session.head(url, allow_redirects=True) as response:
+        return response.status, url
 
-async def fetch_image(url):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    return await response.read(), response.content_type
-                return None, None
-        except aiohttp.ClientError:
-            return None, None
+async def fetch_image(session: aiohttp.ClientSession, url: str):
+    async with session.get(url) as response:
+        if response.status == 200:
+            return await response.read(), response.content_type
+        return None, None
 
 @main.route('/ajax/band_logo/<int:band_id>')
 async def get_band_logo(band_id):
+    import time
+    start = time.monotonic()
     stored_logo = db.session.get(band_logo, band_id)
     if stored_logo and stored_logo.data and stored_logo.content_type:
         return Response(stored_logo.data, mimetype=stored_logo.content_type)
+    
+    async with aiohttp.ClientSession() as http_session:
+        band_id_str = str(band_id)
+        digits = "/".join(band_id_str[:4])
+        file_extensions = ['jpg', 'png', 'gif', 'jpeg']
+        urls = [f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.{ext}" for ext in file_extensions]
 
-    band_id_str = str(band_id)
-    digits = "/".join(band_id_str[:4])
-    file_extensions = ['jpg', 'png', 'gif', 'jpeg']
-    urls = [f"https://www.metal-archives.com/images/{digits}/{band_id_str}_logo.{ext}" for ext in file_extensions]
+        responses = await asyncio.gather(*[fetch_head(http_session, url) for url in urls])
 
-    responses = await asyncio.gather(*[fetch_head(url) for url in urls])
-    for attempt in range(2):
-        for (status, resolved_url), ext in zip(responses, file_extensions):
-            if status == 200:
-                image_data, content_type = await fetch_image(resolved_url)
-                if image_data and content_type:
-                    new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
-                    db.session.add(new_logo)
-                    db.session.commit()
-                    return Response(image_data, mimetype=content_type)
-
-    return jsonify('')
+        for attempt in range(2):
+            for (status, resolved_url), ext in zip(responses, file_extensions):
+                if status == 200 and resolved_url:
+                    image_data, content_type = await fetch_image(http_session, resolved_url)
+                    if image_data and content_type:
+                        new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
+                        db.session.add(new_logo)
+                        db.session.commit()
+                        end = time.monotonic()
+                        print(f"took about {end-start} from metal-arch")
+                        return Response(image_data, mimetype=content_type)
+        return jsonify('')

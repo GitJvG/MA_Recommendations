@@ -20,12 +20,12 @@ function ajax_logo() {
                     logoImg.src = imageUrl;
                     logoImg.alt = `Logo for band ID ${bandId}`;
                 } else {
-                    logoImg.alt = 'Logo not available';
+                    logoImg.alt = '';
                 }
             })
             .catch(error => {
                 console.error('Error fetching band logo:', error);
-                logoImg.alt = 'Error loading logo';
+                logoImg.alt = '';
             });
     }
 };

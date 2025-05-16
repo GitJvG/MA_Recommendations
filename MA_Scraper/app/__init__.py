@@ -5,7 +5,6 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from MA_Scraper.Env import load_config, Env
 from sqlalchemy import inspect
-
 from user_agents import parse
 from MA_Scraper.app.CacheManager import CacheManager
 
