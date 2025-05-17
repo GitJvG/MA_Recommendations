@@ -1,6 +1,6 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, select
 from MA_Scraper.app.models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, band_logo, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
@@ -266,32 +266,27 @@ def imports():
 
 @main.route('/get_genres', methods=['GET'])
 def get_genres():
-    genres = db.session.query(genre.name).distinct().all()
-
-    distinct_genres = [genre[0] for genre in genres]
-    return jsonify(distinct_genres)
+    genres = db.session.scalars(select(genre.name).distinct()).all()
+    return jsonify(genres)
 
 @main.route('/search', methods=['POST', 'GET'])
 def search():
     if request.method == 'POST':
         query = request.form.get('q', '').strip()
-
         matches = (
             db.session.query(band.band_id, band.name)
             .filter(or_(func.unaccent(func.lower(band.name)).ilike(f"{query.lower()} %"), func.unaccent(func.lower(band.name)).ilike(f"{query.lower()}")))
             .all()
         )
         if len(matches) == 1:
-            match = matches[0]
             return jsonify({
                 'success': True,
-                'redirect_url': url_for('main.band_detail', band_id=match.band_id)
+                'redirect_url': url_for('main.band_detail', band_id=matches[0].band_id)
             })
         return jsonify({
             'success': True,
             'redirect_url': url_for('main.search', query=query),
         })
-    
     query = request.args.get('query', '')
     return render_with_base('search.html', query=query)
 
