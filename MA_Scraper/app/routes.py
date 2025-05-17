@@ -12,7 +12,6 @@ from datetime import datetime
 from MA_Scraper.app.YT import YT
 from math import ceil
 from functools import wraps
-import requests
 
 main = Blueprint('main', __name__)
 
@@ -131,11 +130,12 @@ async def fetch_remind(query_limit):
     if cache:
         return jsonify_with_row(cache)
     
-    bands = db.session.query(users.band_id).filter(and_(users.user_id == current_user.id, users.remind_me == True)) \
-    .join(band, band.band_id == users.band_id).order_by(func.random()).limit(query_limit).all()
-
-    selected_band_ids = [vband[0] for vband in bands]
-    Albums = Max_albums(selected_band_ids, True)
+    bands = db.session.scalars( \
+    select(users.band_id).where(users.user_id == current_user.id, users.remind_me == True) \
+    .join(band, band.band_id == users.band_id).order_by(func.random()).limit(query_limit)
+    ).all()
+    
+    Albums = Max_albums(bands, True)
 
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
@@ -149,18 +149,17 @@ async def fetch_albums(query_limit):
     cache = cache_manager.get_cache()
     if cache:
         return jsonify_with_row(cache)
+    
+    band_ids = db.session.scalars(select(candidates.band_id) \
+    .outerjoin(users, and_(users.band_id == candidates.band_id, users.user_id == candidates.user_id)) \
+    .join(discography, discography.band_id == candidates.band_id) \
+    .where(discography.type.in_(["Full-length", "Split", "EP"]), (users.liked.is_not(False)), \
+           (candidates.user_id == current_user.id)) \
+    .group_by(candidates.band_id) \
+    .having(func.sum(discography.review_score) > 0) \
+    .order_by(func.random()).limit(query_limit)).all()
 
-    bands = db.session.query(candidates.band_id).filter(candidates.user_id == current_user.id) \
-        .outerjoin(users, and_(users.band_id == candidates.band_id, users.user_id == candidates.user_id)) \
-        .filter((users.liked == True) | (users.liked == None)) \
-        .join(discography, discography.band_id == candidates.band_id) \
-        .filter(discography.type.in_(["Full-length", "Split", "EP"])) \
-        .group_by(candidates.band_id) \
-        .having(func.sum(discography.review_score) > 0) \
-        .order_by(func.random()).limit(query_limit).all()
-
-    selected_band_ids = [vband[0] for vband in bands]
-    Albums = Max_albums(selected_band_ids)
+    Albums = Max_albums(band_ids)
     
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
@@ -183,17 +182,16 @@ async def fetch_known_albums(query_limit):
     cache = cache_manager.get_cache()
     if cache:
         return jsonify_with_row(cache)
-
-    bands = db.session.query(users.band_id).filter(users.user_id == current_user.id) \
-        .filter(users.liked == True) \
-        .join(band, band.band_id == users.band_id) \
-        .join(discography, discography.band_id == band.band_id) \
-        .filter(discography.type.in_(["Full-length", "Split", "EP"])).distinct(band.band_id).subquery()
     
-    bands = db.session.query(bands).order_by(func.random()).limit(query_limit).all()
+    bands = select(users.band_id) \
+    .join(band, band.band_id == users.band_id) \
+    .join(discography, discography.band_id == band.band_id) \
+    .where(users.user_id == current_user.id, users.liked == True, \
+           discography.type.in_(["Full-length", "Split", "EP"])) \
+    .distinct().subquery()
 
-    selected_band_ids = [vband[0] for vband in bands]
-    Albums = Above_avg_albums(selected_band_ids)
+    bands = db.session.scalars(select(bands.c.band_id).order_by(func.random()).limit(query_limit))
+    Albums = Above_avg_albums(bands)
 
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
@@ -372,8 +370,6 @@ async def fetch_image(session: aiohttp.ClientSession, url: str):
 
 @main.route('/ajax/band_logo/<int:band_id>')
 async def get_band_logo(band_id):
-    import time
-    start = time.monotonic()
     stored_logo = db.session.get(band_logo, band_id)
     if stored_logo and stored_logo.data and stored_logo.content_type:
         return Response(stored_logo.data, mimetype=stored_logo.content_type)
@@ -394,7 +390,5 @@ async def get_band_logo(band_id):
                         new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
                         db.session.add(new_logo)
                         db.session.commit()
-                        end = time.monotonic()
-                        print(f"took about {end-start} from metal-arch")
                         return Response(image_data, mimetype=content_type)
         return jsonify('')

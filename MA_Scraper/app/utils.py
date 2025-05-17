@@ -1,5 +1,6 @@
 from flask import render_template, request, jsonify
 import json
+from sqlalchemy import select
 from MA_Scraper.app import db
 from MA_Scraper.app.models import users
 from datetime import datetime
@@ -25,7 +26,6 @@ def render_with_base(content_template, sidebar_html=None, title=None, main_conte
     return render_template('base.html', content_template=content_template, **variables, js_files=js_files, page_title=title, website_name=website_name, main_content_class=main_content_class)
 
 def JSON(attribute, path=rf'MA_Scraper/app/Javascript.json'):
-        #TO
         with open(path, 'r') as file:
             config = json.load(file)
         value = config.get(attribute)
@@ -35,11 +35,9 @@ def Title(content_template):
      return f"{content_template[:-5].replace("_", " ").title()} - Amplifier Worship"
 
 def liked_bands(current_user_id):
-    liked_bands = db.session.query(users.band_id).filter(
-    users.user_id == current_user_id,
-    users.liked == True
-    ).all()
-    return set(band_id[0] for band_id in liked_bands)
+    liked_bands = db.session.scalars(select(users.band_id).where(
+    users.user_id == current_user_id,users.liked == True).distinct()).all()
+    return liked_bands
 
 def Like_bands(user_id, band_id, action):
     now = datetime.now().replace(microsecond=0)
