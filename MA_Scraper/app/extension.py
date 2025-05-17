@@ -123,6 +123,7 @@ def youtube_import():
     return render_with_base('import.html')
     
 @extension.route('/ajax/youtube_search', methods=['GET'])
-def youtube_search():
+async def youtube_search():
     search_query = request.args.get('q')
-    return YT.get_video(search_query)
+    response = await YT.get_video(search_query)
+    return response
