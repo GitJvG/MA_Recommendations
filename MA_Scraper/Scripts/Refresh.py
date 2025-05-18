@@ -14,8 +14,8 @@ def refresh():
     # Time is set before all scraping, leading to some repeats on consecutive refreshes, this is done to ensure data-integrity and consistency.
     time = get_time()
     csv_files = [env.band, env.label, env.simi, env.disc, env.deta, env.meta, env.memb]
-    Parrallel_Alphabetical_List_Scraper(env.url_band)
-    Parrallel_Alphabetical_List_Scraper(env.url_label)
+    Parrallel_Alphabetical_List_Scraper(env.url_band, type='band')
+    Parrallel_Alphabetical_List_Scraper(env.url_label, type='label')
 
     # Use the same modified bands list for all files if all files share the same last scraping date
     common_date = get_common_date()

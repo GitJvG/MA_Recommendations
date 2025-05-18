@@ -11,7 +11,9 @@ import warnings
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 env = Env.get_instance()
-letters = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()
+alphabet = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()
+other = ' '.join(['á', 'ä', 'å', 'é', 'ñ', 'ó', 'ö', 'ø', 'ü', 'ć', 'č', 'ō', 'ş', 'š', 'ž', 'а', 'б', 'в', 'г', 'д', 
+         'е', 'ж', 'з', 'и', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'э', 'ю', 'я', 'Æ'])
 
 def make_request(url, params=None):
     r = requests.get(url, params=params, headers=env.head, cookies=env.cook)
@@ -43,7 +45,7 @@ mapping = {
         env.url_label: {"csv": env.label, "parser": parse_labels, "columns": ['edit', 'namelink', 'genre', 'status', 'country', 'website', 'shopping'], "length": 200},
     }
 
-def scrape_json(url, letters=letters):
+def scrape_json(url, letters=alphabet):
     column_names = mapping[url]["columns"]
     length = mapping[url]["length"]
     def get_url(letter, start=0, length=length):
@@ -96,7 +98,7 @@ def scrape_json(url, letters=letters):
 
         return data
 
-def Alphabetical_List_Scraper(letters=letters, **kwargs):
+def Alphabetical_List_Scraper(letters=alphabet, **kwargs):
     if kwargs['url']: 
         url = kwargs['url']
     else:
@@ -117,9 +119,15 @@ def Alphabetical_List_Scraper(letters=letters, **kwargs):
 
     return data
 
-def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters=letters, batch_size=False, output=None):
+def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters=alphabet, batch_size=False, output=None, type=None):
     if not output:
         output = mapping[url]["csv"]
+
+    if type:
+        if type == 'band':
+            letters = alphabet
+        if type == 'label':
+            letters = alphabet + other
     Parallel_processing(items_to_process=letters, 
                         batch_size=batch_size,
                         output_files=output,
