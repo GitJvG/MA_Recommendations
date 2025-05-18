@@ -47,13 +47,11 @@ def create_app(test_config=None):
     if youtube_client: 
         youtube_client.init_app(app.config['YT_API_KEY'])
 
-    # Initialize extensions with the app instance
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'  # Updated to use the auth blueprint
+    login_manager.login_view = 'auth.login'
 
-    # Ensure the database is created only once
     @app.before_request
     def create_database():
         with run_once_lock:
@@ -66,20 +64,16 @@ def create_app(test_config=None):
     def init_device():
         get_device()
 
-    # Import models here to avoid circular imports
     with app.app_context():
         from MA_Scraper.app.models import user, band, similar_band, discography, details, users, member, genre, prefix, genres, theme, themes, candidates, band_logo
 
-        # User Loader function for Flask-Login
         @login_manager.user_loader
         def load_user(user_id):
             return user.query.get(int(user_id))
 
-    # Import routes
     from MA_Scraper.app.routes import main as main
     app.register_blueprint(main)
 
-    # Import auth routes
     from MA_Scraper.app.auth import auth as auth
     app.register_blueprint(auth)
 
