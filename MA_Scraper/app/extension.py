@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from MA_Scraper.app.models import discography, band, users
+from MA_Scraper.app.models import Discography, Band, Users
 from flask_login import login_required, current_user
 from MA_Scraper.app.utils import render_with_base, Like_bands, liked_bands
 import re
@@ -51,10 +51,10 @@ def import_playlist(playlist_url, current_user_id):
             band_name, *rest = video_keywords
             album_name = rest[0] if rest else None
 
-            result = db.session.query(discography.band_id, band.name).join(band, band.band_id == discography.band_id).filter(
+            result = db.session.query(Discography.band_id, Band.name).join(Band, Band.band_id == Discography.band_id).filter(
                 and_(
-                    func.unaccent(func.lower(band.name)) == band_name,
-                    func.unaccent(func.lower(discography.name)).ilike(f"%{album_name.lower()}%") if album_name else True
+                    func.unaccent(func.lower(Band.name)) == band_name,
+                    func.unaccent(func.lower(Discography.name)).ilike(f"%{album_name.lower()}%") if album_name else True
                 )
             ).first()
 
@@ -63,8 +63,8 @@ def import_playlist(playlist_url, current_user_id):
                 band_matches[band_id]["video_titles"].append(original_video_title)
                 band_matches[band_id]["band_name"] = band_name
             else:
-                band_results = db.session.query(band.band_id, band.name).filter(
-                    func.unaccent(func.lower(band.name)) == band_name
+                band_results = db.session.query(Band.band_id, Band.name).filter(
+                    func.unaccent(func.lower(Band.name)) == band_name
                 ).all()
 
                 if len(band_results) == 1:

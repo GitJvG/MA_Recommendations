@@ -394,7 +394,11 @@ button[type="submit"] {
     bottom: 0;
     width: 100%;
     border-top: 3px solid;
-    padding-top: var(--big-height);
+    padding-top: calc(var(--big-height) / 2)
+}
+
+#similartit {
+    padding-bottom: calc(var(--big-height) / 2);
 }
 
 .active {

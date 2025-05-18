@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from MA_Scraper.app.models import user, db
+from MA_Scraper.app.models import User, db
 from MA_Scraper.app.utils import render_with_base
 
 auth = Blueprint('auth', __name__)
@@ -12,7 +12,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        queried_user = user.query.filter_by(username=username).first()  # Ensure 'User' is correctly imported
+        queried_user = User.query.filter_by(username=username).first()  # Ensure 'User' is correctly imported
 
         if queried_user and check_password_hash(queried_user.password, password):
             login_user(queried_user)
@@ -60,7 +60,7 @@ def register():
             return redirect(url_for('auth.register'))  # Redirect back to the registration form if validation fails
 
         # Create new user entry
-        new_user = user(
+        new_user = User(
             username=username, 
             email=email, 
             password=password, 

@@ -1,10 +1,10 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_, select
-from MA_Scraper.app.models import user, band, users, discography, similar_band, details, genre, BandGenres, BandPrefixes, BandHgenres, member, prefix, candidates, band_logo, db
+from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Details, Genre, BandGenres, BandPrefixes, BandHgenres, Member, Prefix, Candidates, Band_logo, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
-from MA_Scraper.app.queries import Above_avg_albums, Max_albums, New_albums
+from MA_Scraper.app.queries import Top_albums, New_albums
 import random
 import asyncio
 import aiohttp
@@ -52,12 +52,12 @@ def jsonify_with_row(data):
     })
 
 def get_band_data(band_id):
-    band_data = db.session.execute(select(band.band_id, 
-            band.name.label('band_name'),
-            func.string_agg(genre.name, ', ').label('genre_string'))
-                    .join(band.genres)
-                    .where(band.band_id == band_id)
-                    .group_by(band.band_id, band.name)).all()
+    band_data = db.session.execute(select(Band.band_id, 
+            Band.name.label('band_name'),
+            func.string_agg(Genre.name, ', ').label('genre_string'))
+                    .join(Band.genres)
+                    .where(Band.band_id == band_id)
+                    .group_by(Band.band_id, Band.name)).all()
     if band_data:
         return {
                 "band_id": band_data[0].band_id,
@@ -121,12 +121,12 @@ async def fetch_remind(query_limit):
     if cache:
         return jsonify_with_row(cache)
     
-    bands = db.session.scalars( \
-    select(users.band_id).where(users.user_id == current_user.id, users.remind_me == True) \
-    .join(band, band.band_id == users.band_id).order_by(func.random()).limit(query_limit)
+    bands = db.session.scalars(
+    select(Users.band_id).where(Users.user_id == current_user.id, Users.remind_me == True)
+    .order_by(func.random()).limit(query_limit)
     ).all()
     
-    Albums = Max_albums(bands, True)
+    Albums = Top_albums(bands)
 
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
@@ -141,28 +141,28 @@ async def fetch_albums(query_limit):
     if cache:
         return jsonify_with_row(cache)
     
-    band_ids = db.session.scalars(select(candidates.band_id) \
-    .outerjoin(users, and_(users.band_id == candidates.band_id, users.user_id == candidates.user_id)) \
-    .join(discography, discography.band_id == candidates.band_id) \
-    .where(discography.type.in_(["Full-length", "Split", "EP"]), (users.liked.is_not(False)), \
-           (candidates.user_id == current_user.id)) \
-    .group_by(candidates.band_id) \
-    .having(func.sum(discography.review_score) > 0) \
+    band_ids = db.session.scalars(select(Candidates.band_id)
+    .outerjoin(Users, and_(Users.band_id == Candidates.band_id, Users.user_id == Candidates.user_id))
+    .join(Discography, Discography.band_id == Candidates.band_id)
+    .where(Discography.type.in_(["Full-length", "Split", "EP"]), (Users.liked.is_not(False)),
+           (Candidates.user_id == current_user.id))
+    .group_by(Candidates.band_id)
+    .having(func.sum(Discography.review_score) > 0)
     .order_by(func.random()).limit(query_limit)).all()
 
-    Albums = Max_albums(band_ids)
+    Albums = Top_albums(band_ids)
     
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
     return jsonify_with_row(result)
 
-@main.route('/ajax/above_avg_albums')
+@main.route('/ajax/top_albums')
 @login_required
 async def fetch_above_avg_albums():
     bands = request.args.getlist('bands')
     ppb = min(int(request.args.get('count', 1)), 8)
 
-    Albums = Above_avg_albums(bands, ppb)
+    Albums = Top_albums(bands, ppb)
     result = await fetch_top_albums_with_videos(Albums)
     return jsonify_with_row(result)
     
@@ -174,15 +174,11 @@ async def fetch_known_albums(query_limit):
     if cache:
         return jsonify_with_row(cache)
     
-    bands = select(users.band_id) \
-    .join(band, band.band_id == users.band_id) \
-    .join(discography, discography.band_id == band.band_id) \
-    .where(users.user_id == current_user.id, users.liked == True, \
-           discography.type.in_(["Full-length", "Split", "EP"])) \
-    .distinct().subquery()
+    bands = (select(Users.band_id)
+    .where(Users.user_id == current_user.id, Users.liked == True).distinct()).cte()
+    bands = db.session.scalars(select(bands).order_by(func.random()).limit(query_limit)).all()
 
-    bands = db.session.scalars(select(bands.c.band_id).order_by(func.random()).limit(query_limit))
-    Albums = Above_avg_albums(bands)
+    Albums = Top_albums(bands)
 
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
@@ -205,17 +201,13 @@ def like_band():
 def my_bands():
     user_id = current_user.id
 
-    user_interactions = (
-        db.session.query(
-            band.band_id,
-            band.name,
-            users.liked,
-            users.liked_date
-        )
-        .join(users, users.band_id == band.band_id)
-        .filter(users.user_id == user_id).order_by(users.liked_date.desc()).limit(50)
-        .all()
-    )
+    user_interactions = db.session.execute(select(
+            Band.band_id,
+            Band.name,
+            Users.liked,
+            Users.liked_date)
+        .join(Band.user_interactions)
+        .filter(Users.user_id == user_id).order_by(Users.liked_date.desc()).limit(50)).all()
 
     band_data = [
         {'band_id': band_id, 'name': name, 'liked': liked, 'liked_date': liked_date}
@@ -229,18 +221,15 @@ def my_bands():
 def get_bands():
     user_id = current_user.id
     user_interactions = (
-        db.session.query(
-            band.band_id,
-            band.name,
-            users.liked,
-            users.liked_date,
-            users.remind_me,
-            users.remind_me_date
-        )
-        .join(users, users.band_id == band.band_id)
-        .filter(users.user_id == user_id)
-        .all()
-    )
+        db.session.execute(select(
+            Band.band_id,
+            Band.name,
+            Users.liked,
+            Users.liked_date,
+            Users.remind_me,
+            Users.remind_me_date
+        ).join(Band.user_interactions)
+        .where(Users.user_id == user_id)).all())
 
     band_data = [
         {'band_id': band_id, 'name': name, 'liked': liked, 'liked_date': liked_date, 'remind_me': remind_me, 'remind_me_date': remind_me_date}
@@ -255,7 +244,7 @@ def imports():
 
 @main.route('/get_genres', methods=['GET'])
 def get_genres():
-    genres = db.session.scalars(select(genre.name).distinct()).all()
+    genres = db.session.scalars(select(Genre.name).distinct()).all()
     return jsonify(genres)
 
 @main.route('/search', methods=['POST', 'GET'])
@@ -263,8 +252,8 @@ def search():
     if request.method == 'POST':
         query = request.form.get('q', '').strip()
         matches = (
-            db.session.query(band.band_id, band.name)
-            .filter(or_(func.unaccent(func.lower(band.name)).ilike(f"{query.lower()} %"), func.unaccent(func.lower(band.name)).ilike(f"{query.lower()}")))
+            db.session.query(Band.band_id, Band.name)
+            .filter(or_(func.unaccent(func.lower(Band.name)).ilike(f"{query.lower()} %"), func.unaccent(func.lower(Band.name)).ilike(f"{query.lower()}")))
             .all()
         )
         if len(matches) == 1:
@@ -286,13 +275,13 @@ def query():
     per_page = 100
 
     exact_matches = (
-        db.session.query(band.band_id, band.name, band.genre, band.country)
-        .filter(func.unaccent(func.lower(band.name)) == query.lower())
+        db.session.query(Band.band_id, Band.name, Band.genre, Band.country)
+        .filter(func.unaccent(func.lower(Band.name)) == query.lower())
     )
 
     partial_matches = (
-        db.session.query(band.band_id, band.name, band.genre, band.country)
-        .filter(or_(band.name.ilike(f'% {query} %'), band.name.ilike(f'{query} %')))
+        db.session.query(Band.band_id, Band.name, Band.genre, Band.country)
+        .filter(or_(Band.name.ilike(f'% {query} %'), Band.name.ilike(f'{query} %')))
     )
 
     exact_matches_page = exact_matches.paginate(page=page, per_page=per_page, error_out=False)
@@ -317,13 +306,13 @@ def query():
 @main.route('/band/<int:band_id>')
 @login_required
 def band_detail(band_id):
-    vdetail = db.session.get(details, band_id)
-    name = db.session.get(band, band_id).name
-    feedback = db.session.query(users.liked, users.remind_me).filter(and_(users.user_id == current_user.id, users.band_id == band_id)).first()
-    vdiscography = db.session.query(discography).filter_by(band_id=band_id).order_by(discography.year.asc(), discography.album_id.asc()).all()
-    vsimilar = db.session.query(similar_band.similar_id, band.name, band.country, band.genre, details.status, details.label).join(band, band.band_id == similar_band.similar_id) \
-        .join(details, details.band_id == similar_band.similar_id).filter(similar_band.band_id==band_id).order_by(similar_band.score.desc()).all()
-    types = {album.type for album in vdiscography}
+    detail = db.session.get(Details, band_id)
+    name = db.session.get(Band, band_id).name
+    feedback = db.session.query(Users.liked, Users.remind_me).filter(and_(Users.user_id == current_user.id, Users.band_id == band_id)).first()
+    discography = db.session.execute(select(Discography).where(Discography.band_id == band_id).order_by(Discography.year.asc(), Discography.album_id.asc())).all()
+    similar_bands = db.session.execute(select(Similar_band.similar_id, Band.name, Band.country, Band.genre, Details.status, Details.label).join(Similar_band.similar_band) \
+        .join(Band.details).where(Similar_band.band_id==band_id).order_by(Similar_band.score.desc())).all()
+    types = {album.type for album in discography}
 
     albums = [
         {
@@ -332,7 +321,7 @@ def band_detail(band_id):
             'year': album.year,
             'reviews': album.reviews,
         }
-        for album in vdiscography
+        for album in discography
     ]
 
     similar = [
@@ -344,10 +333,10 @@ def band_detail(band_id):
             'label': sim.label,
             'status': sim.status
         }
-        for sim in vsimilar
+        for sim in similar_bands
     ]
 
-    return render_with_base('band_detail.html', band=vdetail, name=name, feedback=feedback, albums=albums, types=types, similar=similar, title=name)
+    return render_with_base('band_detail.html', band=detail, name=name, feedback=feedback, albums=albums, types=types, similar=similar, title=name)
 
 async def fetch_head(session: aiohttp.ClientSession, url: str):
     async with session.head(url, allow_redirects=True) as response:
@@ -361,7 +350,7 @@ async def fetch_image(session: aiohttp.ClientSession, url: str):
 
 @main.route('/ajax/band_logo/<int:band_id>')
 async def get_band_logo(band_id):
-    stored_logo = db.session.get(band_logo, band_id)
+    stored_logo = db.session.get(Band_logo, band_id)
     if stored_logo and stored_logo.data and stored_logo.content_type:
         return Response(stored_logo.data, mimetype=stored_logo.content_type)
     
@@ -378,7 +367,7 @@ async def get_band_logo(band_id):
                 if status == 200 and resolved_url:
                     image_data, content_type = await fetch_image(http_session, resolved_url)
                     if image_data and content_type:
-                        new_logo = band_logo(band_id=band_id, data=image_data, content_type=content_type)
+                        new_logo = Band_logo(band_id=band_id, data=image_data, content_type=content_type)
                         db.session.add(new_logo)
                         db.session.commit()
                         return Response(image_data, mimetype=content_type)

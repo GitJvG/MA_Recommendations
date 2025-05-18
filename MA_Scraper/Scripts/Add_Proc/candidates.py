@@ -1,6 +1,6 @@
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import band as Band, genre as Genre, hgenre as Hgenre, themes as Themes, discography as Discog, \
-                        theme as Theme, details as Details, user as User, users as Users, similar_band as Similar, candidates, member as Member
+from MA_Scraper.app.models import Band as Band, Genre as Genre, Hgenre as Hgenre, Themes as Themes, Discography as Discog, \
+                        Theme as Theme, Details as Details, User as User, Users as Users, Similar_band as Similar, Candidates, Member as Member
 import pandas as pd
 import faiss
 from collections import defaultdict
@@ -302,7 +302,7 @@ def main(k=200):
 
 def complete_refresh(k=200):
     main(k)
-    refresh_tables([candidates])
+    refresh_tables([Candidates])
 
 if __name__ == '__main__':
     main()
