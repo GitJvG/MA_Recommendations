@@ -1,7 +1,7 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_, select
-from MA_Scraper.app.models import user, band, users, discography, similar_band, details, genre, genres, member, prefix, candidates, band_logo, db
+from MA_Scraper.app.models import user, band, users, discography, similar_band, details, genre, BandGenres, BandPrefixes, BandHgenres, member, prefix, candidates, band_logo, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
 from MA_Scraper.app.queries import Above_avg_albums, Max_albums, New_albums
@@ -52,27 +52,18 @@ def jsonify_with_row(data):
     })
 
 def get_band_data(band_id):
-    band_data = db.session.query(
-        band.band_id,
-        band.name.label('band_name'),
-        genre.name.label('genre_name')
-    ) \
-    .join(genres, genres.band_id == band.band_id) \
-    .filter(genres.type == 'genre') \
-    .join(genre, genres.item_id == genre.genre_id) \
-    .filter(band.band_id == band_id) \
-    .all()
-
+    band_data = db.session.execute(select(band.band_id, 
+            band.name.label('band_name'),
+            func.string_agg(genre.name, ', ').label('genre_string'))
+                    .join(band.genres)
+                    .where(band.band_id == band_id)
+                    .group_by(band.band_id, band.name)).all()
     if band_data:
-        vgenres = [data.genre_name.title() for data in band_data]
-        vgenres_string = ', '.join(vgenres)
-
-        # Return the band data without `liked` status
         return {
-            "band_id": band_data[0].band_id,
-            "name": band_data[0].band_name,
-            "genre": vgenres_string,
-        }
+                "band_id": band_data[0].band_id,
+                "name": band_data[0].band_name,
+                "genre": band_data[0].genre_string,
+            }
 
     return None
 
