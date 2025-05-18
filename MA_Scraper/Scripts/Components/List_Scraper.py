@@ -12,8 +12,12 @@ warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 env = Env.get_instance()
 alphabet = 'NBR A B C D E F G H I J K L M N O P Q R S T U V W X Y Z ~'.split()
-other = ' '.join(['á', 'ä', 'å', 'é', 'ñ', 'ó', 'ö', 'ø', 'ü', 'ć', 'č', 'ō', 'ş', 'š', 'ž', 'а', 'б', 'в', 'г', 'д', 
-         'е', 'ж', 'з', 'и', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'э', 'ю', 'я', 'Æ'])
+label_letters = ['!', '"', '(', '%2E', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '[', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 
+         'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '|', '¡', 'ä', 'å', 'æ', 'é', 'ñ', 'ö', 'ü', 'ć', 'č', 'ş', 'š', 
+         'ž', 'γ', 'ν', 'σ', 'φ', 'ω', 'а', 'б', 'в', 'г', 'д', 'ж', 'з', 'и', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ч', 
+         'ш', 'і', 'آ', 'ව', 'อ', 'ᛉ', 'オ', 'コ', '六', '反', '古', '大', '天', '帝', '朱', '殺', '没', '酒', '金', '麦', 'ꔅ', '열', '토']
+
+
 
 def make_request(url, params=None):
     r = requests.get(url, params=params, headers=env.head, cookies=env.cook)
@@ -127,13 +131,10 @@ def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters=alphabet, batc
         if type == 'band':
             letters = alphabet
         if type == 'label':
-            letters = alphabet + other
+            letters = label_letters
     Parallel_processing(items_to_process=letters, 
                         batch_size=batch_size,
                         output_files=output,
                         function=Alphabetical_List_Scraper,
                         url=url
     )
-    
-if __name__ == "__main__":
-    Parrallel_Alphabetical_List_Scraper(env.url_label)

@@ -102,7 +102,6 @@ class Label(db.Model):
     status = db.Column('status', db.Text, nullable=True)
 
 class Details(db.Model):
-    # Label isn't a foreign key yet because of label scraping issues for special characters.
     __tablename__ = 'details'
     band_id = db.Column("band_id", db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
     country = db.Column("country", db.Text, nullable=True)
@@ -112,7 +111,7 @@ class Details(db.Model):
     genre = db.Column("genre", db.Text, nullable=True)
     themes = db.Column("themes", db.Text, nullable=True)
     label = db.Column("label", db.Text, nullable=True)
-    label_id = db.Column("label_id", db.BigInteger, nullable=True)
+    label_id = db.Column("label_id", db.BigInteger, db.ForeignKey('label.label_id'), nullable=True)
     years_active = db.Column("years_active", db.Text, nullable=True)
 
     band = relationship("band", back_populates="details")
