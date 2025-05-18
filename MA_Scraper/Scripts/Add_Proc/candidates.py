@@ -1,10 +1,9 @@
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import band as Band, genres as Genres, genre as Genre, hgenre as Hgenre, themes as Themes, discography as Discog, \
+from MA_Scraper.app.models import band as Band, genre as Genre, hgenre as Hgenre, themes as Themes, discography as Discog, \
                         theme as Theme, details as Details, user as User, users as Users, similar_band as Similar, candidates, member as Member
 import pandas as pd
 import faiss
 from collections import defaultdict
-from itertools import combinations
 import numpy as np
 from datetime import datetime
 from sqlalchemy import func, and_
@@ -107,9 +106,8 @@ def create_item():
         func.string_agg(func.distinct(Theme.name), ', ').label('theme_names')
     ).join(score_subquery, score_subquery.c.band_id == Band.band_id
     ).join(Details, Band.band_id == Details.band_id
-    ).join(Genres, Band.band_id == Genres.band_id
-    ).join(Genre, and_(Genre.genre_id == Genres.item_id, Genre.type == Genres.type), isouter=True
-    ).join(Hgenre, and_(Hgenre.hgenre_id == Genres.item_id, Hgenre.type == Genres.type,), isouter=True
+    ).join(Band.genres, isouter=True
+    ).join(Band.hgenres, isouter=True
     ).join(Themes, Band.band_id == Themes.band_id
     ).join(Theme, Themes.theme_id == Theme.theme_id
     ).group_by(Band.band_id, Band.name, Band.genre, Details.label, Details.country, Details.status, score_subquery.c.score
