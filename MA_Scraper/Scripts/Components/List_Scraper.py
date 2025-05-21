@@ -28,8 +28,9 @@ def parse_bands(data):
     data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
     data['url'] = data['namelink'].apply(extract_href)
     data['name'] = data['namelink'].apply(extract_text)
+    data['status'] = data['status'].apply(lambda html: BeautifulSoup(html, 'html.parser')).apply(extract_text)
     data['band_id'] = data['url'].apply(extract_url_id)
-    data = data[['name','country','genre','band_id']]
+    data = data[['name','country','genre','status','band_id']]
     return data
 
 def parse_labels(data):

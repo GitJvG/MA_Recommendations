@@ -31,7 +31,7 @@ def fetch_band_stats(soup, band_id):
     results = pd.DataFrame([results])
     results.columns = ['country','location','status','year_formed','genre','themes',
                        'years_active','label','label_id','band_id']
-    return results
+    return results.drop(columns=['genre', 'status', 'country'])
 
 def fetch_band_members(soup, band_id):
     """Helper function to extract band members data from the soup."""

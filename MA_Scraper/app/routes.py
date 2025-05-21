@@ -1,7 +1,7 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_, select
-from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Details, Genre, BandGenres, BandPrefixes, BandHgenres, Member, Prefix, Candidates, Band_logo, db
+from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, BandHgenres, Member, Prefix, Candidates, Band_logo, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
 from MA_Scraper.app.queries import Top_albums, New_albums
@@ -306,10 +306,11 @@ def query():
 @main.route('/band/<int:band_id>')
 @login_required
 def band_detail(band_id):
-    band = db.session.execute(select(Details, Band.name, Users.liked, Users.remind_me).join(Details.band).outerjoin(Band.user_interactions).where(Details.band_id == band_id)).first()
+    band = db.session.execute(select(Band, Users.liked, Users.remind_me).outerjoin(Band.user_interactions)
+                              .where(Band.band_id == band_id, or_(Users.user_id == current_user.id, Users.user_id == None))).first()
     discography = db.session.execute(select(Discography).where(Discography.band_id == band_id).order_by(Discography.year.asc(), Discography.album_id.asc())).scalars().all()
-    similar_bands = db.session.execute(select(Similar_band.similar_id, Band.name, Band.country, Band.genre, Details.status, Details.label).join(Similar_band.similar_band) \
-        .join(Band.details).where(Similar_band.band_id==band_id).order_by(Similar_band.score.desc())).all()
+    similar_bands = db.session.execute(select(Similar_band.similar_id, Band.name, Band.country, Band.genre, Band.status, Band.label).join(Similar_band.similar_band) \
+        .where(Similar_band.band_id==band_id).order_by(Similar_band.score.desc())).all()
     types = {album.type for album in discography}
 
     albums = [
@@ -334,7 +335,7 @@ def band_detail(band_id):
         for sim in similar_bands
     ]
 
-    return render_with_base('band_detail.html', band=band[0], name=band[1], liked=band[2], remind_me=band[3], albums=albums, types=types, similar=similar, title=band[1])
+    return render_with_base('band_detail.html', band=band[0], liked=band[1], remind_me=band[2], albums=albums, types=types, similar=similar, title=band[0].name)
 
 async def fetch_head(session: aiohttp.ClientSession, url: str):
     async with session.head(url, allow_redirects=True) as response:

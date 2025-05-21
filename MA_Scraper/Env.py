@@ -55,6 +55,7 @@ class Env:
         self.label = dpath('MA_Label.csv')
         self.reviews = dpath('MA_Reviews.csv')
 
+        self.fband = dpath('band.csv')
         self.genre = dpath('genre.csv')
         self.hgenre = dpath('hgenres.csv')
         self.prefix = dpath('prefix.csv')

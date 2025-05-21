@@ -2,7 +2,7 @@
     <div class="container" data-band-id="{{ band.band_id }}" id="Band-Container">
         <div class="header">
             <h1 class="title">
-                {{ name }}
+                {{ band.name }}
                 {% include 'like_dislike.html' %}
             </h1>
             <img id="band-logo" class="band-logo" alt="" />
@@ -19,7 +19,7 @@
         <!-- Right Content -->
         <div class="card-body-right">
             <p class="card-text"><strong>Genres:</strong> {{ band.genre }}</p>
-            <p class="card-text"><strong>Themes:</strong> {{ band.themes }}</p>
+            <p class="card-text"><strong>Themes:</strong> {{ band.theme }}</p>
             <p class="card-text"><strong>Label:</strong> {{ band.label }}</p>
         </div>
     </div>

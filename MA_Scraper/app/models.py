@@ -69,9 +69,15 @@ class Band(db.Model):
     name = db.Column(db.Text, nullable=True)
     country = db.Column(db.Text, nullable=True)
     genre = db.Column(db.Text, nullable=True)
+    location = db.Column(db.Text, nullable=True)
+    status = db.Column(db.Text, nullable=True)
+    year_formed = db.Column(db.Integer, nullable=True)
+    theme = db.Column('themes', db.Text, nullable=True)
+    label = db.Column(db.Text, nullable=True)
+    label_id = db.Column(db.Integer, db.ForeignKey('label.label_id'), nullable=True)
+    years_active = db.Column(db.Text, nullable=True)
 
     discography_items = relationship("Discography", back_populates="band")
-    details = relationship("Details", uselist=False, back_populates="band")
     members = relationship("Member", back_populates="band")
     logo = relationship("Band_logo", uselist=False, back_populates="band")
 
@@ -114,21 +120,6 @@ class Label(db.Model):
     country = db.Column(db.Text, nullable=True)
     genre = db.Column(db.Text, nullable=True)
     status = db.Column(db.Text, nullable=True)
-
-class Details(db.Model):
-    __tablename__ = 'details'
-    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
-    country = db.Column(db.Text, nullable=True)
-    location = db.Column(db.Text, nullable=True)
-    status = db.Column(db.Text, nullable=True)
-    year_formed = db.Column(db.Integer, nullable=True)
-    genre = db.Column(db.Text, nullable=True)
-    themes = db.Column(db.Text, nullable=True)
-    label = db.Column(db.Text, nullable=True)
-    label_id = db.Column(db.Integer, db.ForeignKey('label.label_id'), nullable=True)
-    years_active = db.Column(db.Text, nullable=True)
-
-    band = relationship(Band, back_populates="details")
 
 class Member(db.Model):
     __tablename__ = 'member'
