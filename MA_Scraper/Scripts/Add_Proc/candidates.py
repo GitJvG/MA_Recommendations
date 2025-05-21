@@ -1,6 +1,6 @@
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import Band as Band, Genre as Genre, Hgenre as Hgenre, Themes as Themes, Discography as Discog, \
-                        Theme as Theme, Details as Details, User as User, Users as Users, Similar_band as Similar, Candidates, Member as Member
+from MA_Scraper.app.models import Band, Genre, Hgenre, Themes, Discography as Discog, \
+                        Theme, User, Users, Similar_band as Similar, Candidates, Member
 import pandas as pd
 import faiss
 from collections import defaultdict
@@ -97,20 +97,19 @@ def create_item():
         Band.band_id,
         Band.name.label('band_name'),
         Band.genre.label('band_genre'),
-        Details.label,
-        Details.country,
-        Details.status,
+        Band.label,
+        Band.country,
+        Band.status,
         score_subquery.c.score,
         func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
         func.string_agg(func.distinct(Hgenre.name), ', ').label('hybrid_genres'),
         func.string_agg(func.distinct(Theme.name), ', ').label('theme_names')
     ).join(score_subquery, score_subquery.c.band_id == Band.band_id
-    ).join(Details, Band.band_id == Details.band_id
     ).join(Band.genres, isouter=True
     ).join(Band.hgenres, isouter=True
     ).join(Themes, Band.band_id == Themes.band_id
     ).join(Theme, Themes.theme_id == Theme.theme_id
-    ).group_by(Band.band_id, Band.name, Band.genre, Details.label, Details.country, Details.status, score_subquery.c.score
+    ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status, score_subquery.c.score
     ).all()
 
     data = [
