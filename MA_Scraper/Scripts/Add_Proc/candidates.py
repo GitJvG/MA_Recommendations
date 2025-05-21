@@ -1,6 +1,6 @@
 from MA_Scraper.app import create_app, db
 from MA_Scraper.app.models import Band, Genre, Hgenre, Themes, Discography as Discog, \
-                        Theme, User, Users, Similar_band as Similar, Candidates, Member
+                        Theme, User, Users, Similar_band as Similar, Candidates, Member, Prefix
 import pandas as pd
 import faiss
 from collections import defaultdict
@@ -103,12 +103,13 @@ def create_item():
         score_subquery.c.score,
         func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
         func.string_agg(func.distinct(Hgenre.name), ', ').label('hybrid_genres'),
-        func.string_agg(func.distinct(Theme.name), ', ').label('theme_names')
+        func.string_agg(func.distinct(Theme.name), ', ').label('theme_names'),
+        func.string_agg(func.distinct(Prefix.name), ', ').label('prefix_names')
     ).join(score_subquery, score_subquery.c.band_id == Band.band_id
     ).join(Band.genres, isouter=True
     ).join(Band.hgenres, isouter=True
-    ).join(Themes, Band.band_id == Themes.band_id
-    ).join(Theme, Themes.theme_id == Theme.theme_id
+    ).join(Band.themes, isouter=True
+    ).join(Band.prefixes, isouter=True
     ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status, score_subquery.c.score
     ).all()
 
@@ -122,6 +123,7 @@ def create_item():
             'genre_names': band.genre_names,
             'hybrid_genres': band.hybrid_genres,
             'theme_names': band.theme_names,
+            'prefix_names': band.prefix_names,
             'status': band.status,
             'score': band.score,
         }
@@ -131,8 +133,10 @@ def create_item():
     dataframe = pd.DataFrame(data)
     reviews = get_review_data()
     merged_dataframe = pd.merge(dataframe, reviews, on='band_id', how='left')
-    # Fill entries without reviews, 0 makes sense in this case.
+    # Fill empty entries
     merged_dataframe[['review_count', 'median_score']] = merged_dataframe[['review_count', 'median_score']].fillna(0)
+    merged_dataframe[['prefix_names']] = merged_dataframe[['prefix_names']].fillna('Not available')
+    merged_dataframe[['theme_names']] = merged_dataframe[['theme_names']].fillna('Not available')
 
     return merged_dataframe
 
@@ -154,7 +158,7 @@ def create_user():
     return users_preference
 
 def create_item_embeddings_with_faiss(item):
-    categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres']
+    categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres', 'prefix_names']
     numerical_columns = ['score', 'review_count', 'median_score']
 
 
@@ -207,49 +211,75 @@ def get_jaccard(band_members, liked_bands):
 
     return jaccard_dict
 
-def generate_candidates(user_id, users_preference, index, item, item_embeddings, k):
-    user_vector = generate_user_vector(user_id, users_preference, item_embeddings, item)
-    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].values
-    k2 = min(k + len(interacted_bands), k * 2)
-    distances, indices = index.search(user_vector.reshape(1, -1).astype('float32'), k2)
-    faiss_candidate_bands = item.iloc[indices[0]]['band_id'].values
-    remaining_candidates = list(faiss_candidate_bands)
-    for band in faiss_candidate_bands:
-        if band in interacted_bands:
-            if len(remaining_candidates) > k2*3:
-                remaining_candidates.remove(band)
-            else:
-                break
+def generate_candidates(user_id, users_preference, index, item_df, item_embeddings_array, k):
+    user_vector = generate_user_vector(user_id, users_preference, item_embeddings_array, item_df)
 
+    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].values
+    k2 = min(k + len(interacted_bands), k * 3)
+    faiss_limit = int(k2)
+    distances, faiss_indices = index.search(user_vector.reshape(1, -1).astype('float32'), k2)
+
+    faiss_list = []
+    for i in range(len(faiss_indices[0])):
+        band_id = item_df.iloc[faiss_indices[0][i]]['band_id']
+        distance = distances[0][i]
+        faiss_list.append({'band_id': band_id, 'faiss_distance': distance})
+
+    known_candidates = []
+    new_candidates = []
+
+    for candidate_info in faiss_list:
+        if candidate_info['band_id'] in set(interacted_bands):
+            known_candidates.append(candidate_info)
+        else:
+            new_candidates.append(candidate_info)
+
+    faiss_pool = []
+    num_interacted_to_add = faiss_limit - len(new_candidates)
+
+    if num_interacted_to_add > 0:
+        faiss_pool.extend(new_candidates)
+        faiss_pool.extend(known_candidates[:num_interacted_to_add])
+        faiss_pool.sort(key=lambda x: x['faiss_distance'])
+    else:
+        faiss_pool.extend(new_candidates[:faiss_limit])
+
+    candidates = [info['band_id'] for info in faiss_pool]
+    faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_pool}
+    
     liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].values
+
     if len(liked_bands) > 1:
         liked_bands_list = [int(band_id) for band_id in liked_bands]
         band_members = get_filtered_band_members(liked_bands_list)
         jaccard_dict = get_jaccard(band_members, liked_bands_list)
 
-        jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0}) #default dictionary to store total and count
+        jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
         for liked_band in liked_bands:
             for candidate_band, score in jaccard_dict.get(liked_band, {}).items():
                 jaccard_candidates[candidate_band]['total'] += score
                 jaccard_candidates[candidate_band]['count'] += 1
 
-        remaining_candidates.extend(list(jaccard_candidates.keys()))
-        remaining_candidates = list(set(remaining_candidates))
+        candidates.extend(list(jaccard_candidates.keys()))
+        candidates = list(set(candidates))
 
         combined_scores = []
-        for candidate_band in remaining_candidates:
-            faiss_rank = remaining_candidates.index(candidate_band) if candidate_band in remaining_candidates else float('inf')
+        for candidate_band in candidates:
+            faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
+            max_faiss_dist = max(d['faiss_distance'] for d in faiss_pool)
+            faiss_normalized = min(faiss_dist / max_faiss_dist, 1.0)
+
             total_jaccard = jaccard_candidates[candidate_band]['total']
             count = jaccard_candidates[candidate_band]['count']
             avg_jaccard = total_jaccard / count if count > 0 else 0
-            combined_scores.append((candidate_band, faiss_rank + (1 - avg_jaccard) * 1000))
+            
+            score = faiss_normalized + ((1 - avg_jaccard)/2)
+            combined_scores.append((candidate_band, score))
 
         combined_scores.sort(key=lambda x: x[1])
-        final_candidates = [band for band, _ in combined_scores]
-    else:
-        final_candidates = remaining_candidates[:k]
+        candidates = [band_id for band_id, _ in combined_scores]
 
-    return final_candidates[:k]
+    return candidates[:k]
 
 def generate_candidates_for_all_users(users_preference, index, item, item_embeddings, k=1000):
     candidate_list = []
@@ -290,7 +320,7 @@ def verify_candidate_member_overlap(candidates_csv_path, users_preference):
         else:
             results.append({'user_id': user_id, 'overlap_percentage': 0})
 
-def main(k=200):
+def main(k=400):
     app = create_app()
     with app.app_context():
         item = create_item()
@@ -299,7 +329,7 @@ def main(k=200):
         candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, k)
         candidate_frame.to_csv(env.candidates, index=False)
 
-def complete_refresh(k=200):
+def complete_refresh(k=400):
     main(k)
     refresh_tables([Candidates])
 
