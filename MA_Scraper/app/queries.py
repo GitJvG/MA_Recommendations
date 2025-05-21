@@ -93,8 +93,5 @@ def New_albums(query_limit=10, min_year=datetime.today().year-1):
         .order_by(None).order_by(func.random()).limit(limit2)
     ).all()
 
-    print(first_branch_results)
-    print(second_results)
-
     final_combined_results = first_branch_results + second_results
     return final_combined_results

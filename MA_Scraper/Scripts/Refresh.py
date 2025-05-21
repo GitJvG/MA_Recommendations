@@ -9,7 +9,7 @@ from MA_Scraper.Scripts.Components.DetailScraper import refresh as ReDet
 
 env = Env.get_instance()
 
-def refresh():
+def refresh(SQL=False):
     # Time handling is done at this level to ensure consistency between files on consecutive refreshes.
     # Time is set before all scraping, leading to some repeats on consecutive refreshes, this is done to ensure data-integrity and consistency.
     time = get_time()
@@ -28,6 +28,9 @@ def refresh():
     ReDet(band_ids_to_scrape=band_ids_to_scrape)
     for csv in csv_files: update_metadata(csv)
     update_metadata(time=time)
+    if SQL:
+        from MA_Scraper.Scripts.SQL import refresh_tables
+        refresh_tables()
 
 if __name__ == "__main__":
-    refresh()
+    refresh(SQL=True)

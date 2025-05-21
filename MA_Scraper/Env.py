@@ -17,10 +17,6 @@ def load_config(attribute, config_file=config_json):
         if value is None:
             raise ValueError(f"Missing required configuration: {attribute}")
         return value
-    except FileNotFoundError:
-        raise FileNotFoundError(f"The configuration file '{config_file}' was not found. Please create config.json following the format of the template.")
-    except json.JSONDecodeError:
-        raise ValueError(f"Error decoding the JSON in the configuration file '{config_file}'. Please create config.json following the format of the template.")
     except Exception as e:
         print(f"Error loading {config_file}: {e}")
         raise

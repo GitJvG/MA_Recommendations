@@ -26,8 +26,7 @@ def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=en
                 elif type == 'json':
                     return response.json()
             else:
-
-                print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
+                #print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
                 sleep_time = 2.5 ** attempt
                 time.sleep(sleep_time)
         except requests.RequestException as e:

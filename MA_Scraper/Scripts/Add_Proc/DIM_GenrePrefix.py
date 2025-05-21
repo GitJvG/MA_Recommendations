@@ -55,8 +55,6 @@ def create_split_bridge_csvs_optimized(band_df, combined_name_to_id_lookup, outp
             print(f"Bridge data for '{item_type}' created with {len(type_df)} rows (saved to {file_path}).")
 
 def main():
-    import time
-    start = time.time()
     df = pd.read_csv(env.band)
     df['Flattened_Genres'] = df['genre'].apply(lambda x: process_genres(x) if pd.notna(x) else [])
     all_flattened_data = [item for sublist in df['Flattened_Genres'] for item in sublist]
@@ -92,8 +90,6 @@ def main():
     }
 
     create_split_bridge_csvs_optimized(df, combined_name_to_id_lookup, bridge_output_paths)
-    end = time.time()
-    print(end-start)
 
 if __name__ == "__main__":
     main()

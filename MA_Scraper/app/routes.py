@@ -306,10 +306,8 @@ def query():
 @main.route('/band/<int:band_id>')
 @login_required
 def band_detail(band_id):
-    detail = db.session.get(Details, band_id)
-    name = db.session.get(Band, band_id).name
-    feedback = db.session.query(Users.liked, Users.remind_me).filter(and_(Users.user_id == current_user.id, Users.band_id == band_id)).first()
-    discography = db.session.execute(select(Discography).where(Discography.band_id == band_id).order_by(Discography.year.asc(), Discography.album_id.asc())).all()
+    band = db.session.execute(select(Details, Band.name, Users.liked, Users.remind_me).join(Details.band).outerjoin(Band.user_interactions).where(Details.band_id == band_id)).first()
+    discography = db.session.execute(select(Discography).where(Discography.band_id == band_id).order_by(Discography.year.asc(), Discography.album_id.asc())).scalars().all()
     similar_bands = db.session.execute(select(Similar_band.similar_id, Band.name, Band.country, Band.genre, Details.status, Details.label).join(Similar_band.similar_band) \
         .join(Band.details).where(Similar_band.band_id==band_id).order_by(Similar_band.score.desc())).all()
     types = {album.type for album in discography}
@@ -336,7 +334,7 @@ def band_detail(band_id):
         for sim in similar_bands
     ]
 
-    return render_with_base('band_detail.html', band=detail, name=name, feedback=feedback, albums=albums, types=types, similar=similar, title=name)
+    return render_with_base('band_detail.html', band=band[0], name=band[1], liked=band[2], remind_me=band[3], albums=albums, types=types, similar=similar, title=band[1])
 
 async def fetch_head(session: aiohttp.ClientSession, url: str):
     async with session.head(url, allow_redirects=True) as response:

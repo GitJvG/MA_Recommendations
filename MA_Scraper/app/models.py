@@ -29,37 +29,36 @@ class BandPrefixes(db.Model):
 
 class Themes(db.Model):
     __tablename__ = 'themes'
-    bridge_id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
-    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), nullable=False)
-    theme_id = db.Column(db.Integer, db.ForeignKey('theme.theme_id'), nullable=False)
+    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
+    theme_id = db.Column(db.Integer, db.ForeignKey('theme.theme_id'), primary_key=True)
 
     band = relationship('Band', viewonly=True)
     theme = relationship("Theme", viewonly=True)
 
 class Genre(db.Model):
     __tablename__ = 'genre'
-    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, unique=True, nullable=False)
 
     bands = db.relationship('Band', secondary=BandGenres.__table__, back_populates='genres')
 
 class Hgenre(db.Model):
     __tablename__ = 'hgenre'
-    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, unique=True, nullable=False)
 
     bands = db.relationship('Band', secondary=BandHgenres.__table__, back_populates='hgenres')
 
 class Prefix(db.Model):
     __tablename__ = 'prefix'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, unique=True, nullable=False)
 
     bands = db.relationship('Band', secondary=BandPrefixes.__table__, back_populates='prefixes')
 
 class Theme(db.Model):
     __tablename__ = 'theme'
-    theme_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    theme_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, unique=True, nullable=False)
 
     bands = db.relationship('Band', secondary=Themes.__table__, back_populates='themes')
@@ -101,8 +100,8 @@ class Discography(db.Model):
 
 class Similar_band(db.Model):
     __tablename__ = 'similar_band'
-    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
-    similar_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
+    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
+    similar_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
     score = db.Column(db.Integer, nullable=True)
 
     source_band = relationship(Band, foreign_keys=[band_id], back_populates="outgoing_similarities")
@@ -110,7 +109,7 @@ class Similar_band(db.Model):
 
 class Label(db.Model):
     __tablename__ = 'label'
-    label_id = db.Column(db.BigInteger, primary_key=True, nullable=False)
+    label_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, nullable=False)
     country = db.Column(db.Text, nullable=True)
     genre = db.Column(db.Text, nullable=True)
@@ -126,14 +125,14 @@ class Details(db.Model):
     genre = db.Column(db.Text, nullable=True)
     themes = db.Column(db.Text, nullable=True)
     label = db.Column(db.Text, nullable=True)
-    label_id = db.Column(db.BigInteger, db.ForeignKey('label.label_id'), nullable=True)
+    label_id = db.Column(db.Integer, db.ForeignKey('label.label_id'), nullable=True)
     years_active = db.Column(db.Text, nullable=True)
 
     band = relationship(Band, back_populates="details")
 
 class Member(db.Model):
     __tablename__ = 'member'
-    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
+    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
     member_id = db.Column(db.BigInteger, primary_key=True, nullable=False)
     name = db.Column(db.Text, nullable=True)
     role = db.Column(db.Text, nullable=True)
@@ -143,10 +142,10 @@ class Member(db.Model):
 
 class Band_logo(db.Model):
     __tablename__ = 'band_logo'
-    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
+    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
     data = db.Column(db.LargeBinary, nullable=False)
     retrieved_at = db.Column(db.DateTime(timezone=True), default=func.now())
-    content_type = db.Column(db.String(50), nullable=False)
+    content_type = db.Column(db.Text, nullable=False)
 
     band = relationship(Band, back_populates="logo")
 

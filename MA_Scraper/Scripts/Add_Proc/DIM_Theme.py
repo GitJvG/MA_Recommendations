@@ -39,7 +39,6 @@ def main():
     save_DIM_themes(anchor_groups)
     theme_df = pd.read_csv(env.theme)
     save_Bandthemes(anchor_groups, theme_df)
-    print("Anchor and Bridge CSVs created successfully.")
 
 if __name__ == '__main__':
     main()
