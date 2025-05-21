@@ -32,7 +32,7 @@
         </div>
         {% for type in types %}
             <div>
-                <label><input type="checkbox" value="{{ type }}" {% if type == 'EP' or type == 'Full-length' %}checked{% endif %}> {{ type }}</label>
+                <label><input type="checkbox" value="{{ type }}" {% if type == 'EP' or type == 'Full-length' or type == 'Split' or type == 'Demo' %}checked{% endif %}> {{ type }}</label>
             </div>
         {% endfor %}
     </div>
