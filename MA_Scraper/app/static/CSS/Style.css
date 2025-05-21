@@ -55,7 +55,7 @@ header.navbar {
     margin-right: var(--border-width);
     display: flex;
     justify-content: space-between;
-    z-index: 5;
+    z-index: 2;
     align-items: center;
     flex-shrink: 0;
 }
@@ -264,18 +264,11 @@ h3 {
     position: absolute;
     top: 5px;
     right: 5px;
-    background-color: #ff0000;
+    background-color: transparent;
     color: var(--second_color);
     border: none;
-    border-radius: 50%;
-    font-size: 18px;
-    width: 25px;
-    height: 25px;
+    font-size: 20px;
     cursor: pointer;
-}
-
-.close-btn:hover {
-    background-color: #cc0000;
 }
 
 .floating-video-wrapper {
@@ -285,6 +278,7 @@ h3 {
     width: calc(315*var(--root-width));
     height: calc((315*(9/16))*var(--root-width));
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    z-index: 3;
 }
 
 .floating-video-wrapper iframe {
