@@ -10,7 +10,7 @@ env = Env.get_instance()
 
 # Function to extract unique themes from the dataframe and count their frequency
 def items_to_set(genre_series):
-    genre_set = set()
+    theme_set = set()
     theme_count = Counter()  # Counter to hold theme frequencies
     for genre_string in genre_series:
         if pd.notna(genre_string):  # Ensure no NaN values are included
@@ -20,9 +20,9 @@ def items_to_set(genre_series):
                 for genre in genre_string.split(','):
                     genre_cleaned = genre.strip()
                     if len(genre_cleaned) <= 40 and genre_cleaned:  # Check for empty strings and length
-                        genre_set.add(genre_cleaned)
+                        theme_set.add(genre_cleaned)
                         theme_count[genre_cleaned] += 1  # Increase the count for each theme
-    return genre_set, theme_count
+    return theme_set, theme_count
 
 # Function to group similar strings using RapidFuzz with frequency-based sorting
 def group_themes(themes, theme_count, threshold=85):
@@ -70,11 +70,11 @@ def load_existing_dict(pickle_path):
     else:
         return defaultdict(list)
 
-def find_new_themes(all_items, existing_dict):
+def find_new_themes(theme_set, existing_dict):
     existing_themes = set(existing_dict.keys()).union(
         {theme for themes in existing_dict.values() for theme in themes}
     )
-    new_themes = [theme for theme in all_items if theme not in existing_themes]
+    new_themes = theme_set - existing_themes
     return new_themes
 
 def update_theme_dict(new_themes, theme_count, existing_dict, threshold=85):
@@ -104,11 +104,10 @@ def update_pickle():
     df = df.dropna().apply(basic_processing)
     output_path = env.dim_theme_dict
     
-    all_items, theme_count = items_to_set(df)
+    theme_set, theme_count = items_to_set(df)
     existing_dict = load_existing_dict(output_path)
     
-    new_themes = find_new_themes(all_items, existing_dict)
-    
+    new_themes = find_new_themes(theme_set, existing_dict)
     updated_dict = update_theme_dict(new_themes, theme_count, existing_dict)
     
     with open(output_path, 'wb') as pickle_file:
