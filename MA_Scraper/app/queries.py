@@ -31,14 +31,20 @@ def Top_albums(band_ids, picks_per_band=1):
 
     return selected_albums
 
-def New_albums(query_limit=10, min_year=datetime.today().year-1):
+def New_albums(query_limit=10, min_year=None):
     limit1 = int(query_limit / 2)
     limit2 = query_limit - limit1
+    if not min_year:
+        if datetime.today().month > 1:
+            min_year = datetime.today().year
+        else:
+            min_year = datetime.today().year-1
 
-    genre_cte_stmt = (select(Band.band_id,
-            func.string_agg(Genre.name, ', ').label('genre')
-        ).join(Band.genres)
-        .group_by(Band.band_id)).cte('genre_cte_stmt')
+    agg_band_cte = (select(Band.band_id,
+            func.string_agg(Genre.name, ', ').label('genre'),
+            func.sum(Discography.review_count * Discography.review_score).label('total_reviews')
+        ).join(Band.genres).join(Band.discography_items)
+        .group_by(Band.band_id)).cte('agg_band_cte')
     
     recent_albums_ranked_by_year = (
         select(
@@ -66,9 +72,9 @@ def New_albums(query_limit=10, min_year=datetime.today().year-1):
             latest_albums_ranked.c.name,
             latest_albums_ranked.c.type,
             latest_albums_ranked.c.band_name,
-            genre_cte_stmt.c.genre
+            agg_band_cte.c.genre
         )
-        .join(genre_cte_stmt, genre_cte_stmt.c.band_id == latest_albums_ranked.c.band_id)
+        .join(agg_band_cte, agg_band_cte.c.band_id == latest_albums_ranked.c.band_id)
         .where(latest_albums_ranked.c.rank_by_score == 1)
         .order_by(None).order_by(func.random()).limit(limit1)
     ).all()
@@ -85,11 +91,12 @@ def New_albums(query_limit=10, min_year=datetime.today().year-1):
              recent_albums_ranked_by_year.c.name,
              recent_albums_ranked_by_year.c.type,
              recent_albums_ranked_by_year.c.band_name,
-             genre_cte_stmt.c.genre
+             agg_band_cte.c.genre
         )
         .join(band_scores, recent_albums_ranked_by_year.c.band_id == band_scores.c.band_id, isouter=True)
-        .join(genre_cte_stmt, genre_cte_stmt.c.band_id == recent_albums_ranked_by_year.c.band_id)
-        .where(recent_albums_ranked_by_year.c.rank_by_year == 1, band_scores.c.total_score > 50, recent_albums_ranked_by_year.c.band_id.notin_(selected_band_ids))
+        .join(agg_band_cte, agg_band_cte.c.band_id == recent_albums_ranked_by_year.c.band_id)
+        .where(recent_albums_ranked_by_year.c.rank_by_year == 1, band_scores.c.total_score > 50, recent_albums_ranked_by_year.c.band_id.notin_(selected_band_ids)
+                ,agg_band_cte.c.total_reviews > 0)
         .order_by(None).order_by(func.random()).limit(limit2)
     ).all()
 
