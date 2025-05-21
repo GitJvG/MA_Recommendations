@@ -213,10 +213,10 @@ def get_jaccard(band_members, liked_bands):
 
 def generate_candidates(user_id, users_preference, index, item_df, item_embeddings_array, k):
     user_vector = generate_user_vector(user_id, users_preference, item_embeddings_array, item_df)
-
     interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].values
-    k2 = min(k + len(interacted_bands), k * 3)
-    faiss_limit = int(k2)
+    liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].values
+
+    k2 = min(k + len(interacted_bands) * 2, k * 5)
     distances, faiss_indices = index.search(user_vector.reshape(1, -1).astype('float32'), k2)
 
     faiss_list = []
@@ -225,29 +225,8 @@ def generate_candidates(user_id, users_preference, index, item_df, item_embeddin
         distance = distances[0][i]
         faiss_list.append({'band_id': band_id, 'faiss_distance': distance})
 
-    known_candidates = []
-    new_candidates = []
-
-    for candidate_info in faiss_list:
-        if candidate_info['band_id'] in set(interacted_bands):
-            known_candidates.append(candidate_info)
-        else:
-            new_candidates.append(candidate_info)
-
-    faiss_pool = []
-    num_interacted_to_add = faiss_limit - len(new_candidates)
-
-    if num_interacted_to_add > 0:
-        faiss_pool.extend(new_candidates)
-        faiss_pool.extend(known_candidates[:num_interacted_to_add])
-        faiss_pool.sort(key=lambda x: x['faiss_distance'])
-    else:
-        faiss_pool.extend(new_candidates[:faiss_limit])
-
-    candidates = [info['band_id'] for info in faiss_pool]
-    faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_pool}
-    
-    liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].values
+    candidates = [info['band_id'] for info in faiss_list]
+    faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_list}
 
     if len(liked_bands) > 1:
         liked_bands_list = [int(band_id) for band_id in liked_bands]
@@ -264,22 +243,42 @@ def generate_candidates(user_id, users_preference, index, item_df, item_embeddin
         candidates = list(set(candidates))
 
         combined_scores = []
+        max_faiss_dist = max(d['faiss_distance'] for d in faiss_list) if faiss_list else 1.0
+
         for candidate_band in candidates:
             faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
-            max_faiss_dist = max(d['faiss_distance'] for d in faiss_pool)
             faiss_normalized = min(faiss_dist / max_faiss_dist, 1.0)
 
             total_jaccard = jaccard_candidates[candidate_band]['total']
             count = jaccard_candidates[candidate_band]['count']
             avg_jaccard = total_jaccard / count if count > 0 else 0
-            
-            score = faiss_normalized + ((1 - avg_jaccard)/2)
-            combined_scores.append((candidate_band, score))
 
-        combined_scores.sort(key=lambda x: x[1])
-        candidates = [band_id for band_id, _ in combined_scores]
+            score = (faiss_normalized * 0.8) + ((1 - avg_jaccard) * 0.2)
+            combined_scores.append({'band_id': candidate_band, 'score': score})
 
-    return candidates[:k]
+
+        combined_scores.sort(key=lambda x: x['score'])
+        candidates = [item['band_id'] for item in combined_scores]
+    else:
+        faiss_list.sort(key=lambda x: x['faiss_distance'])
+        candidates = [info['band_id'] for info in faiss_list]
+
+    known_candidates_re_ranked = []
+    new_candidates_re_ranked = []
+
+    for band_id in candidates:
+        if band_id in set(interacted_bands):
+            known_candidates_re_ranked.append(band_id)
+        else:
+            new_candidates_re_ranked.append(band_id)
+
+    faiss_pool = []
+    num_interacted_to_add = max(0, k - len(new_candidates_re_ranked))
+
+    faiss_pool.extend(new_candidates_re_ranked)
+    faiss_pool.extend(known_candidates_re_ranked[:num_interacted_to_add])
+
+    return faiss_pool[:k]
 
 def generate_candidates_for_all_users(users_preference, index, item, item_embeddings, k=1000):
     candidate_list = []
