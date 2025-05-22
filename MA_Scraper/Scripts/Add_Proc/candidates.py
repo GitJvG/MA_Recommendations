@@ -1,14 +1,20 @@
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import Band, Genre, Hgenre, Themes, Discography as Discog, \
-                        Theme, User, Users, Similar_band as Similar, Candidates, Member, Prefix
+from MA_Scraper.app.models import Band, Genre, Hgenre, Discography as Discog, \
+                        Theme, Users, Similar_band as Similar, Candidates, Member, Prefix
 import pandas as pd
 import faiss
 from collections import defaultdict
 import numpy as np
 from datetime import datetime
-from sqlalchemy import func, and_
+from sqlalchemy import func
 from MA_Scraper.Env import Env
 from MA_Scraper.Scripts.SQL import refresh_tables
+from hdbscan import HDBSCAN
+from sklearn.decomposition import PCA
+
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 env = Env.get_instance()
 
 today = datetime.today()
@@ -31,7 +37,6 @@ def one_hot_encode(df, columns):
     return np.hstack(encoded)
 
 def get_review_data():
-    # Aggregate review counts and scores in the query itself
     review_subquery = db.session.query(
         Discog.band_id,
         func.sum(Discog.review_count).label('total_review_count'),
@@ -39,14 +44,12 @@ def get_review_data():
     ).filter(Discog.reviews.isnot(None)) \
      .group_by(Discog.band_id).subquery()
     
-    # Join with the main query to get additional details
     result = db.session.query(
         review_subquery.c.band_id,
         review_subquery.c.total_review_count,
         review_subquery.c.median_score
     ).all()
 
-    # Return as DataFrame directly
     df = pd.DataFrame(result, columns=['band_id', 'review_count', 'median_score'])
     return df
 
@@ -133,7 +136,7 @@ def create_item():
     dataframe = pd.DataFrame(data)
     reviews = get_review_data()
     merged_dataframe = pd.merge(dataframe, reviews, on='band_id', how='left')
-    # Fill empty entries
+
     merged_dataframe[['review_count', 'median_score']] = merged_dataframe[['review_count', 'median_score']].fillna(0)
     merged_dataframe[['prefix_names']] = merged_dataframe[['prefix_names']].fillna('Not available')
     merged_dataframe[['theme_names']] = merged_dataframe[['theme_names']].fillna('Not available')
@@ -158,13 +161,12 @@ def create_user():
     return users_preference
 
 def create_item_embeddings_with_faiss(item):
-    categorical_columns = ['country', 'band_genre', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres', 'prefix_names']
+    categorical_columns = ['country', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres', 'prefix_names']
     numerical_columns = ['score', 'review_count', 'median_score']
 
 
     categorical_embeddings = one_hot_encode(item, categorical_columns)
 
-    # Standardscaling numerical cols
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
     item_embeddings_dense = np.hstack([
@@ -178,16 +180,60 @@ def create_item_embeddings_with_faiss(item):
 
     return index, item_embeddings_dense
 
-def generate_user_vector(user_id, users_preference, item_embeddings, item):
+def generate_user_vectors(user_id, users_preference, item_embeddings_array, item_df, min_cluster_size=None):
     user_prefs = users_preference[users_preference['user'] == user_id]
     liked_items = user_prefs[user_prefs['label'] == 1]['band_id'].values
     if len(liked_items) == 0:
         return []
-    
-    liked_embeddings = item_embeddings[item['band_id'].isin(liked_items)]
 
-    user_vector = np.mean(liked_embeddings, axis=0)
-    return user_vector
+    liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_items)]
+
+    pca = PCA(n_components=None)
+    pca.fit(liked_embeddings_array)
+
+    explained_variance_ratio = pca.explained_variance_ratio_
+    cumulative_explained_variance = np.cumsum(explained_variance_ratio)
+    n_components = np.argmax(cumulative_explained_variance >= 0.90)
+
+    user_pca = PCA(n_components=n_components)
+    user_pca.fit(liked_embeddings_array)
+    try:
+        processed_embeddings_array = user_pca.transform(liked_embeddings_array)
+    except Exception as e:
+        print(f"PCA failed for user {user_id}: {e}. Using original embeddings.")
+        processed_embeddings_array = liked_embeddings_array
+
+    
+    min_cluster_size = int(len(processed_embeddings_array) * 0.05)
+    if len(processed_embeddings_array) < min_cluster_size:
+        return [np.mean(processed_embeddings_array, axis=0)]
+
+    try:
+        clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1, allow_single_cluster=True)
+        cluster_labels = clusterer.fit_predict(processed_embeddings_array)
+    except Exception as e:
+        print(f"HDBSCAN clustering failed for user {user_id}: {e}. Returning single average as fallback.")
+        return [np.mean(processed_embeddings_array, axis=0)]
+
+    user_interest_vectors = []
+    unique_clusters = np.unique(cluster_labels)
+    
+    processed_embeddings_array = user_pca.transform(liked_embeddings_array)
+    for cluster_label in unique_clusters:
+        if cluster_label != -1:
+            cluster_items_embeddings = processed_embeddings_array[cluster_labels == cluster_label]
+            if len(cluster_items_embeddings) > 0:
+                interest_vector = np.mean(cluster_items_embeddings, axis=0)
+                interest_vector = user_pca.inverse_transform(interest_vector).reshape(1, -1).flatten()
+                user_interest_vectors.append(interest_vector)
+
+    print(f"User shape before clustering", processed_embeddings_array.shape)
+    print(f"unique_clusters {len(unique_clusters)}")
+    print(f"user interest vectors {len(user_interest_vectors)}")
+    if not user_interest_vectors:
+        return [np.mean(processed_embeddings_array, axis=0)]
+
+    return user_interest_vectors
 
 def get_jaccard(band_members, liked_bands):
     candidate_bands = set(band_members.keys()) - set(liked_bands)
@@ -211,63 +257,69 @@ def get_jaccard(band_members, liked_bands):
 
     return jaccard_dict
 
-def generate_candidates(user_id, users_preference, index, item_df, item_embeddings_array, k):
-    user_vector = generate_user_vector(user_id, users_preference, item_embeddings_array, item_df)
-    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].values
-    liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].values
+def generate_candidates(user_id, users_preference, index, item_df, item_embeddings_array, min_cluster_size, k):
+    user_vectors = generate_user_vectors(user_id, users_preference, item_embeddings_array, item_df, min_cluster_size)
+    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique()
+    interacted_bands = [int(x) for x in interacted_bands]
+    #k2 = min(k + len(interacted_bands) * 2, k * 5)
+    if not user_vectors:
+        return []
+    k_per_cluster = k // len(user_vectors)
+    print(f"k_per_clusters {k_per_cluster}")
+    all_faiss_results = []
+    for user_vector in user_vectors:
+        distances, faiss_indices = index.search(user_vector.reshape(1, -1).astype('float32'), k_per_cluster)
+        for i in range(len(faiss_indices[0])):
+            band_id = item_df.iloc[faiss_indices[0][i]]['band_id']
+            distance = distances[0][i]
+            all_faiss_results.append({'band_id': band_id, 'faiss_distance': distance})
 
-    k2 = min(k + len(interacted_bands) * 2, k * 5)
-    distances, faiss_indices = index.search(user_vector.reshape(1, -1).astype('float32'), k2)
+    unique_candidates = {}
+    for res in all_faiss_results:
+        band_id = res['band_id']
+        distance = res['faiss_distance']
+        if band_id not in unique_candidates or distance < unique_candidates[band_id]['faiss_distance']:
+            unique_candidates[band_id] = res
 
-    faiss_list = []
-    for i in range(len(faiss_indices[0])):
-        band_id = item_df.iloc[faiss_indices[0][i]]['band_id']
-        distance = distances[0][i]
-        faiss_list.append({'band_id': band_id, 'faiss_distance': distance})
-
+    faiss_list = list(unique_candidates.values())
     candidates = [info['band_id'] for info in faiss_list]
     faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_list}
 
-    if len(liked_bands) > 1:
-        liked_bands_list = [int(band_id) for band_id in liked_bands]
-        band_members = get_filtered_band_members(liked_bands_list)
-        jaccard_dict = get_jaccard(band_members, liked_bands_list)
+    band_members = get_filtered_band_members(interacted_bands)
+    jaccard_dict = get_jaccard(band_members, interacted_bands)
 
-        jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
-        for liked_band in liked_bands:
-            for candidate_band, score in jaccard_dict.get(liked_band, {}).items():
-                jaccard_candidates[candidate_band]['total'] += score
-                jaccard_candidates[candidate_band]['count'] += 1
+    jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
+    for liked_band in interacted_bands:
+        for candidate_band, score in jaccard_dict.get(liked_band, {}).items():
+            jaccard_candidates[candidate_band]['total'] += score
+            jaccard_candidates[candidate_band]['count'] += 1
 
-        candidates.extend(list(jaccard_candidates.keys()))
-        candidates = list(set(candidates))
+    candidates.extend(list(jaccard_candidates.keys()))
+    candidates = list(set(candidates))
 
-        combined_scores = []
-        max_faiss_dist = max(d['faiss_distance'] for d in faiss_list) if faiss_list else 1.0
+    combined_scores = []
+    max_faiss_dist = max(d['faiss_distance'] for d in faiss_list) if faiss_list else 1.0
 
-        for candidate_band in candidates:
-            faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
-            faiss_normalized = min(faiss_dist / max_faiss_dist, 1.0)
+    for candidate_band in candidates:
+        faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
+        faiss_normalized = min(faiss_dist / max_faiss_dist, 1.0)
 
-            total_jaccard = jaccard_candidates[candidate_band]['total']
-            count = jaccard_candidates[candidate_band]['count']
-            avg_jaccard = total_jaccard / count if count > 0 else 0
+        total_jaccard = jaccard_candidates[candidate_band]['total']
+        count = jaccard_candidates[candidate_band]['count']
+        avg_jaccard = total_jaccard / count if count > 0 else 0
 
-            score = (faiss_normalized * 0.8) + ((1 - avg_jaccard) * 0.2)
-            combined_scores.append({'band_id': candidate_band, 'score': score})
+        score = (faiss_normalized * 0.8) + ((1 - avg_jaccard) * 0.2)
+        combined_scores.append({'band_id': candidate_band, 'score': score})
 
 
-        combined_scores.sort(key=lambda x: x['score'])
-        candidates = [item['band_id'] for item in combined_scores]
-    else:
-        faiss_list.sort(key=lambda x: x['faiss_distance'])
-        candidates = [info['band_id'] for info in faiss_list]
+    combined_scores.sort(key=lambda x: x['score'])
+    candidates = [item['band_id'] for item in combined_scores]
 
     known_candidates_re_ranked = []
     new_candidates_re_ranked = []
 
     for band_id in candidates:
-        if band_id in set(interacted_bands):
+        if band_id in interacted_bands:
             known_candidates_re_ranked.append(band_id)
         else:
             new_candidates_re_ranked.append(band_id)
@@ -280,56 +332,28 @@ def generate_candidates(user_id, users_preference, index, item_df, item_embeddin
 
     return faiss_pool[:k]
 
-def generate_candidates_for_all_users(users_preference, index, item, item_embeddings, k=1000):
+def generate_candidates_for_all_users(users_preference, index, item, item_embeddings, min_cluster_size, k=1000):
     candidate_list = []
 
     for user_id in users_preference['user'].unique():
-        candidates = generate_candidates(user_id, users_preference, index, item, item_embeddings, k)
+        candidates = generate_candidates(user_id, users_preference, index, item, item_embeddings, min_cluster_size, k)
         for candidate in candidates:
             candidate_list.append({'user_id': user_id, 'band_id': candidate})
 
     candidate_df = pd.DataFrame(candidate_list)
     return candidate_df
 
-def verify_candidate_member_overlap(candidates_csv_path, users_preference):
-    candidates_df = pd.read_csv(candidates_csv_path)
-    results = []
-
-    for user_id in candidates_df['user_id'].unique():
-        user_candidates = candidates_df[candidates_df['user_id'] == user_id]['band_id'].tolist()
-        print(user_candidates)
-        liked_bands = users_preference[users_preference['user'] == user_id][users_preference['label'] == 1]['band_id'].tolist()
-        liked_bands_int = [int(band_id) for band_id in liked_bands]
-
-        if len(liked_bands_int) > 1:
-            band_members = get_filtered_band_members(liked_bands_int)
-            jaccard_dict = get_jaccard(band_members)
-
-            overlap_count = 0
-            for candidate_band in user_candidates:
-                for liked_band in liked_bands_int:
-                    if liked_band in jaccard_dict:
-                        if candidate_band in jaccard_dict[liked_band]:
-                            if jaccard_dict[liked_band][candidate_band] > 0:
-                                overlap_count += 1
-                                break
-
-            overlap_percentage = (overlap_count / len(user_candidates)) * 100 if user_candidates else 0
-            results.append({'user_id': user_id, 'overlap_percentage': overlap_percentage})
-        else:
-            results.append({'user_id': user_id, 'overlap_percentage': 0})
-
-def main(k=400):
+def main(min_cluster_size=None, k=400):
     app = create_app()
     with app.app_context():
         item = create_item()
         users_preference = create_user()
         index, item_embeddings = create_item_embeddings_with_faiss(item)
-        candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, k)
+        candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, min_cluster_size, k)
         candidate_frame.to_csv(env.candidates, index=False)
 
-def complete_refresh(k=400):
-    main(k)
+def complete_refresh(min_cluster_size=None, k=400):
+    main(min_cluster_size, k)
     refresh_tables([Candidates])
 
 if __name__ == '__main__':
