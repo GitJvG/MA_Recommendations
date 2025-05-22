@@ -1,17 +1,16 @@
 from MA_Scraper.app import create_app, db
 from MA_Scraper.app.models import Band, Genre, Hgenre, Discography as Discog, \
                         Theme, Users, Similar_band as Similar, Candidates, Member, Prefix
+from MA_Scraper.Env import Env
+from MA_Scraper.Scripts.SQL import refresh_tables
 import pandas as pd
 import faiss
 from collections import defaultdict
 import numpy as np
 from datetime import datetime
 from sqlalchemy import func
-from MA_Scraper.Env import Env
-from MA_Scraper.Scripts.SQL import refresh_tables
 from hdbscan import HDBSCAN
 from sklearn.decomposition import PCA
-
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 
@@ -187,23 +186,12 @@ def generate_user_vectors(user_id, users_preference, item_embeddings_array, item
         return []
 
     liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_items)]
+    print(f"liked shape before clustering", liked_embeddings_array.shape)
+    pca = PCA(n_components=0.95)
+    pca = pca.fit(liked_embeddings_array)
+    processed_embeddings_array = pca.transform(liked_embeddings_array)
+    print(f"User shape before clustering", processed_embeddings_array.shape)
 
-    pca = PCA(n_components=None)
-    pca.fit(liked_embeddings_array)
-
-    explained_variance_ratio = pca.explained_variance_ratio_
-    cumulative_explained_variance = np.cumsum(explained_variance_ratio)
-    n_components = np.argmax(cumulative_explained_variance >= 0.90)
-
-    user_pca = PCA(n_components=n_components)
-    user_pca.fit(liked_embeddings_array)
-    try:
-        processed_embeddings_array = user_pca.transform(liked_embeddings_array)
-    except Exception as e:
-        print(f"PCA failed for user {user_id}: {e}. Using original embeddings.")
-        processed_embeddings_array = liked_embeddings_array
-
-    
     min_cluster_size = int(len(processed_embeddings_array) * 0.05)
     if len(processed_embeddings_array) < min_cluster_size:
         return [np.mean(processed_embeddings_array, axis=0)]
@@ -218,16 +206,14 @@ def generate_user_vectors(user_id, users_preference, item_embeddings_array, item
     user_interest_vectors = []
     unique_clusters = np.unique(cluster_labels)
     
-    processed_embeddings_array = user_pca.transform(liked_embeddings_array)
     for cluster_label in unique_clusters:
         if cluster_label != -1:
             cluster_items_embeddings = processed_embeddings_array[cluster_labels == cluster_label]
             if len(cluster_items_embeddings) > 0:
                 interest_vector = np.mean(cluster_items_embeddings, axis=0)
-                interest_vector = user_pca.inverse_transform(interest_vector).reshape(1, -1).flatten()
+                interest_vector = pca.inverse_transform(interest_vector).reshape(1, -1).flatten()
                 user_interest_vectors.append(interest_vector)
 
-    print(f"User shape before clustering", processed_embeddings_array.shape)
     print(f"unique_clusters {len(unique_clusters)}")
     print(f"user interest vectors {len(user_interest_vectors)}")
     if not user_interest_vectors:
