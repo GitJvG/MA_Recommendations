@@ -34,16 +34,13 @@ def one_hot_encode(df, columns):
     return np.hstack(encoded)
 
 def get_filtered_band_members(band_ids):
-    m_alias2 = alias(Member)
-    shared_members_cte = (
-        select(Member.member_id)
+    shared_members_cte = (select(Member.member_id)
         .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).cte()
 
     result = (db.session.execute(
         select(Member.band_id, Member.member_id)
-        .join(m_alias2, Member.band_id == m_alias2.c.band_id)
-        .where(m_alias2.c.member_id.in_(select(shared_members_cte.c.member_id)), m_alias2.c.category.in_(['Current lineup', 'Past lineup']))
+        .where(Member.member_id.in_(select(shared_members_cte.c.member_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).all())
 
     band_members = defaultdict(set)
