@@ -38,10 +38,10 @@ def get_filtered_band_members(band_ids):
         .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).cte()
 
-    result = (db.session.execute(
+    result = db.session.execute(
         select(Member.band_id, Member.member_id)
         .where(Member.member_id.in_(select(shared_members_cte.c.member_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
-    ).all())
+    ).all()
 
     band_members = defaultdict(set)
     for band_id, member_id in result:
@@ -49,17 +49,17 @@ def get_filtered_band_members(band_ids):
     return band_members
 
 def create_item():
-    score_subquery = db.session.query(
-    Similar_band.band_id,
-    func.sum(func.distinct(Similar_band.score)).label('score')
-    ).group_by(Similar_band.band_id).subquery()
+    score_subquery = select(
+        Similar_band.band_id,
+        func.sum(func.distinct(Similar_band.score)).label('score')
+        ).group_by(Similar_band.band_id).cte()
 
-    reviews = (select(
+    reviews = select(
         Discography.band_id,
         func.sum(Discography.review_count).label('review_count'),
         func.percentile_cont(0.5).within_group(Discography.review_score).label('median_score')
-    ).filter(Discography.reviews.isnot(None)) \
-     .group_by(Discography.band_id)).cte()
+        ).filter(Discography.reviews.isnot(None)
+        ).group_by(Discography.band_id).cte()
 
     results = db.session.execute(select(
         Band.band_id,
