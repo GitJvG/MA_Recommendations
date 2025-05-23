@@ -8,7 +8,7 @@ import faiss
 from collections import defaultdict
 import numpy as np
 from datetime import datetime
-from sqlalchemy import func, select, alias, case, cast, DateTime
+from sqlalchemy import func, select, alias, case, cast, Date
 from hdbscan import HDBSCAN
 from sklearn.decomposition import PCA
 import warnings
@@ -104,9 +104,9 @@ def create_user():
         Users.band_id,
         case(((Users.liked == True) | (Users.remind_me == True), 1),else_=0).label('label'),
         func.least(
-            func.abs(func.extract('epoch', cast(today, DateTime) - cast(Users.liked_date, DateTime))),
-            func.abs(func.extract('epoch', cast(today, DateTime) - cast(Users.liked_date, DateTime))).label('relevance')
-        ))).all()
+            func.abs(func.current_date() - cast(Users.liked_date, Date)),
+            func.abs(func.current_date() - cast(Users.remind_me_date, Date)).label('relevance'))
+        )).all()
 
     users_preference = pd.DataFrame(user_band_preference_data)
 
