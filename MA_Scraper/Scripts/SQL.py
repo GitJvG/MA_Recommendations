@@ -7,11 +7,17 @@ from MA_Scraper.Env import Env
 import ast
 env = Env.get_instance()
 
+def process_band_logo():
+    df = pd.read_csv(env.band_logo, header=0)
+    df = dataframes.get(Band_logo.__name__)()
+    df.loc[:, 'data'] = df['data'].apply(string_representation_to_bytes)
+    return df
+
 dataframes = {
     Member.__name__: lambda: pd.read_csv(env.memb, header=0, keep_default_na=False, na_values=['']),
     Similar_band.__name__: lambda: pd.read_csv(env.simi, header=0),
     Discography.__name__: lambda: pd.read_csv(env.disc, header=0, keep_default_na=False, na_values=['']),
-    Band_logo.__name__: lambda: pd.read_csv(env.band_logo, header=0),
+    Band_logo.__name__: process_band_logo,
     Band.__name__: lambda: pd.read_csv(env.fband, header=0, keep_default_na=False, na_values=['']),
     Genre.__name__: lambda: pd.read_csv(env.genre, header=0),
     Hgenre.__name__: lambda: pd.read_csv(env.hgenre, header=0),
@@ -52,18 +58,19 @@ def string_representation_to_bytes(byte_string_repr):
 
 def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
-    backup_logo()
     app = create_app()
     with app.app_context():
-        models = model if model else [Label, Band, Theme, Prefix, Genre, Hgenre, Discography, Similar_band, Member, BandGenres, BandHgenres, BandPrefixes, Themes, Candidates]
+        models = model if model else [Label, Band, Theme, Prefix, Genre, Hgenre, Discography, Similar_band, Band_logo, Member, BandGenres, BandHgenres, BandPrefixes, Themes, Candidates]
         for model in models:
             df = dataframes.get(model.__name__)()
             if df is None or df.empty:
                 raise ValueError(f"DataFrame for model '{model.__name__}' is empty or None.")
+        
+        if Band_logo in models:
+            backup_logo()
             
         for model in models:
             db.session.execute(text(f'DROP TABLE IF EXISTS "{model.__tablename__}" CASCADE;'))
-        db.session.execute(text(f'DROP TABLE IF EXISTS "{Band_logo.__tablename__}" CASCADE;'))
         db.session.commit()
 
         db.create_all()
@@ -71,10 +78,6 @@ def refresh_tables(model=None):
         for model in models:
             df = dataframes.get(model.__name__)()
             df.to_sql(model.__tablename__, con=db.engine, if_exists='append', index=False)
-        
-        df2 = dataframes.get(Band_logo.__name__)()
-        df2.loc[:, 'data'] = df2['data'].apply(string_representation_to_bytes)
-        df2.to_sql(Band_logo.__tablename__, con=db.engine, if_exists='append', index=False)
 
         print("All tables refreshed successfully with constraints applied.")
 
