@@ -217,12 +217,14 @@ def index_faiss(dense):
 
     return index
 
-def get_jaccard(band_members, interacted_bands):
-    interacted_bands = set(interacted_bands) & set(band_members.keys())
-    candidate_bands = set(band_members.keys()) - set(interacted_bands)
+def get_jaccard(liked_bands):
+    band_members = get_filtered_band_members(liked_bands)
+    liked_bands = set(liked_bands) & set(band_members.keys())
+    
+    candidate_bands = set(band_members.keys()) - set(liked_bands)
     jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
 
-    for liked_band in interacted_bands:
+    for liked_band in liked_bands:
         members = band_members[liked_band]
 
         for candidate_band in candidate_bands:
@@ -238,13 +240,11 @@ def get_jaccard(band_members, interacted_bands):
     return jaccard_candidates
 
 def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vectors, k):
-    interacted_bands = [int(x) for x in interacted_bands]
     disliked_bands = set(interacted_bands) - set(liked_bands)
     
     if user_vectors.size == 0:
         return []
     k_per_cluster = k // len(user_vectors)
-    print(f"k_per_clusters {k_per_cluster}")
 
     distances_batch, faiss_indices_batch = index.search(user_vectors, k_per_cluster)
     valid_indices = faiss_indices_batch[faiss_indices_batch != -1]
@@ -261,13 +261,12 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     candidates = [info['band_id'] for info in faiss_list]
     faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_list}
 
-    band_members = get_filtered_band_members(interacted_bands)
-    jaccard_candidates = get_jaccard(band_members, interacted_bands)
+    jaccard_candidates = get_jaccard(liked_bands)
     candidates.extend(list(jaccard_candidates.keys()))
     candidates = list(set(candidates))
 
     combined_scores = []
-    max_faiss_dist = max(d['faiss_distance'] for d in faiss_list) if faiss_list else 1.0
+    max_faiss_dist = max(d['faiss_distance'] for d in faiss_list)
 
     for candidate_band in candidates:
         faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
@@ -279,7 +278,6 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
 
         score = (faiss_normalized * 0.8) + ((1 - avg_jaccard) * 0.2)
         combined_scores.append({'band_id': candidate_band, 'score': score})
-
 
     combined_scores.sort(key=lambda x: x['score'])
     candidates = [item['band_id'] for item in combined_scores]
@@ -295,12 +293,11 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
             new_candidates_re_ranked.append(band_id)
 
     faiss_pool = []
-    num_interacted_to_add = max(0, k - len(new_candidates_re_ranked))
 
-    faiss_pool.extend(new_candidates_re_ranked)
-    faiss_pool.extend(known_candidates_re_ranked[:num_interacted_to_add])
+    faiss_pool.extend(new_candidates_re_ranked[:int(k*0.8)])
+    faiss_pool.extend(known_candidates_re_ranked[:int(k*0.2)])
 
-    return faiss_pool[:k]
+    return faiss_pool
 
 def main(min_cluster_size=None, k=400):
     app = create_app()
@@ -311,8 +308,8 @@ def main(min_cluster_size=None, k=400):
 
         candidate_list = []
         for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
-            interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique()
-            liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].unique()
+            interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique().astype(int).tolist()
+            liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].unique().astype(int).tolist()
             user_vectors, pca = generate_user_vectors(liked_bands, item_embeddings, item, min_cluster_size)
             item_embeddings = pca.transform(item_embeddings)
             index = index_faiss(item_embeddings)
