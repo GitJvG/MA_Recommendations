@@ -8,7 +8,7 @@ import faiss
 from collections import defaultdict
 import numpy as np
 from datetime import datetime
-from sqlalchemy import func, select, alias
+from sqlalchemy import func, select, alias, case, cast, DateTime
 from hdbscan import HDBSCAN
 from sklearn.decomposition import PCA
 import warnings
@@ -35,17 +35,6 @@ def one_hot_encode(df, columns):
     
     return np.hstack(encoded)
 
-def get_review_data():
-    result = db.session.execute(select(
-        Discography.band_id,
-        func.sum(Discography.review_count).label('review_count'),
-        func.percentile_cont(0.5).within_group(Discography.review_score).label('median_score')
-    ).filter(Discography.reviews.isnot(None)) \
-     .group_by(Discography.band_id)).all()
-    
-    df = pd.DataFrame(result, columns=['band_id', 'review_count', 'median_score'])
-    return df
-
 def get_filtered_band_members(band_ids):
     m_alias2 = alias(Member)
     shared_members_cte = (
@@ -71,67 +60,55 @@ def create_item():
     func.sum(func.distinct(Similar_band.score)).label('score')
     ).group_by(Similar_band.band_id).subquery()
 
-    results = db.session.query(
+    reviews = (select(
+        Discography.band_id,
+        func.sum(Discography.review_count).label('review_count'),
+        func.percentile_cont(0.5).within_group(Discography.review_score).label('median_score')
+    ).filter(Discography.reviews.isnot(None)) \
+     .group_by(Discography.band_id)).cte()
+
+    results = db.session.execute(select(
         Band.band_id,
         Band.name.label('band_name'),
         Band.genre.label('band_genre'),
-        Band.label,
+        Band.label.label('b_label'),
         Band.country,
         Band.status,
         score_subquery.c.score,
+        reviews.c.review_count,
+        reviews.c.median_score,
         func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
         func.string_agg(func.distinct(Hgenre.name), ', ').label('hybrid_genres'),
         func.string_agg(func.distinct(Theme.name), ', ').label('theme_names'),
         func.string_agg(func.distinct(Prefix.name), ', ').label('prefix_names')
     ).join(score_subquery, score_subquery.c.band_id == Band.band_id
+    ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
     ).join(Band.genres, isouter=True
     ).join(Band.hgenres, isouter=True
     ).join(Band.themes, isouter=True
     ).join(Band.prefixes, isouter=True
-    ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status, score_subquery.c.score
-    ).all()
+    ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status, score_subquery.c.score,
+               reviews.c.review_count, reviews.c.median_score)).all()
 
-    data = [
-        {
-            'band_id': band.band_id,
-            'band_name': band.band_name,
-            'band_genre': band.band_genre,
-            'b_label': band.label,
-            'country': band.country,
-            'genre_names': band.genre_names,
-            'hybrid_genres': band.hybrid_genres,
-            'theme_names': band.theme_names,
-            'prefix_names': band.prefix_names,
-            'status': band.status,
-            'score': band.score,
-        }
-        for band in results
-    ]
+    dataframe = pd.DataFrame(results)
 
-    dataframe = pd.DataFrame(data)
-    reviews = get_review_data()
-    merged_dataframe = pd.merge(dataframe, reviews, on='band_id', how='left')
+    dataframe[['review_count', 'median_score']] = dataframe[['review_count', 'median_score']].fillna(0)
+    dataframe[['prefix_names']] = dataframe[['prefix_names']].fillna('Not available')
+    dataframe[['theme_names']] = dataframe[['theme_names']].fillna('Not available')
 
-    merged_dataframe[['review_count', 'median_score']] = merged_dataframe[['review_count', 'median_score']].fillna(0)
-    merged_dataframe[['prefix_names']] = merged_dataframe[['prefix_names']].fillna('Not available')
-    merged_dataframe[['theme_names']] = merged_dataframe[['theme_names']].fillna('Not available')
-
-    return merged_dataframe
+    return dataframe
 
 def create_user():
-    user_band_preference_data = db.session.query(Users).all()
+    user_band_preference_data = db.session.execute(select(
+        Users.user_id.label('user'),
+        Users.band_id,
+        case(((Users.liked == True) | (Users.remind_me == True), 1),else_=0).label('label'),
+        func.least(
+            func.abs(func.extract('epoch', cast(today, DateTime) - cast(Users.liked_date, DateTime))),
+            func.abs(func.extract('epoch', cast(today, DateTime) - cast(Users.liked_date, DateTime))).label('relevance')
+        ))).all()
 
-    users_preference = pd.DataFrame(
-        [(pref.user_id, pref.band_id, pref.liked, pref.remind_me, pref.liked_date, pref.remind_me_date) for pref in user_band_preference_data],
-        columns=['user', 'band_id', 'liked', 'remind_me', 'liked_date', 'remind_me_date']
-    )
-
-    users_preference['label'] = (users_preference['liked'] == 1) | (users_preference['remind_me'] == 1).astype(int)
-    users_preference['relevance'] = np.minimum(
-    (today - users_preference['liked_date']).abs(),
-    (today - users_preference['remind_me_date']).abs())
-
-    users_preference = users_preference[['user', 'band_id', 'relevance', 'label']]
+    users_preference = pd.DataFrame(user_band_preference_data)
 
     return users_preference
 
