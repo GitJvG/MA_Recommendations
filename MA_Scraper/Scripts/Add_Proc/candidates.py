@@ -1,6 +1,6 @@
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import Band, Genre, Hgenre, Discography as Discog, \
-                        Theme, Users, Similar_band as Similar, Candidates, Member, Prefix
+from MA_Scraper.app.models import Band, Genre, Hgenre, Discography, \
+                        Theme, Users, Similar_band, Candidates, Member, Prefix
 from MA_Scraper.Env import Env
 from MA_Scraper.Scripts.SQL import refresh_tables
 import pandas as pd
@@ -37,11 +37,11 @@ def one_hot_encode(df, columns):
 
 def get_review_data():
     review_subquery = db.session.query(
-        Discog.band_id,
-        func.sum(Discog.review_count).label('total_review_count'),
-        func.percentile_cont(0.5).within_group(Discog.review_score).label('median_score')
-    ).filter(Discog.reviews.isnot(None)) \
-     .group_by(Discog.band_id).subquery()
+        Discography.band_id,
+        func.sum(Discography.review_count).label('total_review_count'),
+        func.percentile_cont(0.5).within_group(Discography.review_score).label('median_score')
+    ).filter(Discography.reviews.isnot(None)) \
+     .group_by(Discography.band_id).subquery()
     
     result = db.session.query(
         review_subquery.c.band_id,
@@ -91,9 +91,9 @@ def get_filtered_band_members(band_ids):
 
 def create_item():
     score_subquery = db.session.query(
-    Similar.band_id,
-    func.sum(func.distinct(Similar.score)).label('score')
-    ).group_by(Similar.band_id).subquery()
+    Similar_band.band_id,
+    func.sum(func.distinct(Similar_band.score)).label('score')
+    ).group_by(Similar_band.band_id).subquery()
 
     results = db.session.query(
         Band.band_id,
