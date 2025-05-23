@@ -7,7 +7,6 @@ import pandas as pd
 import faiss
 from collections import defaultdict
 import numpy as np
-from datetime import datetime
 from sqlalchemy import func, select, alias, case, cast, Date
 from hdbscan import HDBSCAN
 from sklearn.decomposition import PCA
@@ -16,7 +15,6 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 
 env = Env.get_instance()
 
-today = datetime.today()
 faiss.omp_set_num_threads(8)
 
 def one_hot_encode(df, columns):
@@ -43,9 +41,8 @@ def get_filtered_band_members(band_ids):
     ).cte()
 
     result = (db.session.execute(
-        select(Band.band_id, Member.member_id)
-        .join(m_alias2, Band.band_id == m_alias2.c.band_id)
-        .join(Member, onclause=Member.band_id == Band.band_id)
+        select(Member.band_id, Member.member_id)
+        .join(m_alias2, Member.band_id == m_alias2.c.band_id)
         .where(m_alias2.c.member_id.in_(select(shared_members_cte.c.member_id)), m_alias2.c.category.in_(['Current lineup', 'Past lineup']))
     ).all())
 
