@@ -159,10 +159,9 @@ def create_user():
 
     return users_preference
 
-def create_item_embeddings_with_faiss(item):
+def create_item_embeddings(item):
     categorical_columns = ['country', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres', 'prefix_names']
     numerical_columns = ['score', 'review_count', 'median_score']
-
 
     categorical_embeddings = one_hot_encode(item, categorical_columns)
 
@@ -173,81 +172,77 @@ def create_item_embeddings_with_faiss(item):
         numerical_embeddings.astype('float32')
     ])
 
-    dimension = item_embeddings_dense.shape[1]
-    index = faiss.IndexFlatL2(dimension)
-    index.add(item_embeddings_dense)
+    return item_embeddings_dense
 
-    return index, item_embeddings_dense
+def cluster(array, min_cluster_size=None):
+    min_cluster_size = int(len(array) * 0.05)
+    if len(array) < min_cluster_size:
+        return [np.mean(array, axis=0)]
 
-def generate_user_vectors(user_id, users_preference, item_embeddings_array, item_df, min_cluster_size=None):
-    user_prefs = users_preference[users_preference['user'] == user_id]
-    liked_items = user_prefs[user_prefs['label'] == 1]['band_id'].values
-    if len(liked_items) == 0:
-        return []
+    clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1, allow_single_cluster=True)
+    cluster_labels = clusterer.fit_predict(array)
 
-    liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_items)]
-    print(f"liked shape before clustering", liked_embeddings_array.shape)
-    pca = PCA(n_components=0.95)
-    pca = pca.fit(liked_embeddings_array)
-    processed_embeddings_array = pca.transform(liked_embeddings_array)
-    print(f"User shape before clustering", processed_embeddings_array.shape)
-
-    min_cluster_size = int(len(processed_embeddings_array) * 0.05)
-    if len(processed_embeddings_array) < min_cluster_size:
-        return [np.mean(processed_embeddings_array, axis=0)]
-
-    try:
-        clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1, allow_single_cluster=True)
-        cluster_labels = clusterer.fit_predict(processed_embeddings_array)
-    except Exception as e:
-        print(f"HDBSCAN clustering failed for user {user_id}: {e}. Returning single average as fallback.")
-        return [np.mean(processed_embeddings_array, axis=0)]
-
-    user_interest_vectors = []
+    vectors = []
     unique_clusters = np.unique(cluster_labels)
     
     for cluster_label in unique_clusters:
         if cluster_label != -1:
-            cluster_items_embeddings = processed_embeddings_array[cluster_labels == cluster_label]
+            cluster_items_embeddings = array[cluster_labels == cluster_label]
             if len(cluster_items_embeddings) > 0:
-                interest_vector = np.mean(cluster_items_embeddings, axis=0)
-                interest_vector = pca.inverse_transform(interest_vector).reshape(1, -1).flatten()
-                user_interest_vectors.append(interest_vector)
+                vector = np.mean(cluster_items_embeddings, axis=0)
+                vectors.append(vector)
 
     print(f"unique_clusters {len(unique_clusters)}")
+    return vectors
+
+def generate_user_vectors(user_id, users_preference, item_embeddings_array, item_df, min_cluster_size=None):
+    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique()
+    if len(interacted_bands) == 0:
+        return []
+
+    liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(interacted_bands)]
+
+    pca = PCA(n_components=0.90)
+    pca = pca.fit(liked_embeddings_array)
+    processed_embeddings_array = pca.transform(liked_embeddings_array)
+    user_interest_vectors = cluster(processed_embeddings_array, min_cluster_size)
+
     print(f"user interest vectors {len(user_interest_vectors)}")
     if not user_interest_vectors:
         return [np.mean(processed_embeddings_array, axis=0)]
 
-    return user_interest_vectors
+    return user_interest_vectors, interacted_bands, pca
 
-def get_jaccard(band_members, liked_bands):
-    candidate_bands = set(band_members.keys()) - set(liked_bands)
-    jaccard_dict = defaultdict(dict)
+def index_faiss(dense):
+    dimension = dense.shape[1]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(dense)
 
-    for liked_band in liked_bands:
-        if liked_band not in band_members:
-            continue
-        members1 = band_members[liked_band]
+    return index
+
+def get_jaccard(band_members, interacted_bands):
+    interacted_bands = set(interacted_bands) & set(band_members.keys())
+    candidate_bands = set(band_members.keys()) - set(interacted_bands)
+    jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
+
+    for liked_band in interacted_bands:
+        members = band_members[liked_band]
 
         for candidate_band in candidate_bands:
-            if candidate_band not in band_members:
-                continue
             members2 = band_members[candidate_band]
 
-            intersection = len(members1 & members2)
-            union = len(members1 | members2)
+            intersection = len(members & members2)
+            union = len(members | members2)
             jaccard = intersection / union if union != 0 else 0
+        
+            jaccard_candidates[candidate_band]['total'] += jaccard
+            jaccard_candidates[candidate_band]['count'] += 1
 
-            jaccard_dict[liked_band][candidate_band] = jaccard
+    return jaccard_candidates
 
-    return jaccard_dict
-
-def generate_candidates(user_id, users_preference, index, item_df, item_embeddings_array, min_cluster_size, k):
-    user_vectors = generate_user_vectors(user_id, users_preference, item_embeddings_array, item_df, min_cluster_size)
-    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique()
+def generate_candidates(index, item_df, interacted_bands, user_vectors, k):
     interacted_bands = [int(x) for x in interacted_bands]
-    #k2 = min(k + len(interacted_bands) * 2, k * 5)
+    
     if not user_vectors:
         return []
     k_per_cluster = k // len(user_vectors)
@@ -272,14 +267,7 @@ def generate_candidates(user_id, users_preference, index, item_df, item_embeddin
     faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_list}
 
     band_members = get_filtered_band_members(interacted_bands)
-    jaccard_dict = get_jaccard(band_members, interacted_bands)
-
-    jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
-    for liked_band in interacted_bands:
-        for candidate_band, score in jaccard_dict.get(liked_band, {}).items():
-            jaccard_candidates[candidate_band]['total'] += score
-            jaccard_candidates[candidate_band]['count'] += 1
-
+    jaccard_candidates = get_jaccard(band_members, interacted_bands)
     candidates.extend(list(jaccard_candidates.keys()))
     candidates = list(set(candidates))
 
@@ -318,29 +306,28 @@ def generate_candidates(user_id, users_preference, index, item_df, item_embeddin
 
     return faiss_pool[:k]
 
-def generate_candidates_for_all_users(users_preference, index, item, item_embeddings, min_cluster_size, k=1000):
-    candidate_list = []
-
-    for user_id in users_preference['user'].unique():
-        candidates = generate_candidates(user_id, users_preference, index, item, item_embeddings, min_cluster_size, k)
-        for candidate in candidates:
-            candidate_list.append({'user_id': user_id, 'band_id': candidate})
-
-    candidate_df = pd.DataFrame(candidate_list)
-    return candidate_df
-
 def main(min_cluster_size=None, k=400):
     app = create_app()
     with app.app_context():
         item = create_item()
         users_preference = create_user()
-        index, item_embeddings = create_item_embeddings_with_faiss(item)
-        candidate_frame = generate_candidates_for_all_users(users_preference, index, item, item_embeddings, min_cluster_size, k)
-        candidate_frame.to_csv(env.candidates, index=False)
+        item_embeddings = create_item_embeddings(item)
+
+        candidate_list = []
+        for user_id in users_preference['user'].unique():
+            user_vectors, interacted_bands, pca = generate_user_vectors(user_id, users_preference, item_embeddings, item, min_cluster_size)
+            item_embeddings = pca.transform(item_embeddings)
+            index = index_faiss(item_embeddings)
+            candidates = generate_candidates(index, item, interacted_bands, user_vectors, k)
+            for candidate in candidates:
+                candidate_list.append({'user_id': user_id, 'band_id': candidate})
+
+        candidate_df = pd.DataFrame(candidate_list)
+        candidate_df.to_csv(env.candidates, index=False)
 
 def complete_refresh(min_cluster_size=None, k=400):
     main(min_cluster_size, k)
     refresh_tables([Candidates])
 
 if __name__ == '__main__':
-    main()
+    complete_refresh(min_cluster_size=10)
