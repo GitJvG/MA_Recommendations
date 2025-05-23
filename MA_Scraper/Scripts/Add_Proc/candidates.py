@@ -195,12 +195,8 @@ def cluster(array, min_cluster_size=None):
     print(f"unique_clusters {len(unique_clusters)}")
     return vectors
 
-def generate_user_vectors(user_id, users_preference, item_embeddings_array, item_df, min_cluster_size=None):
-    interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique()
-    if len(interacted_bands) == 0:
-        return []
-
-    liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(interacted_bands)]
+def generate_user_vectors(liked_bands, item_embeddings_array, item_df, min_cluster_size=None):
+    liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_bands)]
 
     pca = PCA(n_components=0.90)
     pca = pca.fit(liked_embeddings_array)
@@ -209,9 +205,10 @@ def generate_user_vectors(user_id, users_preference, item_embeddings_array, item
 
     print(f"user interest vectors {len(user_interest_vectors)}")
     if not user_interest_vectors:
-        return [np.mean(processed_embeddings_array, axis=0)]
+        user_interest_vectors = np.mean(processed_embeddings_array, axis=0)
 
-    return user_interest_vectors, interacted_bands, pca
+    user_interest_vectors = np.array(user_interest_vectors).astype('float32')
+    return user_interest_vectors, pca
 
 def index_faiss(dense):
     dimension = dense.shape[1]
@@ -240,29 +237,27 @@ def get_jaccard(band_members, interacted_bands):
 
     return jaccard_candidates
 
-def generate_candidates(index, item_df, interacted_bands, user_vectors, k):
+def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vectors, k):
     interacted_bands = [int(x) for x in interacted_bands]
+    disliked_bands = set(interacted_bands) - set(liked_bands)
     
-    if not user_vectors:
+    if user_vectors.size == 0:
         return []
     k_per_cluster = k // len(user_vectors)
     print(f"k_per_clusters {k_per_cluster}")
-    all_faiss_results = []
-    for user_vector in user_vectors:
-        distances, faiss_indices = index.search(user_vector.reshape(1, -1).astype('float32'), k_per_cluster)
-        for i in range(len(faiss_indices[0])):
-            band_id = item_df.iloc[faiss_indices[0][i]]['band_id']
-            distance = distances[0][i]
-            all_faiss_results.append({'band_id': band_id, 'faiss_distance': distance})
 
-    unique_candidates = {}
-    for res in all_faiss_results:
-        band_id = res['band_id']
-        distance = res['faiss_distance']
-        if band_id not in unique_candidates or distance < unique_candidates[band_id]['faiss_distance']:
-            unique_candidates[band_id] = res
+    distances_batch, faiss_indices_batch = index.search(user_vectors, k_per_cluster)
+    valid_indices = faiss_indices_batch[faiss_indices_batch != -1]
+    valid_distances = distances_batch[faiss_indices_batch != -1]
 
-    faiss_list = list(unique_candidates.values())
+    temp_df = pd.DataFrame({
+        'band_id': item_df.iloc[valid_indices]['band_id'].values,
+        'faiss_distance': valid_distances
+    })
+
+    min_distances_df = temp_df.loc[temp_df.groupby('band_id')['faiss_distance'].idxmin()]
+    faiss_list = min_distances_df[['band_id', 'faiss_distance']].to_dict(orient='records')
+
     candidates = [info['band_id'] for info in faiss_list]
     faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_list}
 
@@ -288,6 +283,7 @@ def generate_candidates(index, item_df, interacted_bands, user_vectors, k):
 
     combined_scores.sort(key=lambda x: x['score'])
     candidates = [item['band_id'] for item in combined_scores]
+    candidates = [candidate for candidate in candidates if candidate not in disliked_bands]
 
     known_candidates_re_ranked = []
     new_candidates_re_ranked = []
@@ -314,11 +310,13 @@ def main(min_cluster_size=None, k=400):
         item_embeddings = create_item_embeddings(item)
 
         candidate_list = []
-        for user_id in users_preference['user'].unique():
-            user_vectors, interacted_bands, pca = generate_user_vectors(user_id, users_preference, item_embeddings, item, min_cluster_size)
+        for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
+            interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique()
+            liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].unique()
+            user_vectors, pca = generate_user_vectors(liked_bands, item_embeddings, item, min_cluster_size)
             item_embeddings = pca.transform(item_embeddings)
             index = index_faiss(item_embeddings)
-            candidates = generate_candidates(index, item, interacted_bands, user_vectors, k)
+            candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
             for candidate in candidates:
                 candidate_list.append({'user_id': user_id, 'band_id': candidate})
 
