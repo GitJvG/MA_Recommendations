@@ -8,7 +8,7 @@ import faiss
 from collections import defaultdict
 import numpy as np
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, select, alias
 from hdbscan import HDBSCAN
 from sklearn.decomposition import PCA
 import warnings
@@ -36,57 +36,33 @@ def one_hot_encode(df, columns):
     return np.hstack(encoded)
 
 def get_review_data():
-    review_subquery = db.session.query(
+    result = db.session.execute(select(
         Discography.band_id,
-        func.sum(Discography.review_count).label('total_review_count'),
+        func.sum(Discography.review_count).label('review_count'),
         func.percentile_cont(0.5).within_group(Discography.review_score).label('median_score')
     ).filter(Discography.reviews.isnot(None)) \
-     .group_by(Discography.band_id).subquery()
+     .group_by(Discography.band_id)).all()
     
-    result = db.session.query(
-        review_subquery.c.band_id,
-        review_subquery.c.total_review_count,
-        review_subquery.c.median_score
-    ).all()
-
     df = pd.DataFrame(result, columns=['band_id', 'review_count', 'median_score'])
     return df
 
 def get_filtered_band_members(band_ids):
-    members_of_target_bands = (
-        db.session.query(Member.member_id)
-        .join(Band, Band.band_id == Member.band_id)
-        .filter(Band.band_id.in_(band_ids))
-        .filter(Member.category.in_(['Current lineup', 'Past lineup']))
-        .distinct()
-        .all()
-    )
+    m_alias2 = alias(Member)
+    shared_members_cte = (
+        select(Member.member_id)
+        .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
+    ).cte()
 
-    member_ids = {member_id for (member_id,) in members_of_target_bands}
-
-    bands_with_shared_members = (
-        db.session.query(Band.band_id)
-        .join(Member, Band.band_id == Member.band_id)
-        .filter(Member.member_id.in_(member_ids))
-        .filter(Member.category.in_(['Current lineup', 'Past lineup']))
-        .distinct()
-        .all()
-    )
-
-    band_ids_with_shared_members = {band_id for (band_id,) in bands_with_shared_members}
-
-    all_members_of_relevant_bands = (
-        db.session.query(Band.band_id, Member.member_id)
-        .join(Member, Band.band_id == Member.band_id)
-        .filter(Band.band_id.in_(band_ids_with_shared_members))
-        .filter(Member.category.in_(['Current lineup', 'Past lineup']))
-        .all()
-    )
+    result = (db.session.execute(
+        select(Band.band_id, Member.member_id)
+        .join(m_alias2, Band.band_id == m_alias2.c.band_id)
+        .join(Member, onclause=Member.band_id == Band.band_id)
+        .where(m_alias2.c.member_id.in_(select(shared_members_cte.c.member_id)), m_alias2.c.category.in_(['Current lineup', 'Past lineup']))
+    ).all())
 
     band_members = defaultdict(set)
-    for band_id, member_id in all_members_of_relevant_bands:
+    for band_id, member_id in result:
         band_members[band_id].add(member_id)
-
     return band_members
 
 def create_item():
@@ -191,8 +167,6 @@ def cluster(array, min_cluster_size=None):
             if len(cluster_items_embeddings) > 0:
                 vector = np.mean(cluster_items_embeddings, axis=0)
                 vectors.append(vector)
-
-    print(f"unique_clusters {len(unique_clusters)}")
     return vectors
 
 def generate_user_vectors(liked_bands, item_embeddings_array, item_df, min_cluster_size=None):
