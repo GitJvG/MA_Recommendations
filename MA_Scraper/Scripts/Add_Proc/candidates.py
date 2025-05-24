@@ -34,13 +34,14 @@ def one_hot_encode(df, columns):
     return np.hstack(encoded)
 
 def get_filtered_band_members(band_ids):
-    shared_members_cte = (select(Member.member_id)
+    bands_with_shared_members_cte = (select(Band.band_id)
+        .join(Band.members)
         .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).cte()
 
     result = db.session.execute(
         select(Member.band_id, Member.member_id)
-        .where(Member.member_id.in_(select(shared_members_cte.c.member_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
+        .where(Member.band_id.in_(select(bands_with_shared_members_cte.c.band_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).all()
 
     band_members = defaultdict(set)
@@ -49,11 +50,6 @@ def get_filtered_band_members(band_ids):
     return band_members
 
 def create_item():
-    score_subquery = select(
-        Similar_band.band_id,
-        func.sum(func.distinct(Similar_band.score)).label('score')
-        ).group_by(Similar_band.band_id).cte()
-
     reviews = select(
         Discography.band_id,
         func.sum(Discography.review_count).label('review_count'),
@@ -68,28 +64,23 @@ def create_item():
         Band.label.label('b_label'),
         Band.country,
         Band.status,
-        score_subquery.c.score,
-        reviews.c.review_count,
-        reviews.c.median_score,
+        func.coalesce(reviews.c.review_count, 0).label('review_count'),
+        func.coalesce(reviews.c.median_score, 0).label('median_score'),
+        func.coalesce(func.sum((Similar_band.score)), 0).label('score'),
         func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
         func.string_agg(func.distinct(Hgenre.name), ', ').label('hybrid_genres'),
-        func.string_agg(func.distinct(Theme.name), ', ').label('theme_names'),
-        func.string_agg(func.distinct(Prefix.name), ', ').label('prefix_names')
-    ).join(score_subquery, score_subquery.c.band_id == Band.band_id
+        func.coalesce(func.string_agg(func.distinct(Theme.name), ', '), 'Not available').label('theme_names'),
+        func.coalesce(func.string_agg(func.distinct(Prefix.name), ', '), 'Not available').label('prefix_names')
     ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
+    ).join(Band.outgoing_similarities, isouter=True
     ).join(Band.genres, isouter=True
     ).join(Band.hgenres, isouter=True
     ).join(Band.themes, isouter=True
     ).join(Band.prefixes, isouter=True
-    ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status, score_subquery.c.score,
+    ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status,
                reviews.c.review_count, reviews.c.median_score)).all()
 
     dataframe = pd.DataFrame(results)
-
-    dataframe[['review_count', 'median_score']] = dataframe[['review_count', 'median_score']].fillna(0)
-    dataframe[['prefix_names']] = dataframe[['prefix_names']].fillna('Not available')
-    dataframe[['theme_names']] = dataframe[['theme_names']].fillna('Not available')
-
     return dataframe
 
 def create_user():
@@ -97,13 +88,11 @@ def create_user():
         Users.user_id.label('user'),
         Users.band_id,
         case(((Users.liked == True) | (Users.remind_me == True), 1),else_=0).label('label'),
-        func.least(
-            func.abs(func.current_date() - cast(Users.liked_date, Date)),
+        func.least(func.abs(func.current_date() - cast(Users.liked_date, Date)),
             func.abs(func.current_date() - cast(Users.remind_me_date, Date)).label('relevance'))
         )).all()
 
     users_preference = pd.DataFrame(user_band_preference_data)
-
     return users_preference
 
 def create_item_embeddings(item):
@@ -189,7 +178,7 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     
     if user_vectors.size == 0:
         return []
-    k_per_cluster = k // len(user_vectors)
+    k_per_cluster = k // len(user_vectors) + 2
 
     distances_batch, faiss_indices_batch = index.search(user_vectors, k_per_cluster)
     valid_indices = faiss_indices_batch[faiss_indices_batch != -1]
@@ -201,17 +190,14 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     })
 
     min_distances_df = temp_df.loc[temp_df.groupby('band_id')['faiss_distance'].idxmin()]
-    faiss_list = min_distances_df[['band_id', 'faiss_distance']].to_dict(orient='records')
+    faiss_distance_lookup = min_distances_df.set_index('band_id')['faiss_distance'].to_dict()
 
-    candidates = [info['band_id'] for info in faiss_list]
-    faiss_distance_lookup = {info['band_id']: info['faiss_distance'] for info in faiss_list}
-
+    candidates = min_distances_df['band_id'].tolist()
     jaccard_candidates = get_jaccard(liked_bands)
-    candidates.extend(list(jaccard_candidates.keys()))
-    candidates = list(set(candidates))
+    candidates = list(set(candidates).union(jaccard_candidates.keys()))
 
     combined_scores = []
-    max_faiss_dist = max(d['faiss_distance'] for d in faiss_list)
+    max_faiss_dist = min_distances_df['faiss_distance'].max()
 
     for candidate_band in candidates:
         faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
