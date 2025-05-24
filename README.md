@@ -9,71 +9,10 @@ You can download the full set of scraped datasets from the link below:
 Please check the entries in `metadata.csv` for information on when the datasets were last updated.
 
 ## Overview
-This project contains a collection of scripts designed to scrape various parts of the Metal-Archives (MA) website. The aim is to create a wrapper script that can scrape and parse just about anything from MA.
-
-## Scrapers
-
-- **List_Scraper → `MA_Bands.csv, MA_Label.csv`**:
-Scrapes data for:
-- **`MA_Bands.csv`**  
-  - Band Name
-  - Country
-  - Genre
-  - Band ID
-
-- **`MA_Label.csv`**  
-  - Label Id
-  - Name
-  - Country
-  - Genre
-  - Status
-
-
-- **SimilarScraper → `MA_Similar.csv`**:  
-  Scrapes data for:
-  - Similar Band ID
-  - Similarity Score
-  - Band ID
-
-- **AlbumScraper → `MA_Discog.csv`**:  
-  Scrapes data for:
-  - Album ID
-  - Album Name
-  - Type
-  - Year
-  - Review_Count
-  - Review_Score
-  - Band ID
-
-- **DetailScraper → `MA_Details.csv, MA_Member.csv`**:  
-Scrapes data for:
-- **`MA_Details.csv`**  
-   - Country of origin  
-   - Location  
-   - Status  
-   - Formed in  
-   - Genre  
-   - Themes  
-   - Years active
-   - Label
-   - Label ID
-   - Band ID  
-
-- **`MA_Member.csv`**  
-   - band_id  
-   - member_id  
-   - name  
-   - role  
-   - category
-
-## Supporting Scripts
-
-- **Refresh**:  
-  Updates all final datasets incrementally by checking the last scraped datetime (stored in `metadata.csv`) and fetching new/modified bands from the recently modified page on Metal-Archives.
-
-- **FullScraper**:  
-  Fully scrapes Metallum from scratch. Starts by quickly scraping all bands and some basic data after which it scrapes corresponding band specific pages: Similar bands, Band details & Band discography.
-  - Note: The initial basic data scraping is much more efficient and only a few minutes, the band specific page scraping takes about 15-20 hours for each distinct page. All in all it could take up to 48.5 hours to scrape all of metallum on these topics.
+This project contains a collection of scripts designed to scrape various parts of the Metal-Archives (MA) website.
 
 ## Recommendation model
-Candidates are generated based on user feedback and item features with Faiss-CPU. At it's core this is a Approximate nearest neighbor model. To further improve recommendations a deep-ranking model should be added to rank the generated candidates. The recommendation model is implemented in `Scripts/Add_Proc/candidates.py`.
+Candidates are generated based on user feedback (liking, disliking or bookmarking bands) and item features with Faiss-CPU. For every user multiple vectors are made using HDBSCAN to allow for multiple diverse or even contradicting tastes. FAISS is used to find the most similar bands based on these clustered vectors. Additionally the average jaccard similarity is calculated for each band and is combined with the faiss distance before a final rerank is used to generate the final candidates. The recommendation model is implemented in `MA_Scraper/Scripts/Add_Proc/candidates.py`.
+
+## Website
+A website is designed to use the underlaying scraped datasets and recommendation model along with Youtube scraping and embedding to deliver a responsive and functional music exploration platform.
