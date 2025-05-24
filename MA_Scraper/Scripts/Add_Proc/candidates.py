@@ -7,7 +7,7 @@ import pandas as pd
 import faiss
 from collections import defaultdict
 import numpy as np
-from sqlalchemy import func, select, alias, case, cast, Date
+from sqlalchemy import func, select, case, cast, Date
 from hdbscan import HDBSCAN
 from sklearn.decomposition import PCA
 import warnings
@@ -17,21 +17,23 @@ env = Env.get_instance()
 
 faiss.omp_set_num_threads(8)
 
-def one_hot_encode(df, columns):
-    unique_categories = {col: np.unique(df[col]) for col in columns}
-    category_to_index = {col: {category: idx for idx, category in enumerate(unique_categories[col])} 
-                        for col in columns}
-    encoded = []
-    
-    for col in columns:
-        indices = np.array([category_to_index[col][val] for val in df[col]])
+def split_one_hot_encode(df, multi_value_cols):
+    df_result = df.copy()
 
-        one_hot = np.zeros((len(df), len(category_to_index[col])))
-        one_hot[np.arange(len(df)), indices] = 1
-        
-        encoded.append(one_hot)
+    for col in multi_value_cols:
+        df_result[col] = df_result[col].replace('Not available', '').astype(str)
+        df_result[f'{col}_list'] = df_result[col].str.split(',').apply(
+            lambda x: [item.strip() for item in x if item.strip()]
+        )
+        df_exploded_part = df_result[['band_id', f'{col}_list']].explode(f'{col}_list')
     
-    return np.hstack(encoded)
+        exploded_ohe = pd.get_dummies(df_exploded_part[f'{col}_list'], prefix=col, dtype=int)
+        df_temp = pd.concat([df_exploded_part[['band_id']], exploded_ohe], axis=1)
+        df_aggregated_ohe = df_temp.groupby('band_id').max().reset_index()
+        df_result = pd.merge(df_result, df_aggregated_ohe, on='band_id', how='left').fillna(0)
+        df_result = df_result.drop(columns=[col, f'{col}_list'])
+    
+    return df_result
 
 def create_item():
     reviews = select(
@@ -80,12 +82,17 @@ def create_user():
     return users_preference
 
 def create_item_embeddings(item):
-    categorical_columns = ['country', 'theme_names', 'b_label', 'status', 'genre_names', 'hybrid_genres', 'prefix_names']
+    multi_valued_categorical_cols = ['hybrid_genres', 'theme_names', 'prefix_names']
+    single_value_categorical_cols = ['country', 'b_label', 'status', 'band_genre']
     numerical_columns = ['score', 'review_count', 'median_score']
 
-    categorical_embeddings = one_hot_encode(item, categorical_columns)
+    processed_df = split_one_hot_encode(item, multi_valued_categorical_cols)
+    final_categorical_df = pd.get_dummies(processed_df, columns=single_value_categorical_cols, dtype=int)
 
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
+
+    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['band_id', 'band_name', 'genre_names']]
+    categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([
         categorical_embeddings.astype('float32'),
@@ -215,8 +222,8 @@ def main(min_cluster_size=None, k=400):
     app = create_app()
     with app.app_context():
         item = create_item()
-        users_preference = create_user()
         item_embeddings = create_item_embeddings(item)
+        users_preference = create_user()
 
         candidate_list = []
         for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
