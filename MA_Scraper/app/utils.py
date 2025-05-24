@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify
 import json
 from sqlalchemy import select
-from MA_Scraper.app import db
+from MA_Scraper.app import db, website_name
 from MA_Scraper.app.models import Users
 from datetime import datetime
 from MA_Scraper.app import cache_manager
@@ -9,7 +9,7 @@ from MA_Scraper.app import cache_manager
 def render_with_base(content_template, sidebar_html=None, title=None, main_content_class='', **variables):
     js_files = JSON(content_template)
     auto_title = Title(content_template)
-    website_name = 'Amplifier Worship'
+    
     title = f"{title} - {website_name}" if title else auto_title
     # This is triggered when someone accesses a page through ajax (sidebar links all are intercepted and turned into ajax requests)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -32,7 +32,12 @@ def JSON(attribute, path=rf'MA_Scraper/app/Javascript.json'):
         return value if value else None
 
 def Title(content_template):
-     return f"{content_template[:-5].replace("_", " ").title()} - Amplifier Worship"
+     content_name = f"{content_template[:-5].replace("_", " ").title()}"
+     print(content_name)
+     title = f"{content_name} - {website_name}"
+     if content_name == 'Index':
+        title = website_name
+     return title
 
 def liked_bands(current_user_id):
     liked_bands = db.session.scalars(select(Users.band_id).where(

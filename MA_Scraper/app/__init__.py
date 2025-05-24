@@ -8,6 +8,7 @@ from sqlalchemy import inspect
 from user_agents import parse
 from MA_Scraper.app.CacheManager import CacheManager
 
+website_name = 'Amplifier Worship'
 backend = Env.get_instance().ytbackend
 db = SQLAlchemy()
 migrate = Migrate()
