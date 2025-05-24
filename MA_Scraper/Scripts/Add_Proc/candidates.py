@@ -33,22 +33,6 @@ def one_hot_encode(df, columns):
     
     return np.hstack(encoded)
 
-def get_filtered_band_members(band_ids):
-    bands_with_shared_members_cte = (select(Band.band_id)
-        .join(Band.members)
-        .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
-    ).cte()
-
-    result = db.session.execute(
-        select(Member.band_id, Member.member_id)
-        .where(Member.band_id.in_(select(bands_with_shared_members_cte.c.band_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
-    ).all()
-
-    band_members = defaultdict(set)
-    for band_id, member_id in result:
-        band_members[band_id].add(member_id)
-    return band_members
-
 def create_item():
     reviews = select(
         Discography.band_id,
@@ -72,7 +56,7 @@ def create_item():
         func.coalesce(func.string_agg(func.distinct(Theme.name), ', '), 'Not available').label('theme_names'),
         func.coalesce(func.string_agg(func.distinct(Prefix.name), ', '), 'Not available').label('prefix_names')
     ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
-    ).join(Band.outgoing_similarities, isouter=True
+    ).join(Band.outgoing_similarities
     ).join(Band.genres, isouter=True
     ).join(Band.hgenres, isouter=True
     ).join(Band.themes, isouter=True
@@ -151,27 +135,44 @@ def index_faiss(dense):
 
     return index
 
+def get_filtered_band_members(band_ids):
+    bands_with_shared_members_cte = (select(Band.band_id)
+        .join(Band.members)
+        .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
+    ).cte()
+
+    result = db.session.execute(
+        select(Member.band_id, Member.member_id)
+        .where(Member.band_id.in_(select(bands_with_shared_members_cte.c.band_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
+    ).all()
+
+    band_members = defaultdict(set)
+    for band_id, member_id in result:
+        band_members[band_id].add(member_id)
+    return band_members
+
 def get_jaccard(liked_bands):
     band_members = get_filtered_band_members(liked_bands)
     liked_bands = set(liked_bands) & set(band_members.keys())
-    
-    candidate_bands = set(band_members.keys()) - set(liked_bands)
-    jaccard_candidates = defaultdict(lambda: {'total': 0, 'count': 0})
 
-    for liked_band in liked_bands:
-        members = band_members[liked_band]
+    union_of_liked_members = set()
+    for band_id in liked_bands:
+        union_of_liked_members.update(band_members[band_id])
 
-        for candidate_band in candidate_bands:
-            members2 = band_members[candidate_band]
+    candidate_bands = set(band_members.keys()) - liked_bands
+    jaccard_scores = []
 
-            intersection = len(members & members2)
-            union = len(members | members2)
-            jaccard = intersection / union if union != 0 else 0
+    for candidate_band_id in candidate_bands:
+        members_of_candidate_band = band_members[candidate_band_id]
+
+        intersection_size = len(members_of_candidate_band.intersection(union_of_liked_members))
+        union_size = len(members_of_candidate_band.union(union_of_liked_members))
         
-            jaccard_candidates[candidate_band]['total'] += jaccard
-            jaccard_candidates[candidate_band]['count'] += 1
-
-    return jaccard_candidates
+        jaccard = intersection_size / union_size if union_size != 0 else 0.0
+        jaccard_scores[candidate_band_id] = jaccard
+    
+    jaccard_scores = pd.DataFrame(jaccard_scores, columns=['band_id', 'jaccard_score'])
+    return jaccard_scores
 
 def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vectors, k):
     disliked_bands = set(interacted_bands) - set(liked_bands)
@@ -184,51 +185,31 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     valid_indices = faiss_indices_batch[faiss_indices_batch != -1]
     valid_distances = distances_batch[faiss_indices_batch != -1]
 
-    temp_df = pd.DataFrame({
+    df = pd.DataFrame({
         'band_id': item_df.iloc[valid_indices]['band_id'].values,
         'faiss_distance': valid_distances
     })
 
-    min_distances_df = temp_df.loc[temp_df.groupby('band_id')['faiss_distance'].idxmin()]
-    faiss_distance_lookup = min_distances_df.set_index('band_id')['faiss_distance'].to_dict()
+    min_distances_df = df.loc[df.groupby('band_id')['faiss_distance'].idxmin()]
+    jaccard_scores_df = get_jaccard(liked_bands)
+    combined_candidates_df = pd.merge(min_distances_df, jaccard_scores_df, on='band_id', how='outer')
+    combined_candidates_df = combined_candidates_df[~combined_candidates_df['band_id'].isin(list(disliked_bands))]
 
-    candidates = min_distances_df['band_id'].tolist()
-    jaccard_candidates = get_jaccard(liked_bands)
-    candidates = list(set(candidates).union(jaccard_candidates.keys()))
+    max_faiss_dist = combined_candidates_df['faiss_distance'].max()
+    combined_candidates_df['jaccard_score'] = combined_candidates_df['jaccard_score'].fillna(0.0)
+    combined_candidates_df['faiss_normalized'] = np.minimum(combined_candidates_df['faiss_distance'] / max_faiss_dist, 1.0)
+    combined_candidates_df['score'] = (combined_candidates_df['faiss_normalized'] * 0.8) + \
+                                      ((1 - combined_candidates_df['jaccard_score']) * 0.2)
+    combined_candidates_df = combined_candidates_df.sort_values(by='score', ascending=True).reset_index(drop=True)
+    
+    num_new_to_take = int(k * 0.8)
+    num_known_to_take = k - num_new_to_take
 
-    combined_scores = []
-    max_faiss_dist = min_distances_df['faiss_distance'].max()
+    combined_candidates_df['is_known'] = combined_candidates_df['band_id'].isin(list(interacted_bands))
+    new_candidates = combined_candidates_df[~combined_candidates_df['is_known']].head(num_new_to_take)['band_id'].tolist()
+    known_candidates = combined_candidates_df[combined_candidates_df['is_known']].head(num_known_to_take)['band_id'].tolist()
 
-    for candidate_band in candidates:
-        faiss_dist = faiss_distance_lookup.get(candidate_band, float('inf'))
-        faiss_normalized = min(faiss_dist / max_faiss_dist, 1.0)
-
-        total_jaccard = jaccard_candidates[candidate_band]['total']
-        count = jaccard_candidates[candidate_band]['count']
-        avg_jaccard = total_jaccard / count if count > 0 else 0
-
-        score = (faiss_normalized * 0.8) + ((1 - avg_jaccard) * 0.2)
-        combined_scores.append({'band_id': candidate_band, 'score': score})
-
-    combined_scores.sort(key=lambda x: x['score'])
-    candidates = [item['band_id'] for item in combined_scores]
-    candidates = [candidate for candidate in candidates if candidate not in disliked_bands]
-
-    known_candidates_re_ranked = []
-    new_candidates_re_ranked = []
-
-    for band_id in candidates:
-        if band_id in interacted_bands:
-            known_candidates_re_ranked.append(band_id)
-        else:
-            new_candidates_re_ranked.append(band_id)
-
-    faiss_pool = []
-
-    faiss_pool.extend(new_candidates_re_ranked[:int(k*0.8)])
-    faiss_pool.extend(known_candidates_re_ranked[:int(k*0.2)])
-
-    return faiss_pool
+    return new_candidates + known_candidates
 
 def main(min_cluster_size=None, k=400):
     app = create_app()
