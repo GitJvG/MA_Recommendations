@@ -13,12 +13,18 @@ def Top_albums(band_ids, picks_per_band=1):
         func.coalesce(Discography.review_score * Discography.review_count, 0).label('weighted_score'),
     ).join(Discography.band).where(Discography.band_id.in_(band_ids), Discography.type.in_(["Full-length", "Split", "EP", "Demo", "Single"])).cte("ranked_albums_subquery")
 
+    band_averages = select(
+        ranked_albums_subquery.c.band_id,
+        func.avg(ranked_albums_subquery.c.weighted_score).label('weighted_score')
+    ).group_by(ranked_albums_subquery.c.band_id).cte()
+
     ranked_albums_with_row_num = (select(
         ranked_albums_subquery,
         func.row_number().over(
             partition_by=ranked_albums_subquery.c.band_id,
-            order_by=ranked_albums_subquery.c.weighted_score.desc()).label('rank')
-    )).cte("ranked_albums_with_row_num")
+            order_by=func.random()).label('rank')
+    ).join(band_averages, onclause= band_averages.c.band_id == ranked_albums_subquery.c.band_id)
+    .where(ranked_albums_subquery.c.weighted_score >= band_averages.c.weighted_score)).cte("ranked_albums_with_row_num")
 
     selected_albums = db.session.execute(select(
             ranked_albums_with_row_num.c.band_id,
