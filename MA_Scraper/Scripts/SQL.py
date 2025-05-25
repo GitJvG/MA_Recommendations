@@ -9,7 +9,6 @@ env = Env.get_instance()
 
 def process_band_logo():
     df = pd.read_csv(env.band_logo, header=0)
-    df = dataframes.get(Band_logo.__name__)()
     df.loc[:, 'data'] = df['data'].apply(string_representation_to_bytes)
     return df
 
