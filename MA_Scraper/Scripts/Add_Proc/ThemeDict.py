@@ -95,7 +95,7 @@ def find_best_anchor_match(item, anchors, threshold=90):
             highest_score = combined_score
             best_match_anchor = anchor_word
             
-    return best_match_anchor, highest_score
+    return best_match_anchor
 
 def reassign_themes(anchors, all_unique_themes, threshold):
     final_clusters = defaultdict(list)
@@ -141,7 +141,7 @@ def main():
     clusters = group_themes(themes, theme_count, 93)
     anchors = consolidate_anchors(clusters, 93)
     clusters = reassign_themes(anchors, themes, 90)
-
+    
     with open(env.dim_theme_dict, 'wb') as pickle_file:
         pickle.dump(clusters, pickle_file)
 
