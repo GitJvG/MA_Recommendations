@@ -80,33 +80,31 @@ def consolidate_anchors(initial_clusters, merge_threshold):
                 
     return consolidated_anchors
 
+def find_best_anchor_match(item, anchors, threshold=90):
+    best_match_anchor = None
+    highest_score = -1.0
+
+    for anchor_word in anchors:
+        score_to_anchor = fuzz.ratio(anchor_word, item)
+        score_to_anchor2 = fuzz.partial_token_set_ratio(anchor_word, item)
+        combined_score = (score_to_anchor + score_to_anchor2) / 2
+
+        if combined_score > highest_score and combined_score >= threshold:
+            highest_score = combined_score
+            best_match_anchor = anchor_word
+            
+    return best_match_anchor, highest_score
+
 def reassign_themes(anchors, all_unique_themes, threshold):
     final_clusters = defaultdict(list)
     for theme in all_unique_themes:
-        best_match_anchor = None
-        highest_score = -1.0
-
-        for anchor_word in anchors:
-            score_to_anchor = fuzz.ratio(anchor_word, theme)
-            score_to_anchor2 = fuzz.partial_token_set_ratio(anchor_word, theme)
-            score_to_anchor = (score_to_anchor + score_to_anchor2)/2
-
-            if score_to_anchor > highest_score and score_to_anchor >= threshold:
-                highest_score = score_to_anchor
-                best_match_anchor = anchor_word
-
+        best_match_anchor = find_best_anchor_match(theme, anchors, threshold)
         if best_match_anchor:
             final_clusters[best_match_anchor].append(theme)
         else:
             final_clusters['other_topic'].append(theme)
-            
+    
     return final_clusters
-
-def base_clusters(df, threshold):
-    all_items, theme_count = items_to_set(df)
-    preprocessed_items = list(all_items)
-    groups = group_themes(preprocessed_items, theme_count, threshold)
-    return groups, all_items
 
 def load_existing_dict(pickle_path):
     if os.path.exists(pickle_path):
@@ -122,25 +120,16 @@ def find_new_themes(theme_set, existing_dict):
     new_themes = theme_set - existing_themes
     return new_themes
 
-def update_theme_dict(new_themes, theme_count, existing_dict, threshold=85):
-    # Sort new themes by frequency
-    sorted_themes = sorted(new_themes, key=lambda theme: theme_count[theme], reverse=True)
-    
-    for theme in sorted_themes:
-        found_group = False
-        
-        # Try to add the theme to an existing group
-        for anchor_word in existing_dict.keys():
-            if any(fuzz.partial_ratio(anchor_word, item) >= threshold for item in existing_dict[anchor_word]):
-                if anchor_word in theme:
-                    existing_dict[anchor_word].append(theme)
-                    found_group = True
-                    break
+def update_theme_dict(new_themes, existing_dict, threshold=85):
+    anchors = set(existing_dict.keys())
 
-        # If no suitable group found, create a new entry
-        if not found_group:
-            anchor_word = max(theme.split(), key=len)
-            existing_dict[anchor_word].append(theme)
+    for theme in new_themes:
+        best_match_anchor = find_best_anchor_match(theme, anchors, threshold)
+        if best_match_anchor:
+            existing_dict[best_match_anchor].append(theme)
+        else:
+            existing_dict['other_topic'].append(theme)
+            
 
     return existing_dict
 
@@ -148,7 +137,8 @@ def main():
     df = pd.read_csv(env.deta)['themes']
     df = df.dropna().apply(basic_processing)
 
-    clusters, themes = base_clusters(df, 93)
+    themes, theme_count = items_to_set(df)
+    clusters = group_themes(themes, theme_count, 93)
     anchors = consolidate_anchors(clusters, 93)
     clusters = reassign_themes(anchors, themes, 90)
 
@@ -164,7 +154,7 @@ def update_pickle():
     existing_dict = load_existing_dict(output_path)
     
     new_themes = find_new_themes(theme_set, existing_dict)
-    updated_dict = update_theme_dict(new_themes, theme_count, existing_dict)
+    updated_dict = update_theme_dict(new_themes, existing_dict)
     
     with open(output_path, 'wb') as pickle_file:
         pickle.dump(updated_dict, pickle_file)
