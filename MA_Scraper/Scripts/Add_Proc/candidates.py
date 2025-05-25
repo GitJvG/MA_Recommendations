@@ -46,7 +46,6 @@ def create_item():
     results = db.session.execute(select(
         Band.band_id,
         Band.name.label('band_name'),
-        Band.genre.label('band_genre'),
         Band.label.label('b_label'),
         Band.country,
         Band.status,
@@ -54,7 +53,6 @@ def create_item():
         func.coalesce(reviews.c.median_score, 0).label('median_score'),
         func.coalesce(func.sum((Similar_band.score)), 0).label('score'),
         func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
-        func.string_agg(func.distinct(Hgenre.name), ', ').label('hybrid_genres'),
         func.coalesce(func.string_agg(func.distinct(Theme.name), ', '), 'Not available').label('theme_names'),
         func.coalesce(func.string_agg(func.distinct(Prefix.name), ', '), 'Not available').label('prefix_names')
     ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
@@ -82,8 +80,8 @@ def create_user():
     return users_preference
 
 def create_item_embeddings(item):
-    multi_valued_categorical_cols = ['hybrid_genres', 'theme_names', 'prefix_names']
-    single_value_categorical_cols = ['country', 'b_label', 'status', 'band_genre']
+    multi_valued_categorical_cols = ['prefix_names', 'genre_names']
+    single_value_categorical_cols = ['country', 'b_label', 'status']
     numerical_columns = ['score', 'review_count', 'median_score']
 
     processed_df = split_one_hot_encode(item, multi_valued_categorical_cols)
@@ -91,7 +89,7 @@ def create_item_embeddings(item):
 
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
-    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['band_id', 'band_name', 'genre_names']]
+    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name']]
     categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([
@@ -123,9 +121,10 @@ def cluster(array, min_cluster_size=None):
 def generate_user_vectors(liked_bands, item_embeddings_array, item_df, min_cluster_size=None):
     liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_bands)]
 
-    pca = PCA(n_components=0.90)
+    pca = PCA(n_components=0.95)
     pca = pca.fit(liked_embeddings_array)
     processed_embeddings_array = pca.transform(liked_embeddings_array)
+
     user_interest_vectors = cluster(processed_embeddings_array, min_cluster_size)
 
     print(f"user interest vectors {len(user_interest_vectors)}")
