@@ -8,6 +8,8 @@ from MA_Scraper.Scripts.Add_Proc.Helper.CleanThemes import basic_processing
 from MA_Scraper.Env import Env
 env = Env.get_instance()
 
+OTHER = 'other_topic'
+
 def items_to_set(genre_series):
     theme_set = set()
     theme_count = Counter()
@@ -42,7 +44,7 @@ def group_themes(themes, theme_count, threshold=85):
 
         if not found_group:
             if theme_count[theme] < 45:
-                theme_dict['other_topic'].append(theme)
+                theme_dict[OTHER].append(theme)
                 grouped_themes_tracker.add(theme)
             else:
                 anchor_word = max(theme.split(), key=len) if theme.split() else theme
@@ -52,7 +54,7 @@ def group_themes(themes, theme_count, threshold=85):
     return theme_dict
 
 def consolidate_anchors(initial_clusters, merge_threshold):
-    anchors = {a for a in initial_clusters.keys() if a != 'other_topic'}
+    anchors = {a for a in initial_clusters.keys() if a != OTHER}
     sorted_anchors = sorted(
         list(anchors), 
         key=lambda x: (len(x), x)
@@ -102,7 +104,7 @@ def reassign_themes(anchors, all_unique_themes, threshold):
         if best_match_anchor:
             final_clusters[best_match_anchor].append(theme)
         else:
-            final_clusters['other_topic'].append(theme)
+            final_clusters[OTHER].append(theme)
     
     return final_clusters
 
@@ -121,16 +123,14 @@ def find_new_themes(theme_set, existing_dict):
     return new_themes
 
 def update_theme_dict(new_themes, existing_dict, threshold=85):
-    anchors = set(existing_dict.keys())
+    anchors = set(existing_dict.keys()) - {OTHER}
 
     for theme in new_themes:
         best_match_anchor = find_best_anchor_match(theme, anchors, threshold)
         if best_match_anchor:
             existing_dict[best_match_anchor].append(theme)
         else:
-            existing_dict['other_topic'].append(theme)
-            
-
+            existing_dict[OTHER].append(theme)
     return existing_dict
 
 def main():
