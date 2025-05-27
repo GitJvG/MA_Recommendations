@@ -17,8 +17,11 @@ def basic_processing(df_series):
     df_series = df_series.str.replace(r'[\s-]+', ' ', regex=True) # replaces consecutive spaces with a single space
     df_series = df_series.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
     df_series = df_series.str.replace(r'\(.*?\)|\s?\'n\'\s?roll', '', regex=True) # removes 'n roll and parenthesis
-    df_series = df_series.str.replace(r'(?<=\bmetal)\s*/', ', ', regex=True) # replaces / with comma if preceeded by metal
-    df_series = df_series.str.replace(r'(?<!-)\s?/?\bmetal\b(?!-)', '', regex=True) # removes metal and optional leading slashes
+    main_genres_check = ['metal', 'punk', 'rock']
+    for genre in main_genres_check:
+        df_series = df_series.str.replace(rf'(?<=\b{genre})\s*/', ', ', regex=True) # replaces / with comma if preceeded by main genre
+
+    df_series = df_series.str.replace(r'(?<!-),?\s?/?\bmetal\b(?!-)', '', regex=True) # removes metal and optional leading slashes
 
     # match "with <genre>, <genre> and <genre> influences and convert to "with <genre> and <genre> and <genre> influences and convert for proper splitting and influence detection"
     df_series = df_series.str.replace(r'(with)(.*?)(and)', lambda m: m.group(1) + m.group(2).replace(',', ' and') + m.group(3), regex=True)
