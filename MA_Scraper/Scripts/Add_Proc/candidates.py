@@ -1,6 +1,6 @@
 from MA_Scraper.app import create_app, db
 from MA_Scraper.app.models import Band, Genre, Hgenre, Discography, \
-                        Theme, Users, Similar_band, Candidates, Member, Prefix
+                        Theme, Users, Similar_band, Candidates, Member, Prefix, Label
 from MA_Scraper.Env import Env
 from MA_Scraper.Scripts.SQL import refresh_tables
 import pandas as pd
@@ -47,10 +47,14 @@ def create_item():
         Genre.id
         ).join(Genre.bands).group_by(Genre.id).having(func.count(Band.band_id) >= 15).order_by(func.count(Band.band_id)).cte()
     
+    labels = select(
+        Label.label_id
+        ).join(Label.band).group_by(Label.label_id).having(func.count(Band.band_id) >= 50).order_by(func.count(Band.band_id)).cte()
+    
     results = db.session.execute(select(
         Band.band_id,
         Band.name.label('band_name'),
-        Band.label.label('b_label'),
+        case((Band.label_id.in_(select(labels.c.label_id)), Band.label), else_="Other_Label").label('b_label'),
         Band.country,
         Band.status,
         func.coalesce(reviews.c.review_count, 0).label('review_count'),
@@ -85,7 +89,7 @@ def create_user():
 
 def create_item_embeddings(item):
     multi_valued_categorical_cols = ['genre_names']
-    single_value_categorical_cols = ['country', 'b_label', 'status']
+    single_value_categorical_cols = ['country', 'status', 'b_label']
     numerical_columns = ['score', 'review_count', 'median_score']
 
     processed_df = split_one_hot_encode(item, multi_valued_categorical_cols)
@@ -101,12 +105,18 @@ def create_item_embeddings(item):
         numerical_embeddings.astype('float32')
     ])
 
+    print(item_embeddings_dense.shape)
+
     return item_embeddings_dense
 
-def cluster(array, min_cluster_size=None):
+def cluster(array, min_cluster_size):
     min_cluster_size = int(len(array) * 0.05)
     if len(array) < min_cluster_size:
         return [np.mean(array, axis=0)]
+    
+    pca = PCA(n_components=0.95)
+    pca = pca.fit(array)
+    array = pca.transform(array)
 
     clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1, allow_single_cluster=True)
     cluster_labels = clusterer.fit_predict(array)
@@ -119,24 +129,21 @@ def cluster(array, min_cluster_size=None):
             cluster_items_embeddings = array[cluster_labels == cluster_label]
             if len(cluster_items_embeddings) > 0:
                 vector = np.mean(cluster_items_embeddings, axis=0)
+                vector = pca.inverse_transform(vector)
                 vectors.append(vector)
     return vectors
 
 def generate_user_vectors(liked_bands, item_embeddings_array, item_df, min_cluster_size=None):
     liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_bands)]
 
-    pca = PCA(n_components=0.95)
-    pca = pca.fit(liked_embeddings_array)
-    processed_embeddings_array = pca.transform(liked_embeddings_array)
-
-    user_interest_vectors = cluster(processed_embeddings_array, min_cluster_size)
+    user_interest_vectors = cluster(liked_embeddings_array, min_cluster_size)
 
     print(f"user interest vectors {len(user_interest_vectors)}")
     if not user_interest_vectors:
-        user_interest_vectors = np.mean(processed_embeddings_array, axis=0)
+        user_interest_vectors = np.mean(liked_embeddings_array, axis=0)
 
     user_interest_vectors = np.array(user_interest_vectors).astype('float32')
-    return user_interest_vectors, pca
+    return user_interest_vectors
 
 def index_faiss(dense):
     dimension = dense.shape[1]
@@ -232,8 +239,7 @@ def main(min_cluster_size=None, k=400):
         for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
             interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique().astype(int).tolist()
             liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].unique().astype(int).tolist()
-            user_vectors, pca = generate_user_vectors(liked_bands, item_embeddings, item, min_cluster_size)
-            item_embeddings = pca.transform(item_embeddings)
+            user_vectors = generate_user_vectors(liked_bands, item_embeddings, item, min_cluster_size)
             index = index_faiss(item_embeddings)
             candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
             for candidate in candidates:
@@ -247,4 +253,4 @@ def complete_refresh(min_cluster_size=None, k=400):
     refresh_tables([Candidates])
 
 if __name__ == '__main__':
-    complete_refresh(min_cluster_size=10)
+    main()
