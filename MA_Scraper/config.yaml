@@ -40,7 +40,8 @@ word_processing:
         "late", 
         "from", 
         "elements", 
-        "music"]
+        "music",
+        "ballad"]
   BINARY_EXCEPTION: [
         "score",
         "age",
@@ -48,9 +49,7 @@ word_processing:
         "nova",
         "word",
         "cappella",
-        "hop",
-        "beat",
-        "garde"]
+        "hop"]
   TERNARY_EXCEPTION: [
         "roll",
         "bass"]

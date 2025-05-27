@@ -23,24 +23,23 @@ def build_name_to_id_and_type(dim_df, item_type):
         name_to_id_type[(str(name).strip(), item_type)] = id_
     return name_to_id_type
 
-def create_bridge_csv(band_df, dim_df_for_type, output_file_path, item_type_label):
+def create_bridge_csv(band_df, dim_df, output_file_path, item_type_label):
     bridge_tuples_for_type = set()
-    dim_lookup = pd.Series(dim_df_for_type['id'].values, index=dim_df_for_type['name']).to_dict()
+    dim_lookup = pd.Series(dim_df['id'].values, index=dim_df['name']).to_dict()
 
     for _, row in band_df.iterrows():
         band_id = row['band_id']
-        terms_string = row[item_type_label]
+        genre = row[item_type_label]
 
-        if isinstance(terms_string, str) and terms_string.strip():
-            individual_terms = [t.strip() for t in terms_string.split(',') if t.strip()]
+        if isinstance(genre, str) and genre.strip():
+            genres = [t.strip() for t in genre.split(',') if t.strip()]
 
-            for term_name in individual_terms:
-                item_id = dim_lookup.get(term_name)
-                if item_id is not None:
-                    bridge_tuples_for_type.add((band_id, item_id))
+            for genre in genres:
+                item_id = dim_lookup.get(genre)
+                bridge_tuples_for_type.add((band_id, item_id))
 
     if bridge_tuples_for_type:
-        bridge_df = pd.DataFrame(list(bridge_tuples_for_type), columns=['band_id', f'{item_type_label}_id'])
+        bridge_df = pd.DataFrame(list(bridge_tuples_for_type), columns=['band_id', 'id'])
         bridge_df.to_csv(output_file_path, index=False)
         print(f"Bridge data for '{item_type_label}' created with {len(bridge_df)} rows (saved to {output_file_path}).")
 
@@ -73,7 +72,7 @@ def main():
   
         create_bridge_csv(
             band_df=df,
-            dim_df_for_type=dim_df,
+            dim_df=dim_df,
             output_file_path=bridge_output_paths[item_type],
             item_type_label=item_type
         )

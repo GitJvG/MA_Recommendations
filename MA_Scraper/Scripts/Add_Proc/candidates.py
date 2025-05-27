@@ -42,7 +42,11 @@ def create_item():
         func.percentile_cont(0.5).within_group(Discography.review_score).label('median_score')
         ).filter(Discography.reviews.isnot(None)
         ).group_by(Discography.band_id).cte()
-
+    
+    genres = select(
+        Genre.id
+        ).join(Genre.bands).group_by(Genre.id).having(func.count(Band.band_id) >= 15).order_by(func.count(Band.band_id)).cte()
+    
     results = db.session.execute(select(
         Band.band_id,
         Band.name.label('band_name'),
@@ -57,10 +61,10 @@ def create_item():
         func.coalesce(func.string_agg(func.distinct(Prefix.name), ', '), 'Not available').label('prefix_names')
     ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
     ).join(Band.outgoing_similarities
-    ).join(Band.genres, isouter=True
-    ).join(Band.hgenres, isouter=True
+    ).join(Band.genres,
     ).join(Band.themes, isouter=True
     ).join(Band.prefixes, isouter=True
+    ).where(Genre.id.in_(select(genres.c.id))
     ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status,
                reviews.c.review_count, reviews.c.median_score)).all()
 
@@ -80,7 +84,7 @@ def create_user():
     return users_preference
 
 def create_item_embeddings(item):
-    multi_valued_categorical_cols = ['prefix_names', 'genre_names']
+    multi_valued_categorical_cols = ['genre_names']
     single_value_categorical_cols = ['country', 'b_label', 'status']
     numerical_columns = ['score', 'review_count', 'median_score']
 
@@ -89,7 +93,7 @@ def create_item_embeddings(item):
 
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
-    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name']]
+    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'prefix_names']]
     categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([

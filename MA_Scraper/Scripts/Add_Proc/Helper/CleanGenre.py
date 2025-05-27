@@ -14,7 +14,7 @@ def basic_processing(df_series):
     combined_unwanted_regex = r'(?<!-)\s?\b(?:' + '|'.join(unwanted_patterns) + r')\b(?!-)'
     df_series = df_series.str.replace(combined_unwanted_regex, '', regex=True)
 
-    df_series = df_series.str.replace(r'[\s-]+', ' ', regex=True) # replaces consecutive spaces with a single space
+    df_series = df_series.str.replace(r'[\s-]+(?!garde|\bbeat\b)', ' ', regex=True) # replaces consecutive spaces with a single space
     df_series = df_series.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
     df_series = df_series.str.replace(r'\(.*?\)|\s?\'n\'\s?roll', '', regex=True) # removes 'n roll and parenthesis
     main_genres_check = ['metal', 'punk', 'rock']
@@ -28,6 +28,11 @@ def basic_processing(df_series):
     df_series = df_series.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ','
     
     df_series = df_series.str.replace(' wave', 'wave')
+    df_series = df_series.str.replace(r'\bfilm score\b', 'soundtrack', regex=True)
+    df_series = df_series.str.replace(r'\baor\b', 'rock', regex=True)
+    df_series = df_series.str.replace(r'\brac\b|\bscreamo\b', 'punk', regex=True)
+    df_series = df_series.str.replace(r'\bbossa nova\b', 'jazz', regex=True)
+
     normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub", "rock", "punk", "reggae", "avant"]]
     normalized_genre_pattern = r'\b\w*(' + '|'.join(normalize_patterns) + r')\w*\b'
     df_series = df_series.str.replace(normalized_genre_pattern, r'\1', regex=True)
@@ -88,7 +93,6 @@ def part_exceptions(split_parts):
 def dissect_genre(genre):
     """Extracts the primal genre, checking for hybrid and non-hybrid genres."""
     parts = [part.split('with')[0].strip() for part in genre.split(',')]
-
     hybrid_genre = set()
     prefixes = set()
 
@@ -132,3 +136,5 @@ def process_genres(df_series):
     df_series2.columns = ['genre', 'hybrid_genre', 'prefix']
 
     return df_series2
+
+print(process_genres(pd.Series("Avant-garde/Gothic/Doom")))
