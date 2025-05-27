@@ -1,5 +1,6 @@
-import re
+import regex as re
 from MA_Scraper.Env import Env
+import pandas as pd
 env = Env.get_instance()
 
 def replace_wrong_comma(genre):
@@ -10,6 +11,11 @@ def replace_wrong_comma(genre):
     genre = re.sub(r'with(.*?)(and)', replace_with_and, genre)
     return genre
 
+def normalize_execeptions(exception, genres):
+    pattern = rf"(?<=[ ,\/\s]|^)\w*{exception}\w*(?=[ ,\/\s]|$)"
+    genres = genres = re.sub(pattern, exception, genres, flags=re.IGNORECASE)
+    return genres
+
 def basic_processing(genre):
     genres = genre.lower()
     genres = re.sub(r'\(.*?\)', '', genres) # removes anything between parenthesis
@@ -17,17 +23,48 @@ def basic_processing(genre):
     genres = re.sub(r'\s+', ' ', genres) # Reduce consecutive spaces to one space
     genres = re.sub(r'[^\x20-\x7E]', '', genres) # Removes non-ASCII
     genres = re.sub(r';', ',', genres) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
+    genres = re.sub(r'\.', ',', genres) # Replace dot with comma, most dots are typos which would cause distinct genres to be treateed as a prefix and genre.
     genres = re.sub(r'[()]+', '', genres).strip() # Removes remaining parenthesis
-
+    genres = re.sub(r'-', ' ', genres) # Replace '-' with a space to fix ambigious behavior with certain prefixes ('atmospheric/post-black' would make atmospheric a genre)
     # Remove 'Metal' (or ' Metal' if followed by '/' to create new hybrids, i.e. death metal/black metal-> death/black)
     genres = re.sub(r'(?<!-)\s?/?\bmetal\b(?!-)', '', genres).strip() 
+    genres = re.sub(r"\s?'n'\s?roll", '', genres).strip()
     # Finally remove any remaining common unwanted words
     for word in env.unwanted:
         genres = re.sub(rf'(?<!-)\s?\b{word}\b(?!-)', '', genres)
 
+    for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub"]:
+        genres = normalize_execeptions(word, genres)
+
     genres = replace_wrong_comma(genres)
 
     return genres
+
+def basic_processing2(df):
+    df = df.copy()
+    df = df.str.lower()
+
+    df = df.str.replace(r'\(.*?\)|\b\w*metal\w*\b|\s?\'n\'\s?roll', '', regex=True) # fremoves metal, 'n roll and parenthesis
+    df = df.str.replace(r'[^\x20-\x7E]|[()]+', '', regex=True) # Remove non-ascii and parenthesis
+    df = df.str.replace(r'[;.]', ',', regex=True) # replaces semicolon and period with comma
+
+    unwanted_patterns = [re.escape(word) for word in env.unwanted]
+    combined_unwanted_regex = r'(?<!-)\s?\b(?:' + '|'.join(unwanted_patterns) + r')\b(?!-)'
+    df = df.str.replace(combined_unwanted_regex, '', regex=True)
+
+    df = df.str.replace(r'[\s-]+', ' ', regex=True) # replaces consecutive spaces with a single space
+    df = df.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
+
+    # match "with <genre>, <genre> and <genre> influences and convert to "with <genre> and <genre> and <genre> influences and convert for proper splitting and influence detection"
+    df = df.str.replace(r'(with)(.*?)(and)', lambda m: m.group(1) + m.group(2).replace(',', ' and') + m.group(3), regex=True)
+    df = df.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ,
+    
+    df = df.str.replace(' wave', 'wave')
+    normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub"]]
+    normalized_genre_pattern = r'\b\w*(' + '|'.join(normalize_patterns) + r')\w*\b'
+    df = df.str.replace(normalized_genre_pattern, r'\1', regex=True)
+
+    return df
 
 def elements(genre):
     """Removes 'with influences' endings and returns the genre and the elements separately in a comma-separated format."""
@@ -82,7 +119,6 @@ def part_exceptions(split_parts):
 
 def dissect_genre(genre):
     """Extracts the primal genre, checking for hybrid and non-hybrid genres."""
-    genre = re.sub(r"\s?'n'\s?roll", '', genre)
     parts = [part.split('with')[0].strip() for part in genre.split(',')]
 
     hybrid_genre = set()
