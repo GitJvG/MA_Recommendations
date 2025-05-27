@@ -46,10 +46,11 @@ word_processing:
         "age",
         "listening",
         "nova",
-        "wave",
         "word",
         "cappella",
-        "hop"]
+        "hop",
+        "beat",
+        "garde"]
   TERNARY_EXCEPTION: [
         "roll",
         "bass"]

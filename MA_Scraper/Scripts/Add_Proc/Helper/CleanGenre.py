@@ -28,7 +28,7 @@ def basic_processing(df_series):
     df_series = df_series.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ','
     
     df_series = df_series.str.replace(' wave', 'wave')
-    normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub"]]
+    normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub", "rock", "punk", "reggae", "avant"]]
     normalized_genre_pattern = r'\b\w*(' + '|'.join(normalize_patterns) + r')\w*\b'
     df_series = df_series.str.replace(normalized_genre_pattern, r'\1', regex=True)
 
