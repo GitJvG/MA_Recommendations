@@ -38,18 +38,10 @@ word_processing:
         "or", 
         "mid", 
         "late", 
-        "metal", 
         "from", 
         "elements", 
         "music"]
   BINARY_EXCEPTION: [
-        "film score",
-        "new age",
-        "easy listening",
-        "bossa nova",
-        "new wave",
-        "spoken word",
-        "a cappella",
         "score",
         "age",
         "listening",
@@ -59,10 +51,5 @@ word_processing:
         "cappella",
         "hop"]
   TERNARY_EXCEPTION: [
-        "black 'n' roll",
-        "rock 'n' roll",
-        "death 'n' roll",
-        "thrash 'n' roll",
-        "drum and bass",
         "roll",
         "bass"]
