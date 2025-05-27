@@ -23,46 +23,35 @@ def build_name_to_id_and_type(dim_df, item_type):
         name_to_id_type[(str(name).strip(), item_type)] = id_
     return name_to_id_type
 
-def create_split_bridge_csvs_optimized(band_df, combined_name_to_id_lookup, output_paths):
-    def get_band_bridge_tuples(row):
+def create_bridge_csv(band_df, dim_df_for_type, output_file_path, item_type_label):
+    bridge_tuples_for_type = set()
+    dim_lookup = pd.Series(dim_df_for_type['id'].values, index=dim_df_for_type['name']).to_dict()
+
+    for _, row in band_df.iterrows():
         band_id = row['band_id']
-        flattened_data = row['Flattened_Genres'] if isinstance(row['Flattened_Genres'], list) else []
-        band_links = set()
+        terms_string = row[item_type_label]
 
-        for name, type_ in flattened_data:
-            name = str(name).strip()
-            type_ = str(type_).strip()
-            if (name, type_) in combined_name_to_id_lookup:
-                item_id = combined_name_to_id_lookup[(name, type_)]
-                band_links.add((band_id, item_id, type_))
+        if isinstance(terms_string, str) and terms_string.strip():
+            individual_terms = [t.strip() for t in terms_string.split(',') if t.strip()]
 
-        return list(band_links)
-    list_of_link_lists = band_df.apply(get_band_bridge_tuples, axis=1)
-    all_bridge_tuples = [
-        link_tuple
-        for link_list in list_of_link_lists
-        for link_tuple in link_list
-    ]
-    final_unique_bridge_tuples = set(all_bridge_tuples)
+            for term_name in individual_terms:
+                item_id = dim_lookup.get(term_name)
+                if item_id is not None:
+                    bridge_tuples_for_type.add((band_id, item_id))
 
-    if final_unique_bridge_tuples:
-        bridge_df = pd.DataFrame(list(final_unique_bridge_tuples), columns=['band_id', 'id', 'type'])
-        print(f"Total unique bridge rows collected: {len(bridge_df)}")
-
-        for item_type, file_path in output_paths.items():
-            type_df = bridge_df[bridge_df['type'] == item_type][['band_id', 'id']].copy()
-            type_df.to_csv(file_path, index=False)
-            print(f"Bridge data for '{item_type}' created with {len(type_df)} rows (saved to {file_path}).")
+    if bridge_tuples_for_type:
+        bridge_df = pd.DataFrame(list(bridge_tuples_for_type), columns=['band_id', f'{item_type_label}_id'])
+        bridge_df.to_csv(output_file_path, index=False)
+        print(f"Bridge data for '{item_type_label}' created with {len(bridge_df)} rows (saved to {output_file_path}).")
 
 def main():
     df = pd.read_csv(env.band)
-    df['Flattened_Genres'] = df['genre'].apply(lambda x: process_genres(x) if pd.notna(x) else [])
-    all_flattened_data = [item for sublist in df['Flattened_Genres'] for item in sublist]
+    df[['genre', 'hybrid_genre', 'prefix']] = process_genres(df['genre'])
 
     unique_names_by_type = {
-        'genre': set(name for name, type_ in all_flattened_data if type_ == 'genre'),
-        'hybrid_genre': set(name for name, type_ in all_flattened_data if type_ == 'hybrid_genre'),
-        'prefix': set(name for name, type_ in all_flattened_data if type_ == 'prefix'),
+        'genre': set(item.strip() for s in df['genre'] if isinstance(s, str) and s for item in s.split(',') if item.strip()),
+        'hybrid_genre': set(item.strip() for s in df['hybrid_genre'] if isinstance(s, str) and s for item in s.split(',') if item.strip()),
+        'prefix': set(item.strip() for s in df['prefix'] if isinstance(s, str) and s for item in s.split(',') if item.strip()),
     }
 
     dim_output_paths = {
@@ -70,18 +59,6 @@ def main():
         'hybrid_genre': env.hgenre,
         'prefix': env.prefix,
     }
-    
-    dim_dfs = {}
-    combined_name_to_id_lookup = {}
-
-    for item_type, unique_names in unique_names_by_type.items():
-        output_path = dim_output_paths[item_type]
-        create_dim_csv(unique_names, output_path)
-        dim_df = pd.read_csv(output_path)
-        dim_dfs[item_type] = dim_df
-
-        lookup_for_type = build_name_to_id_and_type(dim_df, item_type)
-        combined_name_to_id_lookup.update(lookup_for_type)
 
     bridge_output_paths = {
         'genre': env.band_genres,
@@ -89,7 +66,17 @@ def main():
         'prefix': env.band_prefixes,
     }
 
-    create_split_bridge_csvs_optimized(df, combined_name_to_id_lookup, bridge_output_paths)
+    for item_type, unique_names in unique_names_by_type.items():
+        output_path = dim_output_paths[item_type]
+        create_dim_csv(unique_names, output_path)
+        dim_df = pd.read_csv(output_path)
+  
+        create_bridge_csv(
+            band_df=df,
+            dim_df_for_type=dim_df,
+            output_file_path=bridge_output_paths[item_type],
+            item_type_label=item_type
+        )
 
 if __name__ == "__main__":
     main()

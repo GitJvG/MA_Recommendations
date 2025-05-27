@@ -3,68 +3,32 @@ from MA_Scraper.Env import Env
 import pandas as pd
 env = Env.get_instance()
 
-def replace_wrong_comma(genre):
-    """Replaces element comma with 'and' to prevent unintended splitting."""
-    def replace_with_and(match):
-        return match.group(0).replace(',', ' and')
+def basic_processing(df_series):
+    df_series = df_series.copy()
+    df_series = df_series.str.lower()
 
-    genre = re.sub(r'with(.*?)(and)', replace_with_and, genre)
-    return genre
-
-def normalize_execeptions(exception, genres):
-    pattern = rf"(?<=[ ,\/\s]|^)\w*{exception}\w*(?=[ ,\/\s]|$)"
-    genres = genres = re.sub(pattern, exception, genres, flags=re.IGNORECASE)
-    return genres
-
-def basic_processing(genre):
-    genres = genre.lower()
-    genres = re.sub(r'\(.*?\)', '', genres) # removes anything between parenthesis
-    genres = re.sub(r'\s?/\s?', '/', genres) # Removes spaces before and after '/'
-    genres = re.sub(r'\s+', ' ', genres) # Reduce consecutive spaces to one space
-    genres = re.sub(r'[^\x20-\x7E]', '', genres) # Removes non-ASCII
-    genres = re.sub(r';', ',', genres) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
-    genres = re.sub(r'\.', ',', genres) # Replace dot with comma, most dots are typos which would cause distinct genres to be treateed as a prefix and genre.
-    genres = re.sub(r'[()]+', '', genres).strip() # Removes remaining parenthesis
-    genres = re.sub(r'-', ' ', genres) # Replace '-' with a space to fix ambigious behavior with certain prefixes ('atmospheric/post-black' would make atmospheric a genre)
-    # Remove 'Metal' (or ' Metal' if followed by '/' to create new hybrids, i.e. death metal/black metal-> death/black)
-    genres = re.sub(r'(?<!-)\s?/?\bmetal\b(?!-)', '', genres).strip() 
-    genres = re.sub(r"\s?'n'\s?roll", '', genres).strip()
-    # Finally remove any remaining common unwanted words
-    for word in env.unwanted:
-        genres = re.sub(rf'(?<!-)\s?\b{word}\b(?!-)', '', genres)
-
-    for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub"]:
-        genres = normalize_execeptions(word, genres)
-
-    genres = replace_wrong_comma(genres)
-
-    return genres
-
-def basic_processing2(df):
-    df = df.copy()
-    df = df.str.lower()
-
-    df = df.str.replace(r'\(.*?\)|\b\w*metal\w*\b|\s?\'n\'\s?roll', '', regex=True) # fremoves metal, 'n roll and parenthesis
-    df = df.str.replace(r'[^\x20-\x7E]|[()]+', '', regex=True) # Remove non-ascii and parenthesis
-    df = df.str.replace(r'[;.]', ',', regex=True) # replaces semicolon and period with comma
+    df_series = df_series.str.replace(r'[^\x20-\x7E]|\(.*?\)', '', regex=True) # Remove non-ascii and everything in parenthesis
+    df_series = df_series.str.replace(r'[;.]', ',', regex=True) # replaces semicolon and period with comma
 
     unwanted_patterns = [re.escape(word) for word in env.unwanted]
     combined_unwanted_regex = r'(?<!-)\s?\b(?:' + '|'.join(unwanted_patterns) + r')\b(?!-)'
-    df = df.str.replace(combined_unwanted_regex, '', regex=True)
+    df_series = df_series.str.replace(combined_unwanted_regex, '', regex=True)
 
-    df = df.str.replace(r'[\s-]+', ' ', regex=True) # replaces consecutive spaces with a single space
-    df = df.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
+    df_series = df_series.str.replace(r'[\s-]+', ' ', regex=True) # replaces consecutive spaces with a single space
+    df_series = df_series.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
+    df_series = df_series.str.replace(r'\(.*?\)|\s?\'n\'\s?roll', '', regex=True) # removes 'n roll and parenthesis
+    df_series = df_series.str.replace(r'(?<!-)\s?/?\bmetal\b(?!-)', '', regex=True) # removes metal and optional leading slashes
 
     # match "with <genre>, <genre> and <genre> influences and convert to "with <genre> and <genre> and <genre> influences and convert for proper splitting and influence detection"
-    df = df.str.replace(r'(with)(.*?)(and)', lambda m: m.group(1) + m.group(2).replace(',', ' and') + m.group(3), regex=True)
-    df = df.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ,
+    df_series = df_series.str.replace(r'(with)(.*?)(and)', lambda m: m.group(1) + m.group(2).replace(',', ' and') + m.group(3), regex=True)
+    df_series = df_series.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ','
     
-    df = df.str.replace(' wave', 'wave')
+    df_series = df_series.str.replace(' wave', 'wave')
     normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub"]]
     normalized_genre_pattern = r'\b\w*(' + '|'.join(normalize_patterns) + r')\w*\b'
-    df = df.str.replace(normalized_genre_pattern, r'\1', regex=True)
+    df_series = df_series.str.replace(normalized_genre_pattern, r'\1', regex=True)
 
-    return df
+    return df_series
 
 def elements(genre):
     """Removes 'with influences' endings and returns the genre and the elements separately in a comma-separated format."""
@@ -127,7 +91,6 @@ def dissect_genre(genre):
     for part in parts:
         partslist = part.split()
         if '/' not in partslist[-1]:
-
             count = part_exceptions(partslist)
             primary_genre = ' '.join(partslist[-count:])
             prefixlist = partslist[:-count]
@@ -153,23 +116,15 @@ def dissect_genre(genre):
     genre = split_and_strip(hybrid_genre)
     prefixes = split_and_strip(prefixes)
 
-    return genre, hybrid_genre, prefixes
+    genre_output = ','.join(sorted(list(genre)))
+    hybrid_genre_output = ','.join(sorted(list(hybrid_genre)))
+    prefixes_output = ','.join(sorted(list(prefixes)))
 
-def process_genres(genres):
-    """Returns a flattened list for bridge table creation."""
-    try:
-        genre = basic_processing(genres)
-        genre, hybrid_genre, prefixes = dissect_genre(genre)
+    return genre_output, hybrid_genre_output, prefixes_output
 
-        results = []
-        if genre:
-            results.extend([(item.strip(), 'genre') for item in genre])
-        if hybrid_genre:
-            results.extend([(item.strip(), 'hybrid_genre') for item in hybrid_genre])
-        if prefixes:
-            results.extend([(item.strip(), 'prefix') for item in prefixes])
+def process_genres(df_series):
+    df_series = basic_processing(df_series)
+    df_series2 = df_series.apply(dissect_genre).apply(pd.Series)
+    df_series2.columns = ['genre', 'hybrid_genre', 'prefix']
 
-        return results
-    except Exception as e:
-        print(f"Error processing genre: {genres} - {e}")
-        raise
+    return df_series2
