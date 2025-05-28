@@ -17,20 +17,26 @@ def basic_processing(df_series):
     df_series = df_series.str.replace(r'[\s-]+(?!garde|\bbeat\b)', ' ', regex=True) # replaces consecutive spaces with a single space
     df_series = df_series.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
     df_series = df_series.str.replace(r'\(.*?\)|\s?\'n\'\s?roll', '', regex=True) # removes 'n roll and parenthesis
-    main_genres_check = ['metal', 'punk', 'rock']
+    main_genres_check = ['metal', 'punk', 'rock', 'metal']
     for genre in main_genres_check:
         df_series = df_series.str.replace(rf'(?<=\b{genre})\s*/', ', ', regex=True) # replaces / with comma if preceeded by main genre
 
     df_series = df_series.str.replace(r'(?<!-),?\s?/?\bmetal\b(?!-)', '', regex=True) # removes metal and optional leading slashes
 
-    # match "with <genre>, <genre> and <genre> influences and convert to "with <genre> and <genre> and <genre> influences and convert for proper splitting and influence detection"
-    df_series = df_series.str.replace(r'(with)(.*?)(and)', lambda m: m.group(1) + m.group(2).replace(',', ' and') + m.group(3), regex=True)
+    # remove everything after with
+    df_series = df_series.str.replace(r'with[^,]*', '', regex=True)
     df_series = df_series.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ','
     
     df_series = df_series.str.replace(' wave', 'wave')
     df_series = df_series.str.replace(r'\bfilm score\b', 'soundtrack', regex=True)
     df_series = df_series.str.replace(r'\baor\b', 'rock', regex=True)
     df_series = df_series.str.replace(r'\brac\b|\bscreamo\b', 'punk', regex=True)
+    df_series = df_series.str.replace(r'\bbossa nova\b', 'jazz', regex=True)
+
+    genres_with_space = ["new age","easy listening","spoken word","a cappella","trip hop","hip hop","middle eastern", "drum and bass"]
+    regex_pattern = r'\b(' + '|'.join(re.escape(phrase) for phrase in genres_with_space) + r')\b'
+    df_series = df_series.str.replace(regex_pattern, lambda x: x.group(0).replace(' ', '_'), regex=True)
+
     df_series = df_series.str.replace(r'\bbossa nova\b', 'jazz', regex=True)
 
     normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub", "rock", "punk", "reggae", "avant"]]
@@ -76,65 +82,26 @@ def elements(genre):
     element_output = ', '.join(sorted(element_parts)) if element_parts else None
 
     return cleaned_genre_output, element_output
+    
+def dissect_genre(series):
+    df_exploded = series.str.split(',').explode()
+    df_exploded = df_exploded.str.strip()
+    dissected_df = pd.DataFrame({'row_id': df_exploded.index, 'og_genre': df_exploded.values})
 
-def part_exceptions(split_parts):
-    # Last word except for when it is an exception ('age' in 'new age' then take last 2)
-    # Added ternary for three-part entities such as 'black 'n' roll'
-    last_part = split_parts[-1]
+    main_pattern = r"^(?:(.+?)\s+)?([^/\s]+(?:/[^/\s]+)?)$" # Match any non white character optionally followed by a '/' and any non white character
+    full_pattern = r"^(.*?)\s*?" + main_pattern + r"$"
+    extracted_data = dissected_df['og_genre'].str.extract(full_pattern, flags=re.IGNORECASE)
 
-    if last_part in env.binary:
-        result = 2
-    elif last_part in env.ternary:
-        result = 3
-    else:
-        result = 1
-    return result
+    dissected_df['prefix'] = extracted_data[1].str.replace(r'[ /]', ',', regex=True)
+    dissected_df['hybrid_genre'] = extracted_data[2]
+    dissected_df['genre'] = dissected_df['hybrid_genre'].str.replace('/', ',')
 
-def dissect_genre(genre):
-    """Extracts the primal genre, checking for hybrid and non-hybrid genres."""
-    parts = [part.split('with')[0].strip() for part in genre.split(',')]
-    hybrid_genre = set()
-    prefixes = set()
+    dissected_df[['row_id', 'og_genre', 'genre', 'prefix', 'hybrid_genre']]
 
-    for part in parts:
-        partslist = part.split()
-        if '/' not in partslist[-1]:
-            count = part_exceptions(partslist)
-            primary_genre = ' '.join(partslist[-count:])
-            prefixlist = partslist[:-count]
-        else:
-            subparts = part.rsplit('/', 1) # Only split at the final / as earlier ones can be hybrid prefixes
-
-            count_before = part_exceptions(subparts[0].strip().split())
-            count_after = part_exceptions(subparts[1].strip().split())
-            
-            part_before = ' '.join(subparts[0].split()[-count_before:])
-            part_after = ' '.join(subparts[1].split()[-count_after:])
-            primary_genre = f"{part_before}/{part_after}"
-
-            prefixlist = subparts[0].split()[:-count_before]
-
-        hybrid_genre.add(primary_genre)
-        for prefix in prefixlist:
-            prefixes.add(prefix)
-
-    def split_and_strip(parts):
-        return {x.strip() for part in parts for x in part.split('/') if x.strip()}
-
-    genre = split_and_strip(hybrid_genre)
-    prefixes = split_and_strip(prefixes)
-
-    genre_output = ','.join(sorted(list(genre)))
-    hybrid_genre_output = ','.join(sorted(list(hybrid_genre)))
-    prefixes_output = ','.join(sorted(list(prefixes)))
-
-    return genre_output, hybrid_genre_output, prefixes_output
+    return dissected_df
 
 def process_genres(df_series):
     df_series = basic_processing(df_series)
-    df_series2 = df_series.apply(dissect_genre).apply(pd.Series)
-    df_series2.columns = ['genre', 'hybrid_genre', 'prefix']
+    df_series2 = dissect_genre(df_series)
 
     return df_series2
-
-print(process_genres(pd.Series("Avant-garde/Gothic/Doom")))

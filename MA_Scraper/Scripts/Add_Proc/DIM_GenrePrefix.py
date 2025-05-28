@@ -10,7 +10,10 @@ def items_to_set(flattened_data):
 def create_dim_csv(unique_names_for_type, output_path):
     dfsingle = pd.DataFrame(list(unique_names_for_type), columns=['name'])
     dfsingle = dfsingle.sort_values(by='name').reset_index(drop=True)
-    dfsingle.rename_axis('id').to_csv(output_path, index=True)
+    dfsingle['id'] = dfsingle.index
+    dfsingle.to_csv(output_path, index=False)
+
+    return dfsingle
 
 def build_name_to_id_and_type(dim_df):
     """Build a lookup dictionary for name -> (id, type)."""
@@ -23,35 +26,49 @@ def build_name_to_id_and_type(dim_df, item_type):
         name_to_id_type[(str(name).strip(), item_type)] = id_
     return name_to_id_type
 
-def create_bridge_csv(band_df, dim_df, output_file_path, item_type_label):
-    bridge_tuples_for_type = set()
-    dim_lookup = pd.Series(dim_df['id'].values, index=dim_df['name']).to_dict()
+def create_bridge_csv(processed_df, dim_df, output_file_path, item_type_label):
+    temp_series = processed_df[item_type_label].dropna().astype(str)
+        
+    if item_type_label == 'genre':
+        exploded_items = temp_series.str.split(' ').explode().str.strip()
+    elif item_type_label == 'prefix':
+        exploded_items = temp_series.str.split(' ').explode().str.strip()
+    else:
+        exploded_items = temp_series
 
-    for _, row in band_df.iterrows():
-        band_id = row['band_id']
-        genre = row[item_type_label]
+    temp_bridge_df = pd.DataFrame({
+        'item_name': exploded_items,
+        'original_processed_df_index': exploded_items.index
+    })
 
-        if isinstance(genre, str) and genre.strip():
-            genres = [t.strip() for t in genre.split(',') if t.strip()]
+    temp_bridge_df = pd.merge(
+        temp_bridge_df,
+        processed_df[['row_id', 'band_id']],
+        left_on='original_processed_df_index',
+        right_on=processed_df.index,
+        how='left'
+    )
 
-            for genre in genres:
-                item_id = dim_lookup.get(genre)
-                bridge_tuples_for_type.add((band_id, item_id))
+    temp_bridge_df = temp_bridge_df.drop(columns=['original_processed_df_index'])
 
-    if bridge_tuples_for_type:
-        bridge_df = pd.DataFrame(list(bridge_tuples_for_type), columns=['band_id', 'id'])
+    bridge_df = pd.merge(
+        temp_bridge_df, dim_df[['id', 'name']], left_on='item_name', right_on='name', how='inner')
+
+    bridge_df = bridge_df[['band_id', 'id']].drop_duplicates()
+
+    if not bridge_df.empty:
         bridge_df.to_csv(output_file_path, index=False)
         print(f"Bridge data for '{item_type_label}' created with {len(bridge_df)} rows (saved to {output_file_path}).")
 
 def main():
     df = pd.read_csv(env.band)
-    df[['genre', 'hybrid_genre', 'prefix']] = process_genres(df['genre'])
+    processed_df = process_genres(df['genre'])
+    processed_df['band_id'] = processed_df['row_id'].map(df['band_id'])
 
-    unique_names_by_type = {
-        'genre': set(item.strip() for s in df['genre'] if isinstance(s, str) and s for item in s.split(',') if item.strip()),
-        'hybrid_genre': set(item.strip() for s in df['hybrid_genre'] if isinstance(s, str) and s for item in s.split(',') if item.strip()),
-        'prefix': set(item.strip() for s in df['prefix'] if isinstance(s, str) and s for item in s.split(',') if item.strip()),
-    }
+    unique_names_by_type = {}
+    unique_names_by_type['genre'] = set(processed_df['genre'].str.split(',').explode().str.strip().dropna().unique())
+    unique_names_by_type['hybrid_genre'] = set(processed_df['genre'].dropna().unique())
+    unique_names_by_type['prefix'] = set(processed_df['prefix'].str.split(',').explode().str.strip().dropna().unique())
 
     dim_output_paths = {
         'genre': env.genre,
@@ -67,11 +84,10 @@ def main():
 
     for item_type, unique_names in unique_names_by_type.items():
         output_path = dim_output_paths[item_type]
-        create_dim_csv(unique_names, output_path)
-        dim_df = pd.read_csv(output_path)
+        dim_df = create_dim_csv(unique_names, output_path)
   
         create_bridge_csv(
-            band_df=df,
+            processed_df=processed_df,
             dim_df=dim_df,
             output_file_path=bridge_output_paths[item_type],
             item_type_label=item_type
