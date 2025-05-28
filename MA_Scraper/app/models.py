@@ -80,6 +80,7 @@ class Band(db.Model):
     discography_items = relationship("Discography", back_populates="band")
     members = relationship("Member", back_populates="band")
     logo = relationship("Band_logo", uselist=False, back_populates="band")
+    band_label = relationship("Label", back_populates="band")
 
     user_interactions = relationship("Users", back_populates="band_obj")
     candidate_users_link = relationship("Candidates", back_populates="band_obj")
@@ -120,6 +121,8 @@ class Label(db.Model):
     country = db.Column(db.Text, nullable=True)
     genre = db.Column(db.Text, nullable=True)
     status = db.Column(db.Text, nullable=True)
+
+    band = relationship(Band, back_populates="band_label")
 
 class Member(db.Model):
     __tablename__ = 'member'
