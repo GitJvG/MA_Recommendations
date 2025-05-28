@@ -33,7 +33,7 @@ def JSON(attribute, path=rf'MA_Scraper/app/Javascript.json'):
 
 def Title(content_template):
      content_name = f"{content_template[:-5].replace("_", " ").title()}"
-     print(content_name)
+
      title = f"{content_name} - {website_name}"
      if content_name == 'Index':
         title = website_name
