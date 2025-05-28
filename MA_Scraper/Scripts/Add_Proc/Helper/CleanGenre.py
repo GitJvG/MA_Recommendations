@@ -44,44 +44,6 @@ def basic_processing(df_series):
     df_series = df_series.str.replace(normalized_genre_pattern, r'\1', regex=True)
 
     return df_series
-
-def elements(genre):
-    """Removes 'with influences' endings and returns the genre and the elements separately in a comma-separated format."""
-    # Split on commas or semicolons
-    parts = re.split(r'[;,]+', genre.lower())
-    genre_without_element = set()
-    element_parts = set()
-
-    for part in parts:
-        part = re.sub(r'[()]+', '', part).strip()
-
-        # Handle "with" or "influences" descriptions
-        if 'with' in part:
-            part_split = re.split(r'with', part)
-            genre_main = part_split[0].strip()  # The main genre
-            
-            element_description = part_split[1].strip() if len(part_split) > 1 else ""
-            
-            # Clean the "elemental" part (e.g., "with doom elements")
-            element_cleaned = ' '.join([word for word in element_description.split()])
-            if element_cleaned:
-                element_parts.add(element_cleaned)
-            
-            # Clean the main genre (without the element part)
-            genre_cleaned = ' '.join([word for word in genre_main.split()])
-            if genre_cleaned:
-                genre_without_element.add(genre_cleaned)
-        else:
-            # If no "with" or "influences", just clean the genre
-            genre_cleaned = ' '.join([word for word in part.split()])
-            if genre_cleaned:
-                genre_without_element.add(genre_cleaned)
-
-    # Return both genre without element and the elements as comma-separated strings
-    cleaned_genre_output = ', '.join(sorted(genre_without_element))
-    element_output = ', '.join(sorted(element_parts)) if element_parts else None
-
-    return cleaned_genre_output, element_output
     
 def dissect_genre(series):
     df_exploded = series.str.split(',').explode()
