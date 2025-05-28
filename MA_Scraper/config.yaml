@@ -42,14 +42,3 @@ word_processing:
         "elements", 
         "music",
         "ballad"]
-  BINARY_EXCEPTION: [
-        "score",
-        "age",
-        "listening",
-        "nova",
-        "word",
-        "cappella",
-        "hop"]
-  TERNARY_EXCEPTION: [
-        "roll",
-        "bass"]

@@ -91,8 +91,6 @@ class Env:
         self.delay = yaml_conf['scraper']['DELAY']
         self.batch_size = yaml_conf['scraper']['BATCH_SIZE']
 
-        self.binary = yaml_conf['word_processing']['BINARY_EXCEPTION']
-        self.ternary = yaml_conf['word_processing']['TERNARY_EXCEPTION']
         self.unwanted = yaml_conf['word_processing']['UNWANTED_GENRE_WORDS']
 
         self.ytbackend = yaml_conf['website']['YOUTUBE_BACKEND']
