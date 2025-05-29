@@ -17,13 +17,12 @@ def basic_processing(df_series):
     df_series = df_series.str.replace(r'[\s-]+(?!garde|\bbeat\b)', ' ', regex=True) # replaces consecutive spaces with a single space
     df_series = df_series.str.replace(r'\s?/\s?', '/', regex=True) # removes space around /
     df_series = df_series.str.replace(r'\(.*?\)|\s?\'n\'\s?roll', '', regex=True) # removes 'n roll and parenthesis
+
     main_genres_check = ['metal', 'punk', 'rock', 'metal']
     for genre in main_genres_check:
         df_series = df_series.str.replace(rf'(?<=\b{genre})\s*/', ', ', regex=True) # replaces / with comma if preceeded by main genre
 
     df_series = df_series.str.replace(r'(?<!-),?\s?/?\bmetal\b(?!-)', '', regex=True) # removes metal and optional leading slashes
-
-    # remove everything after with
     df_series = df_series.str.replace(r'with[^,]*', '', regex=True)
     df_series = df_series.str.replace(r'\s?,\s?', ',', regex=True) # removes space around ','
     
@@ -37,8 +36,6 @@ def basic_processing(df_series):
     regex_pattern = r'\b(' + '|'.join(re.escape(phrase) for phrase in genres_with_space) + r')\b'
     df_series = df_series.str.replace(regex_pattern, lambda x: x.group(0).replace(' ', '_'), regex=True)
 
-    df_series = df_series.str.replace(r'\bbossa nova\b', 'jazz', regex=True)
-
     normalize_patterns = [re.escape(word) for word in ["grind", "electro", "noise", "synth", "wave", "crust", "dub", "rock", "punk", "reggae", "avant"]]
     normalized_genre_pattern = r'\b\w*(' + '|'.join(normalize_patterns) + r')\w*\b'
     df_series = df_series.str.replace(normalized_genre_pattern, r'\1', regex=True)
@@ -51,14 +48,14 @@ def dissect_genre(series):
     dissected_df = pd.DataFrame({'row_id': df_exploded.index, 'og_genre': df_exploded.values})
 
     main_pattern = r"^(?:(.+?)\s+)?([^/\s]+(?:/[^/\s]+)?)$" # Match any non white character optionally followed by a '/' and any non white character
-    full_pattern = r"^(.*?)\s*?" + main_pattern + r"$"
-    extracted_data = dissected_df['og_genre'].str.extract(full_pattern, flags=re.IGNORECASE)
+    extracted_data = dissected_df['og_genre'].str.extract(main_pattern, flags=re.IGNORECASE)
 
-    dissected_df['prefix'] = extracted_data[1].str.replace(r'[ /]', ',', regex=True)
-    dissected_df['hybrid_genre'] = extracted_data[2]
-    dissected_df['genre'] = dissected_df['hybrid_genre'].str.replace('/', ',')
+    exploded_prefix = extracted_data[0].str.split(r'[ /]').explode().str.strip().to_frame(name='prefix')
+    dissected_df['hybrid_genre'] = extracted_data[1]
+    exploded_genre = dissected_df['hybrid_genre'].str.split('/').explode().str.strip().to_frame(name='genre')
 
-    dissected_df[['row_id', 'og_genre', 'genre', 'prefix', 'hybrid_genre']]
+    dissected_df = pd.merge(dissected_df, exploded_prefix, left_index=True, right_index=True, how='left')
+    dissected_df = pd.merge(dissected_df, exploded_genre, left_index=True, right_index=True, how='left')
 
     return dissected_df
 
