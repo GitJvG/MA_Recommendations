@@ -1,5 +1,5 @@
 from sqlalchemy import func, select
-from MA_Scraper.app import db, create_app
+from MA_Scraper.app import db
 from MA_Scraper.app.models import Band, Discography, Similar_band, Genre, db
 from datetime import datetime
 
@@ -11,7 +11,7 @@ def Top_albums(band_ids, picks_per_band=1):
         Band.name.label('band_name'),
         Band.genre,
         func.coalesce(Discography.review_score * Discography.review_count, 0).label('weighted_score'),
-    ).join(Discography.band).where(Discography.band_id.in_(band_ids), Discography.type.in_(["Full-length", "Split", "EP", "Demo", "Single"])).cte("ranked_albums_subquery")
+    ).join(Discography.band).where(Discography.band_id.in_(band_ids), Discography.type.in_(["Full-length", "Split", "EP", "Demo"])).cte("ranked_albums_subquery")
 
     band_averages = select(
         ranked_albums_subquery.c.band_id,
@@ -68,8 +68,7 @@ def New_albums(query_limit=10, min_year=None):
     
     latest_albums_ranked = (select(
             recent_albums_ranked_by_year,
-            func.row_number().over(partition_by=recent_albums_ranked_by_year.c.band_id,order_by=(recent_albums_ranked_by_year.c.review_score * recent_albums_ranked_by_year.c.review_count).desc()).label("rank_by_score"),
-            func.max(recent_albums_ranked_by_year.c.review_score * recent_albums_ranked_by_year.c.review_count).over(partition_by=recent_albums_ranked_by_year.c.band_id).label('max_album_score')
+            func.row_number().over(partition_by=recent_albums_ranked_by_year.c.band_id,order_by=(recent_albums_ranked_by_year.c.review_score * recent_albums_ranked_by_year.c.review_count).desc()).label("rank_by_score")
         ).where(recent_albums_ranked_by_year.c.review_score > 0)).cte('latest_albums_ranked')
 
     first_branch_results = db.session.execute(
