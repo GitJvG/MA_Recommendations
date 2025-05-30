@@ -1,12 +1,11 @@
 <div class="container" data-band-id="{{ band.band_id }}" id="Band-Container">
-    <div class="container" data-band-id="{{ band.band_id }}" id="Band-Container">
-        <div class="header">
-            <h1 class="title">
-                {{ band.name }}
-                {% include 'like_dislike.html' %}
-            </h1>
-            <img id="band-logo" class="band-logo" alt="" />
-        </div>
+    <div class="header">
+        <h1 class="title">
+            {{ band.name }}
+            {% include 'like_dislike.html' %}
+        </h1>
+        <img id="band-logo" class="band-logo" alt="" />
+    </div>
     <div class="card">
         <!-- Left Content -->
         <div class="card-body-left">
@@ -45,24 +44,15 @@
             <th class="col2">Type</th>
             <th class="col3">Year</th>
             <th class="col4">Reviews</th>
-            <th class="col5">Video</th>
         </tr>
     </thead>
     <tbody>
         {% for album in albums %}
-        <tr data-type="{{ album.type }}">
-            <td>{{ album.album_name }}</td>
+        <tr data-type="{{ album.type }}" >
+            <td class="album-name-clickable">{{ album.album_name }}</td>
             <td>{{ album.type }}</td> 
             <td>{{ album.year }}</td>  
             <td>{{ album.reviews }}</td>  
-            <td>
-                <button class="btn watch-video" 
-                data-name="{{ band.name }}" 
-                data-album="{{ album.album_name }}" 
-                data-type="{{ album.type }}">
-            Watch
-        </button>
-            </td>
         </tr>
         {% endfor %}
     </tbody>
