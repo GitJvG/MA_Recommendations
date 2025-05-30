@@ -13,6 +13,7 @@
     --font-big: 1.25rem;
     --big-width: calc(20*var(--root-width));
     --big-height: calc(20*var(--root-height));
+    --single-height: calc(1*var(--root-height));
 }
 
 html {
@@ -147,16 +148,6 @@ h3 {
     margin-bottom: 0px;
 }
 
-.band-container {
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    padding-top: 10px;
-    padding-left: 10px;
-    gap: 10px;
-    padding-right: var(--border-width);
-}
-
 .band_name {
     font-size: 20px;
 }
@@ -221,6 +212,7 @@ h3 {
     display: inline-block;
     width: 100%;
     z-index: 1;
+    padding-bottom: 10px;;
 }
 
 .filter-btn {
@@ -297,25 +289,6 @@ h3 {
     cursor: se-resize;
 }
 
-.header {
-    padding-top: var(--big-height);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.title {
-    align-self: stretch;
-    margin: 0px;
-}
-
-.band-logo {
-    max-width: 300px;
-    max-height: 100px;
-    object-fit: contain;
-    background-color: black;
-}
-
 .results-container {
     display: flex;
     justify-content: space-between;
@@ -340,6 +313,34 @@ h3 {
     pointer-events: none;
 }
 
+#Band-Container {
+    width: 100%;
+}
+
+.header {
+    position: relative;
+    padding-top: var(--big-height);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.title {
+    align-self: baseline;
+    margin: 0px;
+    padding: 0px;
+}
+
+.band-logo {
+    position: absolute;
+    top: 0;
+    right: 0;
+    max-width: 300px;
+    max-height: 100px;
+    object-fit: contain;
+    background-color: black;
+}
+
 .card {
     border-radius: 5px;
     border: none;
@@ -355,9 +356,38 @@ h3 {
 .table {
     width: 100%;
     text-align: left;
-    .col1 {width: 50%;}
 }
 
+#discographyTable tbody td:first-child {
+    width: 50%;
+    cursor: pointer;
+}
+
+#discographyTable tbody td:first-child:hover {
+    text-decoration: underline;
+}
+
+#discographyTable tbody tr td {
+    padding-top: calc(var(--single-height) * 6);
+    padding-bottom: calc(var(--single-height) * 3);
+    font-size: 0.9em;
+    opacity: 0.8;
+    font-weight: 250;
+    font-style: italic;
+}
+
+#discographyTable tbody tr[data-type="Full-length"] td {
+    font-weight: 550;
+    opacity: 1;
+    font-style: unset;
+}
+
+#discographyTable tbody tr[data-type="EP"] td,
+#discographyTable tbody tr[data-type="Split"] td {
+    font-weight: normal;
+    opacity: 0.9;
+    font-style: unset;
+}
 
 .mb li {
     display: flex;

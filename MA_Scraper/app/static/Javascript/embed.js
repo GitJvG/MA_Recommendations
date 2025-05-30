@@ -24,12 +24,13 @@ function fetchVideo(bandName, albumName, AlbumType) {
     });
 }
 
-document.querySelectorAll('.watch-video').forEach(button => {
-  button.addEventListener('click', event => {
-      const name = button.dataset.name;
-      const album = button.dataset.album;
-      const type = button.dataset.type;
+document.querySelectorAll('#discographyTable tbody tr').forEach(row => {
+    const albumNameCell = row.querySelector('td:first-child');
+    albumNameCell.addEventListener('click', event => {
+        const name = "{{ band.name }}";
+        const album = albumNameCell.textContent.trim();
+        const type = row.dataset.type;
 
-      fetchVideo(name, album, type);
-  });
+        fetchVideo(name, album, type);
+    });
 });
