@@ -24,12 +24,11 @@ function fetchVideo(bandName, albumName, AlbumType) {
     });
 }
 
-document.querySelectorAll('#discographyTable tbody tr').forEach(row => {
-    const albumNameCell = row.querySelector('td:first-child');
-    albumNameCell.addEventListener('click', event => {
-        const name = "{{ band.name }}";
-        const album = albumNameCell.textContent.trim();
-        const type = row.dataset.type;
+document.querySelectorAll('.clickable-album-name').forEach(span => {
+    span.addEventListener('click', event => {
+        const name = span.dataset.name;
+        const album = span.dataset.album;
+        const type = span.dataset.type;
 
         fetchVideo(name, album, type);
     });

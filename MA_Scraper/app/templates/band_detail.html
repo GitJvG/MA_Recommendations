@@ -48,8 +48,14 @@
     </thead>
     <tbody>
         {% for album in albums %}
-        <tr data-type="{{ album.type }}" >
-            <td class="album-name-clickable">{{ album.album_name }}</td>
+            <td>
+                <span class="clickable-album-name" 
+                      data-name="{{ band.name }}" 
+                      data-album="{{ album.album_name }}" 
+                      data-type="{{ album.type }}">
+                    {{ album.album_name }}
+                </span>
+            </td>
             <td>{{ album.type }}</td> 
             <td>{{ album.year }}</td>  
             <td>{{ album.reviews }}</td>  

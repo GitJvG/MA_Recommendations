@@ -344,7 +344,6 @@ h3 {
 .card {
     border-radius: 5px;
     border: none;
-    padding-bottom: 10px;
     display: flex;
 }
 
@@ -360,11 +359,11 @@ h3 {
 
 #discographyTable tbody td:first-child {
     width: 50%;
-    cursor: pointer;
 }
 
-#discographyTable tbody td:first-child:hover {
+.clickable-album-name:hover {
     text-decoration: underline;
+    cursor: pointer;
 }
 
 #discographyTable tbody tr td {
