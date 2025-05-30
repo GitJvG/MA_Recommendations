@@ -57,12 +57,10 @@ class Env:
 
         self.fband = dpath('band.csv')
         self.genre = dpath('genre.csv')
-        self.hgenre = dpath('hgenres.csv')
         self.prefix = dpath('prefix.csv')
         self.genres = dpath('genres.csv')
         self.band_logo = dpath('band_logo.csv')
         self.band_genres = dpath('band_genres.csv')
-        self.band_hgenres = dpath('band_hgenres.csv')
         self.band_prefixes = dpath('band_prefixes.csv')
         self.theme = dpath('theme.csv')
         self.dim_theme_dict = dpath('Temp/DIM_Theme_Dict.pkl')

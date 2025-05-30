@@ -1,7 +1,7 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_, select
-from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, BandHgenres, Member, Prefix, Candidates, Band_logo, db
+from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, Member, Prefix, Candidates, Band_logo, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
 from MA_Scraper.app.queries import Top_albums, New_albums

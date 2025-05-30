@@ -1,7 +1,7 @@
 """Script to push all data to SQL, currently fully cascades the existing DB out of convenience"""
 import pandas as pd
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import Member, Similar_band, Discography, Band_logo, Band, Genre, Prefix, BandGenres, BandPrefixes, BandHgenres, Theme, Themes, Candidates, Hgenre, Label
+from MA_Scraper.app.models import Member, Similar_band, Discography, Band_logo, Band, Genre, Prefix, BandGenres, BandPrefixes, Theme, Themes, Candidates, Label
 from sqlalchemy import text, inspect
 from MA_Scraper.Env import Env
 import ast
@@ -19,10 +19,8 @@ dataframes = {
     Band_logo.__name__: process_band_logo,
     Band.__name__: lambda: pd.read_csv(env.fband, header=0, keep_default_na=False, na_values=['']),
     Genre.__name__: lambda: pd.read_csv(env.genre, header=0),
-    Hgenre.__name__: lambda: pd.read_csv(env.hgenre, header=0),
     Prefix.__name__: lambda: pd.read_csv(env.prefix, header=0),
     BandGenres.__name__: lambda: pd.read_csv(env.band_genres, header=0),
-    BandHgenres.__name__: lambda: pd.read_csv(env.band_hgenres, header=0),
     BandPrefixes.__name__: lambda: pd.read_csv(env.band_prefixes, header=0),
     Theme.__name__: lambda: pd.read_csv(env.theme, header=0, keep_default_na=False, na_values=['']),
     Themes.__name__: lambda: pd.read_csv(env.themes, header=0),
@@ -59,7 +57,7 @@ def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     app = create_app()
     with app.app_context():
-        models = model if model else [Label, Band, Theme, Prefix, Genre, Hgenre, Discography, Similar_band, Band_logo, Member, BandGenres, BandHgenres, BandPrefixes, Themes, Candidates]
+        models = model if model else [Label, Band, Theme, Prefix, Genre, Discography, Similar_band, Band_logo, Member, BandGenres, BandPrefixes, Themes, Candidates]
         for model in models:
             df = dataframes.get(model.__name__)()
             if df is None or df.empty:
@@ -81,4 +79,4 @@ def refresh_tables(model=None):
         print("All tables refreshed successfully with constraints applied.")
 
 if __name__ == "__main__":
-    refresh_tables()
+    refresh_tables([Genre,Prefix,BandGenres,BandPrefixes])

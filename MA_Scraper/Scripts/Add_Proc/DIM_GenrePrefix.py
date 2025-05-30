@@ -50,13 +50,11 @@ def main():
 
     dim_output_paths = {
         'genre': env.genre,
-        'hybrid_genre': env.hgenre,
         'prefix': env.prefix,
     }
 
     bridge_output_paths = {
         'genre': env.band_genres,
-        'hybrid_genre': env.band_hgenres,
         'prefix': env.band_prefixes,
     }
 

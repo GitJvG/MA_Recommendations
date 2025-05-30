@@ -11,14 +11,6 @@ class BandGenres(db.Model):
     band_obj = db.relationship('Band', viewonly=True)
     genre_item = db.relationship('Genre', viewonly=True)
 
-class BandHgenres(db.Model):
-    __tablename__ = 'band_hgenres'
-    band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
-    id = db.Column(db.Integer, db.ForeignKey('hgenre.id'), primary_key=True)
-
-    band_obj = db.relationship('Band', viewonly=True)
-    hgenre_item = db.relationship('Hgenre', viewonly=True)
-
 class BandPrefixes(db.Model):
     __tablename__ = 'band_prefixes'
     band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True)
@@ -41,13 +33,6 @@ class Genre(db.Model):
     name = db.Column(db.Text, unique=True, nullable=False)
 
     bands = db.relationship('Band', secondary=BandGenres.__table__, back_populates='genres')
-
-class Hgenre(db.Model):
-    __tablename__ = 'hgenre'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Text, unique=True, nullable=False)
-
-    bands = db.relationship('Band', secondary=BandHgenres.__table__, back_populates='hgenres')
 
 class Prefix(db.Model):
     __tablename__ = 'prefix'
@@ -88,7 +73,6 @@ class Band(db.Model):
     incoming_similarities  = relationship("Similar_band", foreign_keys="Similar_band.similar_id", back_populates="similar_band")
 
     genres = db.relationship(Genre, secondary=BandGenres.__table__, back_populates='bands')
-    hgenres = db.relationship(Hgenre, secondary=BandHgenres.__table__, back_populates='bands')
     prefixes = db.relationship(Prefix, secondary=BandPrefixes.__table__, back_populates='bands')
     themes = relationship(Theme, secondary=Themes.__table__, back_populates="bands")
 
