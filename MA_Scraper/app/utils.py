@@ -70,8 +70,13 @@ def Like_bands(user_id, band_id, action):
             new_preference = Users(user_id=user_id, band_id=band_id, liked=None, remind_me=True, remind_me_date=now)
         db.session.add(new_preference)
 
+    current_liked_state = existing_preference.liked if existing_preference else (new_preference.liked if 'new_preference' in locals() else None)
+    current_remind_me_state = existing_preference.remind_me if existing_preference else (new_preference.remind_me if 'new_preference' in locals() else False)
+
     db.session.commit()
     if action == 'remind_me':
         cache_manager.reset_cache('/ajax/remind')
     if action == 'dislike':
         cache_manager.reset_cache('/ajax/recommended_albums')
+
+    return current_liked_state, current_remind_me_state

@@ -193,8 +193,8 @@ def like_band():
     band_id = data.get('band_id')
     action = data.get('action')
 
-    Like_bands(user_id, band_id, action)
-    return jsonify({'status': 'success'}), 200
+    liked_state, remind_state = Like_bands(user_id, band_id, action)
+    return jsonify({'status': 'success', 'liked_state': liked_state, 'remind_me_state': remind_state}), 200
 
 @main.route('/my_bands')
 @login_required
