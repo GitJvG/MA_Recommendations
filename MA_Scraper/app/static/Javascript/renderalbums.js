@@ -75,7 +75,7 @@ function createAlbumCard(album) {
     albumImage.addEventListener("click", function (event) {
         event.preventDefault();
         if (videoEmbedUrl) {
-            createFloatingWindow(videoEmbedUrl);
+            createFloatingWindow(videoEmbedUrl, album.name, album.band_id, album.album_name);
         }
     });
 

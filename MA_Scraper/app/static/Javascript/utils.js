@@ -86,26 +86,52 @@ window.create_like_dislike = function create_like_dislike(band) {
     `;
 }
 
-window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl) {
+window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl, bandName, bandId, albumName) {
     const videoWrapper = document.createElement('div');
     videoWrapper.classList.add('floating-video-wrapper');
-  
+    
+    const iframewrap = document.createElement('div');
+    iframewrap.classList.add('iframewrap');
+
     const iframe = document.createElement('iframe');
     iframe.src = videoEmbedUrl;
     iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
     iframe.allowFullscreen = true;
-  
+
+    iframewrap.appendChild(iframe)
+
+    const header = document.createElement('div');
+    header.classList.add('floating-video-header');
+
+    const titleContainer = document.createElement('div');
+    titleContainer.classList.add('floating-video-title-container');
+
+    const bandLink = document.createElement('a');
+    bandLink.classList.add('nav-link', 'ajax-link');
+    bandLink.href = `/band/${bandId}`;
+    bandLink.textContent = bandName;
+    const separator = document.createTextNode(' - ');
+    const albumText = document.createElement('span');
+    albumText.textContent = albumName;
+
+    titleContainer.appendChild(bandLink);
+    titleContainer.appendChild(separator);
+    titleContainer.appendChild(albumText);
+
     const closeBtn = document.createElement('button');
     closeBtn.classList.add('close-btn');
     closeBtn.innerHTML = '&times;';
-  
+
+    header.appendChild(closeBtn);
+    header.appendChild(titleContainer);
+
     closeBtn.addEventListener('click', function () {
       videoWrapper.remove();
     });
-  
-    videoWrapper.appendChild(iframe);
-    videoWrapper.appendChild(closeBtn);
-  
+    
+    videoWrapper.appendChild(iframewrap);
+    videoWrapper.appendChild(header);
+
     document.body.appendChild(videoWrapper);
     makeResizable(videoWrapper);
   }

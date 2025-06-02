@@ -1,4 +1,4 @@
-function fetchVideo(bandName, albumName, AlbumType) {
+function fetchVideo(bandName, id, albumName, AlbumType) {
   AlbumType = (AlbumType === 'Full-length') ? 'Full Album' : AlbumType;
   const searchQuery = `${bandName} ${albumName} ${AlbumType}`;
   const url = `/ajax/youtube_search?q=${encodeURIComponent(searchQuery)}`;
@@ -14,7 +14,7 @@ function fetchVideo(bandName, albumName, AlbumType) {
         else {
             videoEmbedUrl = data.video_url;}
 
-        createFloatingWindow(videoEmbedUrl)
+        createFloatingWindow(videoEmbedUrl, id, bandName, albumName)
       } else {
         alert('No video found for this album and band.');
       }
@@ -26,10 +26,10 @@ function fetchVideo(bandName, albumName, AlbumType) {
 
 document.querySelectorAll('.clickable-album-name').forEach(span => {
     span.addEventListener('click', event => {
-        const name = span.dataset.name;
-        const album = span.dataset.album;
-        const type = span.dataset.type;
-
-        fetchVideo(name, album, type);
+      const id = span.dataset.id
+      const name = span.dataset.name;
+      const album = span.dataset.album;
+      const type = span.dataset.type;
+      fetchVideo(name, id, album, type);
     });
 });
