@@ -14,7 +14,7 @@ function fetchVideo(bandName, id, albumName, AlbumType) {
         else {
             videoEmbedUrl = data.video_url;}
 
-        createFloatingWindow(videoEmbedUrl, id, bandName, albumName)
+        createFloatingWindow(videoEmbedUrl, bandName, id, albumName)
       } else {
         alert('No video found for this album and band.');
       }

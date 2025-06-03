@@ -253,23 +253,46 @@ h3 {
 }
 
 .floating-video-header {
+    position: relative;
     background-color: black;
     display: flex;
+    height: 20px;
 }
 
-.floating-video-title-container {
+.resizer {
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: black;
+    margin-right: 10px;
+    cursor: se-resize;
+    stroke: white;
+    stroke-width: 2;
+}
+
+.floating-video-title-container,
+.floating-video-title-container span,
+.floating-video-title-container a {
+    font-size: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-left: 10px;
+    width: 100%;
+    background-color: black;
 }
 
 .close-btn {
-    background-color: black;
-    color: var(--second_color);
+    height: 20px;
     border: none;
-    font-size: 20px;
     cursor: pointer;
+    aspect-ratio: 1 / 1;
+    background-color: black;
+    padding: 0px;
+}
+
+.close-btn-svg {
+    height: 100%;
+    fill: white;
+    background-color: black;
 }
 
 .floating-video-wrapper {
@@ -292,16 +315,6 @@ h3 {
     width: 100%;
     height: 100%;
     display: flex;
-}
-
-.resizer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 15px;
-    height: 15px;
-    background-color: #888;
-    cursor: se-resize;
 }
 
 .results-container {

@@ -120,18 +120,27 @@ window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl, bandN
 
     const closeBtn = document.createElement('button');
     closeBtn.classList.add('close-btn');
-    closeBtn.innerHTML = '&times;';
 
-    header.appendChild(closeBtn);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.classList.add('close-btn-svg');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z');
+
+    svg.appendChild(path);
+    closeBtn.appendChild(svg);
+
     header.appendChild(titleContainer);
+    header.appendChild(closeBtn);
 
     closeBtn.addEventListener('click', function () {
       videoWrapper.remove();
     });
     
-    videoWrapper.appendChild(iframewrap);
     videoWrapper.appendChild(header);
-
+    videoWrapper.appendChild(iframewrap);
+    
     document.body.appendChild(videoWrapper);
     makeResizable(videoWrapper);
   }
@@ -139,34 +148,45 @@ window.createFloatingWindow = function createFloatingWindow(videoEmbedUrl, bandN
 function makeResizable(wrapper) {
     const resizer = document.createElement('div');
     resizer.classList.add('resizer');
-    wrapper.appendChild(resizer);
-  
+
+    const resizerSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    resizerSvg.setAttribute('viewBox', '0 0 24 24');
+    resizerSvg.classList.add('resizer-icon-svg');
+
+    const resizerPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    resizerPath.setAttribute('d', 'M6 6L18 18m0 -12h-12v12');
+
+    resizerSvg.appendChild(resizerPath);
+    resizer.appendChild(resizerSvg);
+
+    wrapper.querySelector('.floating-video-header').prepend(resizer);
+
     let isResizing = false;
-  
+
     resizer.addEventListener('mousedown', (e) => {
-      isResizing = true;
-      document.body.style.cursor = 'se-resize';
-  
-      initialWidth = wrapper.offsetWidth;
-      initialHeight = wrapper.offsetHeight;
-      initialMouseX = e.clientX;
-      initialMouseY = e.clientY;
+        isResizing = true;
+        document.body.style.cursor = 'se-resize';
+
+        initialWidth = wrapper.offsetWidth;
+        initialHeight = wrapper.offsetHeight;
+        initialMouseX = e.clientX;
+        initialMouseY = e.clientY;
     });
-  
+
     let initialWidth, initialHeight, initialMouseX, initialMouseY;
-  
+
     document.addEventListener('mousemove', (e) => {
-      if (isResizing) {
-        const deltaX = initialMouseX - e.clientX;
-        const deltaY = initialMouseY - e.clientY;
-  
-        wrapper.style.width = `${initialWidth + deltaX}px`;
-        wrapper.style.height = `${initialHeight + deltaY}px`;
-      }
+        if (isResizing) {
+            const deltaX = initialMouseX - e.clientX;
+            const deltaY = initialMouseY - e.clientY;
+
+            wrapper.style.width = `${initialWidth + deltaX}px`;
+            wrapper.style.height = `${initialHeight + deltaY}px`;
+        }
     });
-  
+
     document.addEventListener('mouseup', () => {
-      isResizing = false;
-      document.body.style.cursor = 'auto';
+        isResizing = false;
+        document.body.style.cursor = 'auto';
     });
 }
