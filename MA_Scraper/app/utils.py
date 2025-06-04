@@ -59,7 +59,7 @@ def Like_bands(user_id, band_id, action):
 
         elif action == 'remind_me':
             existing_preference.remind_me_date = now
-            existing_preference.remind_me = False if existing_preference.liked is True else True
+            existing_preference.remind_me = False if existing_preference.remind_me is True else True
             
     else:
         if action == 'like':
@@ -78,5 +78,5 @@ def Like_bands(user_id, band_id, action):
         cache_manager.reset_cache('/ajax/remind')
     if action == 'dislike':
         cache_manager.reset_cache('/ajax/recommended_albums')
-
+    print(current_remind_me_state)
     return current_liked_state, current_remind_me_state
