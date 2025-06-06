@@ -1,5 +1,5 @@
 from MA_Scraper.app import create_app, db
-from MA_Scraper.app.models import Band, Genre, Hgenre, Discography, \
+from MA_Scraper.app.models import Band, Genre, Discography, \
                         Theme, Users, Similar_band, Candidates, Member, Prefix, Label
 from MA_Scraper.Env import Env
 from MA_Scraper.Scripts.SQL import refresh_tables
@@ -51,18 +51,25 @@ def create_item():
         Label.label_id
         ).join(Label.band).group_by(Label.label_id).having(func.count(Band.band_id) >= 50).order_by(func.count(Band.band_id)).cte()
     
+    prefixes = select(
+        Prefix.id
+        ).join(Prefix.bands).group_by(Prefix.id).having(func.count(Band.band_id) >= 15).order_by(func.count(Band.band_id)).cte()
+    
     results = db.session.execute(select(
         Band.band_id,
         Band.name.label('band_name'),
         case((Band.label_id.in_(select(labels.c.label_id)), Band.label), else_="Other_Label").label('b_label'),
         Band.country,
         Band.status,
+        Band.year_formed,
         func.coalesce(reviews.c.review_count, 0).label('review_count'),
         func.coalesce(reviews.c.median_score, 0).label('median_score'),
         func.coalesce(func.sum((Similar_band.score)), 0).label('score'),
         func.string_agg(func.distinct(Genre.name), ', ').label('genre_names'),
         func.coalesce(func.string_agg(func.distinct(Theme.name), ', '), 'Not available').label('theme_names'),
-        func.coalesce(func.string_agg(func.distinct(Prefix.name), ', '), 'Not available').label('prefix_names')
+        func.coalesce(func.string_agg(func.distinct(
+            case((Prefix.id.in_(select(prefixes.c.id)), Prefix.name), else_='Other_Prefix')), ', '
+            ), 'Not available').label('prefix_names')
     ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
     ).join(Band.outgoing_similarities
     ).join(Band.genres,
@@ -88,7 +95,7 @@ def create_user():
     return users_preference
 
 def create_item_embeddings(item):
-    multi_valued_categorical_cols = ['genre_names']
+    multi_valued_categorical_cols = ['genre_names', 'prefix_names']
     single_value_categorical_cols = ['country', 'status', 'b_label']
     numerical_columns = ['score', 'review_count', 'median_score']
 
@@ -97,7 +104,7 @@ def create_item_embeddings(item):
 
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
-    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'prefix_names']]
+    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed']]
     categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([
@@ -241,6 +248,7 @@ def main(min_cluster_size=None, k=400):
             liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].unique().astype(int).tolist()
             user_vectors = generate_user_vectors(liked_bands, item_embeddings, item, min_cluster_size)
             index = index_faiss(item_embeddings)
+
             candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
             for candidate in candidates:
                 candidate_list.append({'user_id': user_id, 'band_id': candidate})
