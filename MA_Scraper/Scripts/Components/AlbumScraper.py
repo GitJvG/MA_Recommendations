@@ -36,6 +36,13 @@ def fetch_album_data(band_id):
 
 def refresh(band_ids_to_scrape=None):
     band_ids_to_process = Modified_based_list(env.disc, complete=False, band_ids_to_process=band_ids_to_scrape)
+
+    # Metallum can change the 'parent' release version. Causing the band page to have a different ID for the same album. 
+    # To prevent duplicate albums the whole discography is wiped before processing updated pages.
+    existing_df = pd.read_csv(env.disc, keep_default_na=False, na_values=[''])
+    existing_df = existing_df[~existing_df['band_id'].isin(band_ids_to_process)]
+    existing_df.to_csv(env.disc, mode='w', header=True, index=False)
+
     Parallel_processing(band_ids_to_process, env.batch_size, env.disc, fetch_album_data)
     
 def main():
