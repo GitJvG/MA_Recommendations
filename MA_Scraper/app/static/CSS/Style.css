@@ -452,6 +452,17 @@ button[type="submit"] {
     padding-bottom: calc(var(--big-height) / 2);
 }
 
+.listen-button {
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+
+.listen-button[data-status="disliked"] {
+        display: inline-block;
+        transform: rotate(180deg);
+    }
+
 .active {
     opacity: 0.5 !important;
 }

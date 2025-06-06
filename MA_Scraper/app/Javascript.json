@@ -10,7 +10,8 @@
         "/static/Javascript/like_button.js",
         "/static/Javascript/embed.js",
         "/static/Javascript/Band_logo.js",
-        "/static/Javascript/band_picks.js"
+        "/static/Javascript/band_picks.js",
+        "/static/Javascript/album_marking.js"
     ],
     "my_bands.html": [
         "/static/Javascript/my_bands.js",

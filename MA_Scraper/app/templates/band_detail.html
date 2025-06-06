@@ -48,19 +48,23 @@
     </thead>
     <tbody>
         {% for album in albums %}
-        <tr data-type="{{ album.type }}" >
+        <tr data-type="{{ album.type }}" data-album_id="{{ album.album_id }}" data-band_id="{{ band.band_id }}">
             <td>
                 <span class="clickable-album-name" 
-                      data-id="{{ band.band_id }}"
-                      data-name="{{ band.name }}" 
-                      data-album="{{ album.album_name }}" 
-                      data-type="{{ album.type }}">
+                      data-name="{{ band.name }}"
+                      data-album="{{ album.album_name }}">
                     {{ album.album_name }}
                 </span>
             </td>
-            <td>{{ album.type }}</td> 
-            <td>{{ album.year }}</td>  
-            <td>{{ album.reviews }}</td>  
+            <td>{{ album.type }}</td>
+            <td>{{ album.year }}</td>
+            <td>{{ album.reviews }}</td>
+
+            <td class="listen-status-controls">
+                <button type="button" class="listen-button {% if album.listen_status == 'liked' %}selected{% endif %}" data-status="liked">&#10013;</button>
+                <button type="button" class="listen-button {% if album.listen_status == 'disliked' %}selected{% endif %}" data-status="disliked">&#10013;</button>
+                <button type="button" class="listen-button {% if album.listen_status == 'neutral' %}selected{% endif %}" data-status="neutral">-</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

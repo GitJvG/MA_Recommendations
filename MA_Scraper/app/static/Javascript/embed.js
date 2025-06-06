@@ -26,10 +26,10 @@ function fetchVideo(bandName, id, albumName, AlbumType) {
 
 document.querySelectorAll('.clickable-album-name').forEach(span => {
     span.addEventListener('click', event => {
-      const id = span.dataset.id
+      const band_id = span.closest('tr').dataset.band_id
       const name = span.dataset.name;
       const album = span.dataset.album;
-      const type = span.dataset.type;
-      fetchVideo(name, id, album, type);
+      const type = span.closest('tr').dataset.type;
+      fetchVideo(name, band_id, album, type);
     });
 });

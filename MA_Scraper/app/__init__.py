@@ -66,7 +66,7 @@ def create_app(test_config=None):
         get_device()
 
     with app.app_context():
-        from MA_Scraper.app.models import User, Band, Similar_band, Discography, Users, Member, BandGenres, BandPrefixes, Prefix, Theme, Themes, Candidates, Band_logo
+        from MA_Scraper.app.models import User, Band, Similar_band, Discography, Users, Member, BandGenres, BandPrefixes, Prefix, Theme, Themes, Candidates, Band_logo, User_albums
 
         @login_manager.user_loader
         def load_user(user_id):

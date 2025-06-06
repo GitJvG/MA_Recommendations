@@ -155,6 +155,20 @@ class Users(db.Model):
     user = relationship(User, back_populates="user_interactions")
     band_obj = relationship(Band, back_populates="user_interactions")
 
+class User_albums(db.Model):
+    __tablename__ = 'user_albums'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    band_id = db.Column(db.BigInteger, primary_key=True)
+    album_id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.Text, nullable=True)
+    modified_date = db.Column(db.DateTime, nullable=True)
+    creation_date = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            ['band_id', 'album_id'],
+            ['discography.band_id', 'discography.album_id']),{})
+
 class Candidates(db.Model):
     __tablename__ = 'candidates'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)

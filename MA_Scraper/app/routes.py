@@ -1,7 +1,7 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_, select
-from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, Member, Prefix, Candidates, Band_logo, db
+from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, Member, Prefix, Candidates, Band_logo, User_albums, db
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
 from MA_Scraper.app.queries import Top_albums, New_albums
@@ -316,6 +316,7 @@ def band_detail(band_id):
     albums = [
         {
             'album_name': album.name,
+            'album_id': album.album_id,
             'type': album.type,
             'year': album.year,
             'reviews': album.reviews,
@@ -371,3 +372,25 @@ async def get_band_logo(band_id):
                         db.session.commit()
                         return Response(image_data, mimetype=content_type)
         return jsonify('')
+    
+@main.route('/update_album_status',methods=['POST'])
+def update_album_status():
+    data = request.get_json()
+    album_id = data.get('album_id')
+    band_id = data.get('band_id')
+    new_status = data.get('status')
+    now = datetime.now().replace(microsecond=0)
+
+    existing_preference = User_albums.query.filter_by(user_id=current_user.id, album_id=album_id, band_id=band_id).first()
+    if existing_preference:
+        existing_preference.status = new_status
+        existing_preference.modified_date = now
+    else:
+        new_preference = User_albums(user_id=current_user.id, band_id=band_id, album_id=album_id, status=new_status, creation_date=now, modified_date=now)
+        db.session.add(new_preference)
+    db.session.commit()
+
+    return jsonify({
+        "album_id": album_id,
+        "new_status": new_status,
+    }), 200

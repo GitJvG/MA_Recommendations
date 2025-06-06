@@ -76,7 +76,7 @@ def Like_bands(user_id, band_id, action):
     db.session.commit()
     if action == 'remind_me':
         cache_manager.reset_cache('/ajax/remind')
-    if action == 'dislike':
+    if action == 'dislike' or action == 'like':
         cache_manager.reset_cache('/ajax/recommended_albums')
-    print(current_remind_me_state)
+
     return current_liked_state, current_remind_me_state
