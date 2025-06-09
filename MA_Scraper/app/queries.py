@@ -1,9 +1,10 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, case
 from MA_Scraper.app import db
 from MA_Scraper.app.models import Band, Discography, Similar_band, Genre, db
 from datetime import datetime
 
 def Top_albums(band_ids, picks_per_band=1):
+    print(picks_per_band)
     ranked_albums_subquery = select(
         Band.band_id,
         Discography.name,
@@ -22,9 +23,12 @@ def Top_albums(band_ids, picks_per_band=1):
         ranked_albums_subquery,
         func.row_number().over(
             partition_by=ranked_albums_subquery.c.band_id,
-            order_by=func.random()).label('rank')
-    ).join(band_averages, onclause= band_averages.c.band_id == ranked_albums_subquery.c.band_id)
-    .where(ranked_albums_subquery.c.weighted_score >= band_averages.c.weighted_score)).cte("ranked_albums_with_row_num")
+            order_by=(
+                case((ranked_albums_subquery.c.weighted_score >= band_averages.c.weighted_score, 0), else_=1),
+                case((ranked_albums_subquery.c.weighted_score >= band_averages.c.weighted_score, func.random()), 
+                     else_=ranked_albums_subquery.c.weighted_score).desc()
+                     )).label('rank')
+    ).join(band_averages, onclause= band_averages.c.band_id == ranked_albums_subquery.c.band_id)).cte("ranked_albums_with_row_num")
 
     selected_albums = db.session.execute(select(
             ranked_albums_with_row_num.c.band_id,
