@@ -4,7 +4,6 @@ from MA_Scraper.app.models import Band, Discography, Similar_band, Genre, db
 from datetime import datetime
 
 def Top_albums(band_ids, picks_per_band=1):
-    print(picks_per_band)
     ranked_albums_subquery = select(
         Band.band_id,
         Discography.name,
