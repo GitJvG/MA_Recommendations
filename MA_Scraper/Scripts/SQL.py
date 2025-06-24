@@ -57,7 +57,7 @@ def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     app = create_app()
     with app.app_context():
-        models = model if model else [Label, Band, Theme, Prefix, Genre, Discography, Similar_band, Band_logo, Member, BandGenres, BandPrefixes, Themes, Candidates]
+        models = model if model else [Label, Band, Theme, Prefix, Genre, Discography, Similar_band, Band_logo, Member, BandGenres, BandPrefixes, Themes]
         for model in models:
             df = dataframes.get(model.__name__)()
             if df is None or df.empty:
@@ -79,4 +79,4 @@ def refresh_tables(model=None):
         print("All tables refreshed successfully with constraints applied.")
 
 if __name__ == "__main__":
-    refresh_tables([Genre,Prefix,BandGenres,BandPrefixes])
+    refresh_tables()
