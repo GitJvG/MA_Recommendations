@@ -206,13 +206,26 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     k_per_cluster = k // len(user_vectors) + 2
 
     distances_batch, faiss_indices_batch = index.search(user_vectors, k_per_cluster)
-    valid_indices = faiss_indices_batch[faiss_indices_batch != -1]
-    valid_distances = distances_batch[faiss_indices_batch != -1]
 
-    df = pd.DataFrame({
-        'band_id': item_df.iloc[valid_indices]['band_id'].values,
-        'faiss_distance': valid_distances
-    })
+    all_candidates = []
+
+    for cluster_idx in range(len(user_vectors)):
+        current_faiss_indices = faiss_indices_batch[cluster_idx]
+        current_distances = distances_batch[cluster_idx]
+
+        valid_mask = current_faiss_indices != -1
+        valid_indices = current_faiss_indices[valid_mask]
+        valid_distances = current_distances[valid_mask]
+
+        if len(valid_indices) > 0:
+            temp_df = pd.DataFrame({
+                'band_id': item_df.iloc[valid_indices]['band_id'].values,
+                'faiss_distance': valid_distances,
+                'cluster_id': cluster_idx + 1
+            })
+            all_candidates.append(temp_df)
+
+    df = pd.concat(all_candidates, ignore_index=True)
 
     min_distances_df = df.loc[df.groupby('band_id')['faiss_distance'].idxmin()]
     jaccard_scores_df = get_jaccard(liked_bands)
@@ -230,12 +243,15 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     num_known_to_take = k - num_new_to_take
 
     combined_candidates_df['is_known'] = combined_candidates_df['band_id'].isin(list(interacted_bands))
-    new_candidates = combined_candidates_df[~combined_candidates_df['is_known']].head(num_new_to_take)['band_id'].tolist()
-    known_candidates = combined_candidates_df[combined_candidates_df['is_known']].head(num_known_to_take)['band_id'].tolist()
+    new_candidates_df = combined_candidates_df[~combined_candidates_df['is_known']].head(num_new_to_take)[['band_id', 'cluster_id']]
+    known_candidates_df = combined_candidates_df[combined_candidates_df['is_known']].head(num_known_to_take)[['band_id', 'cluster_id']]
+
+    new_candidates = list(new_candidates_df.itertuples(index=False, name=None))
+    known_candidates = list(known_candidates_df.itertuples(index=False, name=None))
 
     return new_candidates + known_candidates
 
-def main(min_cluster_size=None, k=400):
+def main(min_cluster_size=None, k=800):
     app = create_app()
     with app.app_context():
         item = create_item()
@@ -250,8 +266,8 @@ def main(min_cluster_size=None, k=400):
             index = index_faiss(item_embeddings)
 
             candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
-            for candidate in candidates:
-                candidate_list.append({'user_id': user_id, 'band_id': candidate})
+            for candidate, cluster_id in candidates:
+                candidate_list.append({'user_id': user_id, 'band_id': candidate, 'cluster_id': cluster_id})
 
         candidate_df = pd.DataFrame(candidate_list)
         candidate_df.to_csv(env.candidates, index=False)

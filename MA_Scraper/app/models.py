@@ -173,6 +173,7 @@ class Candidates(db.Model):
     __tablename__ = 'candidates'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)
     band_id = db.Column(db.BigInteger, db.ForeignKey('band.band_id'), primary_key=True, nullable=False)
+    cluster_id = db.Column(db.Integer, nullable=False)
 
     user = relationship(User, back_populates="candidate_bands_link")
     band_obj = relationship(Band, back_populates="candidate_users_link")
