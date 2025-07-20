@@ -5,6 +5,7 @@
     --header-height: calc(60*var(--root-height));
     --border-width: calc(40*var(--root-width));
     --main-content-margin: calc(var(--sidebar-width)*1.25);
+    --side-margin: calc(var(--main-content-margin)*2);
     --thumbnail-gaps: calc(15*var(--root-width));
     --main-color: #1b1f24;
     --second_color: white;
@@ -85,13 +86,7 @@ header.navbar {
 
 #main-content.index {
     margin-right: 0px !important;
-    .album-container {
-        width: calc(((100vw - (1 * var(--main-content-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
-        
-    }
-    .album-card {
-        height: calc(((100vw - (1 * var(--main-content-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
-    }
+    --side-margin: var(--main-content-margin);
 }
 
 .navbar-brand {
@@ -178,11 +173,11 @@ h3 {
 }
 
 .album-container {
-    width: calc(((100vw - (2 * var(--main-content-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
+    width: calc(((100vw - (var(--side-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
 }
 
 .album-card {
-    height: calc(((100vw - (2 * var(--main-content-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
+    height: calc(((100vw - (2 * var(--side-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
 }
 
 .album-thumbnail {
