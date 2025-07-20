@@ -53,22 +53,21 @@ export function loadData(route, containerSelector, type, bands=null, count=null)
 }
 
 function createAlbumCard(album) {
+    let videoEmbedUrl = album.playlist_url || album.video_url;
+    let thumbnail_url = videoEmbedUrl ? album.thumbnail_url : "path/to/placeholder_image.jpg";
+
     const albumContainer = document.createElement("div");
     const albumCard = document.createElement("div");
 
     albumContainer.className = "album-container"
     albumCard.className = "album-card";
 
-    let videoEmbedUrl = album.playlist_url || album.video_url;
-    let thumbnail_url = album.thumbnail_url
-
     const albumLink = document.createElement("a");
     albumLink.href = videoEmbedUrl;
 
     const albumImage = document.createElement("img");
-    albumImage.src = videoEmbedUrl
-        ? thumbnail_url
-        : "path/to/placeholder_image.jpg";
+    albumImage.src =  thumbnail_url;
+        
     albumImage.alt = ``;
     albumImage.classList.add("album-thumbnail");
 
@@ -89,20 +88,17 @@ function createAlbumCard(album) {
     const overlaytext = document.createElement("div");
     overlaytext.className = "overlay-text";
 
-    const bandName = document.createElement("p");
-    bandName.textContent = `${album.name}`;
-    bandName.className = "band-name";
+    const createTextElement = (text, className) => {
+        const p = document.createElement("p");
+        p.textContent = text;
+        p.className = className;
+        return p;
+    };
 
-    const AlbumName = document.createElement("p");
-    AlbumName.textContent = `${album.album_name}`;
-    AlbumName.className = "album";
-
-    const genre = document.createElement("p");
-    genre.textContent = `${album.genre}`;
-    genre.className = "genre";
-
-    overlaytext.appendChild(AlbumName);
-    overlaytext.appendChild(bandName);
+    overlaytext.appendChild(createTextElement(album.album_name, "album"));
+    overlaytext.appendChild(createTextElement(album.name, "band-name"));
+    // overlaytext.appendChild(createTextElement(album.genre, "genre"));
+    
     bandLink.appendChild(overlaytext);
     overlay.appendChild(bandLink);
     albumLink.appendChild(albumImage);
