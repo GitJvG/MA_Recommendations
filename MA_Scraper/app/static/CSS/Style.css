@@ -177,7 +177,7 @@ h3 {
 }
 
 .album-card {
-    height: calc(((100vw - (2 * var(--side-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
+    height: calc(((100vw - (var(--side-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
 }
 
 .album-thumbnail {
