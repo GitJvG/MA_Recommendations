@@ -181,7 +181,7 @@ class SCRAPE:
                     thumbnail_match = re.search(thumbnail_url_pattern, javascript)
                     thumbnail_url = thumbnail_match.group(1) if thumbnail_match else None
 
-                thumbnail_url = thumbnail_url or (f"https://i.ytimg.com/vi/{video_id}/0.jpg" if video_id else None)
+                thumbnail_url = thumbnail_url or (f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg" if video_id else None)
 
                 return jsonify({
                     'playlist_url': f'https://www.youtube.com/embed/videoseries?list={playlist_id}' if playlist_id else None,
