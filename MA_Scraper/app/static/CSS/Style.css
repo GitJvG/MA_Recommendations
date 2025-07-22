@@ -1,8 +1,9 @@
 :root {
     --root-height: calc(100vh/920);
     --root-width: calc(100vw/1920);
-    --sidebar-width: calc(200*var(--root-width));
-    --header-height: calc(60*var(--root-height));
+    --sidebar-width: calc(max(160*var(--root-width), 165px));
+    --header-padding: 0px;
+    --header-height: calc(50*var(--root-height) + var(--header-padding));
     --border-width: calc(40*var(--root-width));
     --main-content-margin: calc(var(--sidebar-width)*1.25);
     --side-margin: calc(var(--main-content-margin)*2);
@@ -11,7 +12,7 @@
     --second_color: white;
     --font-small: 0.6875rem;
     --font-medium: 0.9375rem;
-    --font-big: 1.25rem;
+    --font-big: 1rem;
     --big-width: calc(20*var(--root-width));
     --big-height: calc(20*var(--root-height));
     --single-height: calc(1*var(--root-height));
@@ -52,9 +53,10 @@ header.navbar {
     position: fixed;
     top: 0;
     width: calc(100% - (var(--border-width)*2));
-    height: var(--header-height);
-    margin-left: var(--border-width);
-    margin-right: var(--border-width);
+    height: calc(var(--header-height) - var(--header-padding));
+    padding-left: var(--border-width);
+    padding-right: var(--border-width);
+    padding-bottom: var(--header-padding);
     display: flex;
     justify-content: space-between;
     z-index: 2;
@@ -97,7 +99,7 @@ header.navbar {
 }
 
 .navbar-nav.flex-column {
-    margin-top: var(--big-height);
+    margin-top: 0px;
     padding-left: var(--border-width);
 }
 
@@ -105,7 +107,7 @@ header.navbar {
     margin: 5px;
     margin-left: 0px;
     font-weight: bold;
-    font-size: 1.25rem;
+    font-size: var(--font-big);
 }
 
 form {
@@ -139,8 +141,7 @@ input, .form-control {
 }
 
 h3 {
-    margin-top: var(--big-height);
-    margin-bottom: 0px;
+    margin: 0px;
 }
 
 .band_name {
@@ -169,8 +170,12 @@ h3 {
     gap: var(--thumbnail-gaps);
     justify-content: left;
     padding-top: 10px;
-    padding-bottom: 10px;
+    padding-bottom: calc(10px + var(--big-height));
 }
+
+.scrollable-container.shared {
+        padding-bottom: 10px;
+    }
 
 .album-container {
     width: calc(((100vw - (var(--side-margin))) - (var(--albums-per-row) * var(--thumbnail-gaps))) / var(--albums-per-row));
@@ -213,7 +218,7 @@ h3 {
 .filter-btn {
     width: 100%;
     padding: 0.5rem 1rem;
-    font-size: 16px;
+    font-size: var(--font-big);
     font-weight: 600;
     border: 1px solid var(--second_color);
     border-radius: 0.25rem;
@@ -422,7 +427,7 @@ h3 {
 }
 
 button[type="submit"] {
-    font-size: 1.1rem;
+    font-size: var(--font-big);
     border-radius: 5px;
     cursor: pointer;
     margin-top: var(--big-height);
