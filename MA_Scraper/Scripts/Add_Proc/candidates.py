@@ -71,8 +71,8 @@ def create_item():
             case((Prefix.id.in_(select(prefixes.c.id)), Prefix.name), else_='Other_Prefix')), ', '
             ), 'Not available').label('prefix_names')
     ).join(reviews, onclause=reviews.c.band_id == Band.band_id, isouter=True
-    ).join(Band.outgoing_similarities
-    ).join(Band.genres,
+    ).join(Band.outgoing_similarities, isouter=True
+    ).join(Band.genres, isouter=True
     ).join(Band.themes, isouter=True
     ).join(Band.prefixes, isouter=True
     ).where(Genre.id.in_(select(genres.c.id))
@@ -88,7 +88,7 @@ def create_user():
         Users.band_id,
         case(((Users.liked == True) | (Users.remind_me == True), 1),else_=0).label('label'),
         func.least(func.abs(func.current_date() - cast(Users.liked_date, Date)),
-            func.abs(func.current_date() - cast(Users.remind_me_date, Date)).label('relevance'))
+            func.abs(func.current_date() - cast(Users.remind_me_date, Date))).label('relevance')
         )).all()
 
     users_preference = pd.DataFrame(user_band_preference_data)
@@ -112,11 +112,9 @@ def create_item_embeddings(item):
         numerical_embeddings.astype('float32')
     ])
 
-    print(item_embeddings_dense.shape)
-
     return item_embeddings_dense
 
-def cluster(array, min_cluster_size):
+def cluster(array, weights, min_cluster_size):
     min_cluster_size = int(len(array) * 0.05)
     if len(array) < min_cluster_size:
         return [np.mean(array, axis=0)]
@@ -133,21 +131,23 @@ def cluster(array, min_cluster_size):
     
     for cluster_label in unique_clusters:
         if cluster_label != -1:
-            cluster_items_embeddings = array[cluster_labels == cluster_label]
+            cluster_indices = (cluster_labels == cluster_label)
+            cluster_items_embeddings = array[cluster_indices]
+            cluster_weights = weights[cluster_indices]
+
             if len(cluster_items_embeddings) > 0:
-                vector = np.mean(cluster_items_embeddings, axis=0)
+                vector = np.average(cluster_items_embeddings, axis=0, weights=cluster_weights)
                 vector = pca.inverse_transform(vector)
                 vectors.append(vector)
     return vectors
 
-def generate_user_vectors(liked_bands, item_embeddings_array, item_df, min_cluster_size=None):
+def generate_user_vectors(liked_bands, weights, item_embeddings_array, item_df, min_cluster_size=None):
     liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_bands)]
-
-    user_interest_vectors = cluster(liked_embeddings_array, min_cluster_size)
+    user_interest_vectors = cluster(liked_embeddings_array, weights, min_cluster_size)
 
     print(f"user interest vectors {len(user_interest_vectors)}")
     if not user_interest_vectors:
-        user_interest_vectors = np.mean(liked_embeddings_array, axis=0)
+        user_interest_vectors = np.average(liked_embeddings_array, axis=0, weights=weights)
 
     user_interest_vectors = np.array(user_interest_vectors).astype('float32')
     return user_interest_vectors
@@ -260,9 +260,16 @@ def main(min_cluster_size=None, k=800):
 
         candidate_list = []
         for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
-            interacted_bands = users_preference[users_preference['user'] == user_id]['band_id'].unique().astype(int).tolist()
-            liked_bands = users_preference[(users_preference['user'] == user_id) & (users_preference['label'] == 1)]['band_id'].unique().astype(int).tolist()
-            user_vectors = generate_user_vectors(liked_bands, item_embeddings, item, min_cluster_size)
+            user_preference = users_preference[users_preference['user'] == user_id]
+
+            interacted_bands = user_preference['band_id'].unique().astype('int64').tolist()
+            liked_bands = user_preference[user_preference['label'] == 1]['band_id'].unique().astype('int64').tolist()
+            band_relevance_map = user_preference[user_preference['label'] == 1].set_index('band_id')['relevance'].to_dict()
+            
+            relevances = np.array([band_relevance_map[band_id] for band_id in liked_bands])
+            weights = 1.0 / (relevances + 1e-6)
+
+            user_vectors = generate_user_vectors(liked_bands, weights, item_embeddings, item, min_cluster_size)
             index = index_faiss(item_embeddings)
 
             candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
@@ -277,4 +284,4 @@ def complete_refresh(min_cluster_size=None, k=400):
     refresh_tables([Candidates])
 
 if __name__ == '__main__':
-    main()
+    complete_refresh()
