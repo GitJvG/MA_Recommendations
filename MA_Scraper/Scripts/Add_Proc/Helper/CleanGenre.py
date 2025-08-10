@@ -65,7 +65,7 @@ def dissect_genre(series):
     df_exploded = df_exploded.str.strip()
     dissected_df = pd.DataFrame({'row_id': df_exploded.index, 'og_genre': df_exploded.values})
 
-    main_pattern = r"^(?:(.+?)\s+)?([^/\s]+(?:/[^/\s]+)?)$" # Match any non white character optionally followed by a '/' and any non white character
+    main_pattern = r"^(?:(.+?)\s+)?([^\/\s]+(?:[\/][^\s\/]+)*)$" # Match any non white character optionally followed by a '/' and any non white character
     extracted_data = dissected_df['og_genre'].str.extract(main_pattern, flags=re.IGNORECASE)
 
     exploded_prefix = extracted_data[0].str.split(r'[ /]').explode().str.strip().to_frame(name='prefix')
