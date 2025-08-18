@@ -1,7 +1,6 @@
 import threading
 from flask import Flask, request, g
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager
 from MA_Scraper.Env import load_config, Env
 from sqlalchemy import inspect
@@ -11,7 +10,6 @@ from MA_Scraper.app.CacheManager import CacheManager
 website_name = 'Amplifier Worship'
 backend = Env.get_instance().ytbackend
 db = SQLAlchemy()
-migrate = Migrate()
 login_manager = LoginManager()
 cache_manager = CacheManager()
 if backend == 'YTAPI':
@@ -49,7 +47,6 @@ def create_app(test_config=None):
         youtube_client.init_app(app.config['YT_API_KEY'])
 
     db.init_app(app)
-    migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 
