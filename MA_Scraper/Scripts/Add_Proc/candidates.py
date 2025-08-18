@@ -7,8 +7,8 @@ import pandas as pd
 import faiss
 from collections import defaultdict
 import numpy as np
-from sqlalchemy import func, select, case, cast, Date
-from hdbscan import HDBSCAN
+from sqlalchemy import func, select, case, cast, Date, text
+import hdbscan
 from sklearn.decomposition import PCA
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -77,7 +77,8 @@ def create_item():
     ).join(Band.prefixes, isouter=True
     ).where(Genre.id.in_(select(genres.c.id))
     ).group_by(Band.band_id, Band.name, Band.genre, Band.label, Band.country, Band.status,
-               reviews.c.review_count, reviews.c.median_score)).all()
+               reviews.c.review_count, reviews.c.median_score)
+    .having(text('review_count > 0'))).all()
 
     dataframe = pd.DataFrame(results)
     return dataframe
@@ -101,49 +102,53 @@ def create_item_embeddings(item):
 
     processed_df = split_one_hot_encode(item, multi_valued_categorical_cols)
     final_categorical_df = pd.get_dummies(processed_df, columns=single_value_categorical_cols, dtype=int)
-
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
     categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed']]
     categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
+    clustering_columns = [col for col in processed_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed'] and col not in single_value_categorical_cols]
+    clustering_embeddings = processed_df[clustering_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([
         categorical_embeddings.astype('float32'),
         numerical_embeddings.astype('float32')
     ])
 
-    return item_embeddings_dense
+    return item_embeddings_dense, clustering_embeddings
 
-def cluster(array, weights, min_cluster_size):
+def cluster(array, disliked_embeddings_array, clustering_array, declustering_embeddings_array, weights, min_cluster_size):
     min_cluster_size = int(len(array) * 0.05)
     if len(array) < min_cluster_size:
         return [np.mean(array, axis=0)]
     
-    pca = PCA(n_components=0.95)
-    pca = pca.fit(array)
-    array = pca.transform(array)
-
-    clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1, allow_single_cluster=True)
-    cluster_labels = clusterer.fit_predict(array)
-
-    vectors = []
-    unique_clusters = np.unique(cluster_labels)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=15, min_samples=1, allow_single_cluster=True, prediction_data=True).fit(clustering_array)
+    disliked_labels, strengths = hdbscan.approximate_predict(clusterer, declustering_embeddings_array)
     
+    vectors = []
+    unique_clusters = np.unique(clusterer.labels_)
+
     for cluster_label in unique_clusters:
         if cluster_label != -1:
-            cluster_indices = (cluster_labels == cluster_label)
+            cluster_indices = (clusterer.labels_ == cluster_label)
             cluster_items_embeddings = array[cluster_indices]
             cluster_weights = weights[cluster_indices]
 
+            disliked_indices = (disliked_labels == cluster_label)
+            cluster_disliked_embeddings = disliked_embeddings_array[disliked_indices]
+            
             if len(cluster_items_embeddings) > 0:
                 vector = np.average(cluster_items_embeddings, axis=0, weights=cluster_weights)
-                vector = pca.inverse_transform(vector)
+                if len(cluster_disliked_embeddings) > 0:
+                    vector = vector - np.mean(cluster_disliked_embeddings, axis=0)
                 vectors.append(vector)
     return vectors
 
-def generate_user_vectors(liked_bands, weights, item_embeddings_array, item_df, min_cluster_size=None):
+def generate_user_vectors(liked_bands, disliked_bands, weights, item_embeddings_array, item_df, clustering_embeddings, min_cluster_size=None):
     liked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(liked_bands)]
-    user_interest_vectors = cluster(liked_embeddings_array, weights, min_cluster_size)
+    disliked_embeddings_array = item_embeddings_array[item_df['band_id'].isin(disliked_bands)]
+    clustering_embeddings_array = clustering_embeddings[item_df['band_id'].isin(liked_bands)]
+    declustering_embeddings_array = clustering_embeddings[item_df['band_id'].isin(disliked_bands)]
+    user_interest_vectors = cluster(liked_embeddings_array, disliked_embeddings_array, clustering_embeddings_array, declustering_embeddings_array, weights, min_cluster_size)
 
     print(f"user interest vectors {len(user_interest_vectors)}")
     if not user_interest_vectors:
@@ -243,8 +248,8 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     num_known_to_take = k - num_new_to_take
 
     combined_candidates_df['is_known'] = combined_candidates_df['band_id'].isin(list(interacted_bands))
-    new_candidates_df = combined_candidates_df[~combined_candidates_df['is_known']].head(num_new_to_take)[['band_id', 'cluster_id']]
-    known_candidates_df = combined_candidates_df[combined_candidates_df['is_known']].head(num_known_to_take)[['band_id', 'cluster_id']]
+    new_candidates_df = combined_candidates_df[~combined_candidates_df['is_known']].head(num_new_to_take)[['band_id', 'cluster_id', 'score']]
+    known_candidates_df = combined_candidates_df[combined_candidates_df['is_known']].head(num_known_to_take)[['band_id', 'cluster_id', 'score']]
 
     new_candidates = list(new_candidates_df.itertuples(index=False, name=None))
     known_candidates = list(known_candidates_df.itertuples(index=False, name=None))
@@ -255,26 +260,27 @@ def main(min_cluster_size=None, k=800):
     app = create_app()
     with app.app_context():
         item = create_item()
-        item_embeddings = create_item_embeddings(item)
+        item_embeddings, clustering_embeddings = create_item_embeddings(item)
         users_preference = create_user()
 
         candidate_list = []
         for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
-            user_preference = users_preference[users_preference['user'] == user_id]
+            user_preference = users_preference[(users_preference['user'] == user_id) & (users_preference['band_id'].isin(item['band_id']))]
 
             interacted_bands = user_preference['band_id'].unique().astype('int64').tolist()
             liked_bands = user_preference[user_preference['label'] == 1]['band_id'].unique().astype('int64').tolist()
+            disliked_bands = user_preference[user_preference['label'] == 0]['band_id'].unique().astype('int64').tolist()
             band_relevance_map = user_preference[user_preference['label'] == 1].set_index('band_id')['relevance'].to_dict()
             
             relevances = np.array([band_relevance_map[band_id] for band_id in liked_bands])
             weights = 1.0 / (relevances + 1e-6)
 
-            user_vectors = generate_user_vectors(liked_bands, weights, item_embeddings, item, min_cluster_size)
+            user_vectors = generate_user_vectors(liked_bands, disliked_bands, weights, item_embeddings, item, clustering_embeddings, min_cluster_size)
             index = index_faiss(item_embeddings)
 
             candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
-            for candidate, cluster_id in candidates:
-                candidate_list.append({'user_id': user_id, 'band_id': candidate, 'cluster_id': cluster_id})
+            for candidate, cluster_id, score in candidates:
+                candidate_list.append({'user_id': user_id, 'band_id': candidate, 'cluster_id': cluster_id, 'score': score})
 
         candidate_df = pd.DataFrame(candidate_list)
         candidate_df.to_csv(env.candidates, index=False)
