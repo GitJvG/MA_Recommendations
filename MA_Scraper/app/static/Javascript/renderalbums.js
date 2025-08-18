@@ -96,8 +96,7 @@ function createAlbumCard(album) {
     };
 
     overlaytext.appendChild(createTextElement(album.album_name, "album"));
-    overlaytext.appendChild(createTextElement(album.name, "band-name"));
-    // overlaytext.appendChild(createTextElement(album.genre, "genre"));
+    overlaytext.appendChild(createTextElement(`${album.name} (${album.genre})`, "band-name"));
     
     bandLink.appendChild(overlaytext);
     overlay.appendChild(bandLink);
