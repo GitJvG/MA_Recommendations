@@ -159,7 +159,7 @@ async def fetch_albums(query_limit):
 @main.route('/ajax/top_albums')
 @login_required
 async def fetch_above_avg_albums():
-    bands = request.args.getlist('bands')
+    bands = [int(band) for band in request.args.getlist('bands')]
     ppb = min(int(request.args.get('count', 1)), 8)
 
     Albums = Top_albums(bands, ppb)
