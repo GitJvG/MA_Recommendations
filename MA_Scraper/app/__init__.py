@@ -1,15 +1,16 @@
 import threading
 from flask import Flask, request, g
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from MA_Scraper.Env import load_config, Env
 from sqlalchemy import inspect
 from user_agents import parse
+from MA_Scraper.app.db import Session, engine
 from MA_Scraper.app.CacheManager import CacheManager
+from MA_Scraper.app.models import Base, User
 
 website_name = 'Amplifier Worship'
 backend = Env.get_instance().ytbackend
-db = SQLAlchemy()
+
 login_manager = LoginManager()
 cache_manager = CacheManager()
 if backend == 'YTAPI':
@@ -40,34 +41,37 @@ def create_app(test_config=None):
 
     # Load the config
     app.config['SECRET_KEY'] = load_config('Secret_Key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = load_config('SQL_Url')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['YT_API_KEY'] = load_config('yt_api_key')
     if youtube_client: 
         youtube_client.init_app(app.config['YT_API_KEY'])
 
-    db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 
     @app.before_request
     def create_database():
         with run_once_lock:
-            inspector = inspect(db.engine)
+            inspector = inspect(engine)
             if not inspector.has_table('user'): 
-                db.create_all()
+                Base.metadata.create_all(engine)
                 print("Database tables created.")
     
     @app.before_request
     def init_device():
         get_device()
 
+    
+    @app.teardown_appcontext
+    def cleanup(resp_or_exc):
+        Session.remove()
+
     with app.app_context():
         from MA_Scraper.app.models import User, Band, Similar_band, Discography, Users, Member, BandGenres, BandPrefixes, Prefix, Theme, Themes, Candidates, Band_logo, User_albums
 
         @login_manager.user_loader
         def load_user(user_id):
-            return User.query.get(int(user_id))
+            return Session.get(User, int(user_id))
 
     from MA_Scraper.app.routes import main as main
     app.register_blueprint(main)

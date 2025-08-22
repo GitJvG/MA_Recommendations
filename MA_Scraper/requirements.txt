@@ -8,8 +8,6 @@ aiohttp==3.11.11
 # Website & Database
 Flask==3.0.3
 Flask_Login==0.6.3
-Flask_Migrate==4.0.7
-flask_sqlalchemy==3.1.1
 SQLAlchemy==2.0.35
 psycopg2==2.9.10
 faiss_cpu==1.8.0.post1

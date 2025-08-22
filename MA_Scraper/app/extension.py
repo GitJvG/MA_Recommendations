@@ -5,7 +5,7 @@ from MA_Scraper.app.utils import render_with_base, Like_bands, liked_bands
 import re
 import unicodedata
 from sqlalchemy import and_, func
-from MA_Scraper.app import db
+from MA_Scraper.app.db import Session
 from collections import defaultdict
 from MA_Scraper.app.YT import YT
 
@@ -51,7 +51,7 @@ def import_playlist(playlist_url, current_user_id):
             band_name, *rest = video_keywords
             album_name = rest[0] if rest else None
 
-            result = db.session.query(Discography.band_id, Band.name).join(Band, Band.band_id == Discography.band_id).filter(
+            result = Session.query(Discography.band_id, Band.name).join(Band, Band.band_id == Discography.band_id).filter(
                 and_(
                     func.unaccent(func.lower(Band.name)) == band_name,
                     func.unaccent(func.lower(Discography.name)).ilike(f"%{album_name.lower()}%") if album_name else True
@@ -63,7 +63,7 @@ def import_playlist(playlist_url, current_user_id):
                 band_matches[band_id]["video_titles"].append(original_video_title)
                 band_matches[band_id]["band_name"] = band_name
             else:
-                band_results = db.session.query(Band.band_id, Band.name).filter(
+                band_results = Session.query(Band.band_id, Band.name).filter(
                     func.unaccent(func.lower(Band.name)) == band_name
                 ).all()
 

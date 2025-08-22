@@ -1,7 +1,8 @@
 from flask import Blueprint, request, url_for, jsonify, g, Response
 from flask_login import login_required, current_user
 from sqlalchemy import func, and_, or_, select
-from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, Member, Prefix, Candidates, Band_logo, User_albums, db
+from MA_Scraper.app.db import Session
+from MA_Scraper.app.models import User, Band, Users, Discography, Similar_band, Genre, BandGenres, BandPrefixes, Member, Prefix, Candidates, Band_logo, User_albums
 from MA_Scraper.app import cache_manager
 from MA_Scraper.app.utils import render_with_base, Like_bands
 from MA_Scraper.app.queries import Top_albums, New_albums
@@ -52,7 +53,7 @@ def jsonify_with_row(data):
     })
 
 def get_band_data(band_id):
-    band_data = db.session.execute(select(Band.band_id, 
+    band_data = Session.execute(select(Band.band_id, 
             Band.name.label('band_name'),
             func.string_agg(Genre.name, ', ').label('genre_string'))
                     .join(Band.genres)
@@ -121,7 +122,7 @@ async def fetch_remind(query_limit):
     if cache:
         return jsonify_with_row(cache)
     
-    bands = db.session.scalars(
+    bands = Session.scalars(
     select(Users.band_id).where(Users.user_id == current_user.id, Users.remind_me == True)
     .order_by(func.random()).limit(query_limit)
     ).all()
@@ -141,15 +142,14 @@ async def fetch_albums(query_limit):
     if cache:
         return jsonify_with_row(cache)
     
-    band_ids = db.session.scalars(select(Candidates.band_id)
+    band_ids = Session.scalars(select(Candidates.band_id)
     .outerjoin(Users, and_(Users.band_id == Candidates.band_id, Users.user_id == Candidates.user_id))
     .join(Discography, Discography.band_id == Candidates.band_id)
     .where(Discography.type.in_(["Full-length", "Split", "EP"]), (Users.liked.is_not(False)),
            (Candidates.user_id == current_user.id))
     .group_by(Candidates.band_id)
-    .having(func.sum(Discography.review_score) > 0)
+    #.having(func.sum(Discography.review_score) > 0)
     .order_by(func.random()).limit(query_limit)).all()
-
     Albums = Top_albums(band_ids)
     
     result = await fetch_top_albums_with_videos(Albums)
@@ -176,10 +176,9 @@ async def fetch_known_albums(query_limit):
     
     bands = (select(Users.band_id)
     .where(Users.user_id == current_user.id, Users.liked == True).distinct()).cte()
-    bands = db.session.scalars(select(bands).order_by(func.random()).limit(query_limit)).all()
+    bands = Session.scalars(select(bands).order_by(func.random()).limit(query_limit)).all()
 
     Albums = Top_albums(bands)
-
     result = await fetch_top_albums_with_videos(Albums)
     cache_manager.set_cache(result)
 
@@ -201,7 +200,7 @@ def like_band():
 def my_bands():
     user_id = current_user.id
 
-    user_interactions = db.session.execute(select(
+    user_interactions = Session.execute(select(
             Band.band_id,
             Band.name,
             Users.liked,
@@ -221,7 +220,7 @@ def my_bands():
 def get_bands():
     user_id = current_user.id
     user_interactions = (
-        db.session.execute(select(
+        Session.execute(select(
             Band.band_id,
             Band.name,
             Users.liked,
@@ -244,7 +243,7 @@ def imports():
 
 @main.route('/get_genres', methods=['GET'])
 def get_genres():
-    genres = db.session.scalars(select(Genre.name).distinct()).all()
+    genres = Session.scalars(select(Genre.name).distinct()).all()
     return jsonify(genres)
 
 @main.route('/search', methods=['POST', 'GET'])
@@ -252,7 +251,7 @@ def search():
     if request.method == 'POST':
         query = request.form.get('q', '').strip()
         matches = (
-            db.session.query(Band.band_id, Band.name)
+            Session.query(Band.band_id, Band.name)
             .filter(or_(func.unaccent(func.lower(Band.name)).ilike(f"{query.lower()} %"), func.unaccent(func.lower(Band.name)).ilike(f"{query.lower()}")))
             .all()
         )
@@ -275,12 +274,12 @@ def query():
     per_page = 100
 
     exact_matches = (
-        db.session.query(Band.band_id, Band.name, Band.genre, Band.country)
+        Session.query(Band.band_id, Band.name, Band.genre, Band.country)
         .filter(func.unaccent(func.lower(Band.name)) == query.lower())
     )
 
     partial_matches = (
-        db.session.query(Band.band_id, Band.name, Band.genre, Band.country)
+        Session.query(Band.band_id, Band.name, Band.genre, Band.country)
         .filter(or_(Band.name.ilike(f'% {query} %'), Band.name.ilike(f'{query} %')))
     )
 
@@ -306,10 +305,10 @@ def query():
 @main.route('/band/<int:band_id>')
 @login_required
 def band_detail(band_id):
-    band = db.session.execute(select(Band, Users.liked, Users.remind_me).outerjoin(Band.user_interactions)
+    band = Session.execute(select(Band, Users.liked, Users.remind_me).outerjoin(Band.user_interactions)
                               .where(Band.band_id == band_id, or_(Users.user_id == current_user.id, Users.user_id == None))).first()
-    discography = db.session.execute(select(Discography).where(Discography.band_id == band_id).order_by(Discography.year.asc(), Discography.album_id.asc())).scalars().all()
-    similar_bands = db.session.execute(select(Similar_band.similar_id, Band.name, Band.country, Band.genre, Band.status, Band.label).join(Similar_band.similar_band) \
+    discography = Session.execute(select(Discography).where(Discography.band_id == band_id).order_by(Discography.year.asc(), Discography.album_id.asc())).scalars().all()
+    similar_bands = Session.execute(select(Similar_band.similar_id, Band.name, Band.country, Band.genre, Band.status, Band.label).join(Similar_band.similar_band) \
         .where(Similar_band.band_id==band_id).order_by(Similar_band.score.desc())).all()
     types = {album.type for album in discography}
 
@@ -350,7 +349,7 @@ async def fetch_image(session: aiohttp.ClientSession, url: str):
 
 @main.route('/ajax/band_logo/<int:band_id>')
 async def get_band_logo(band_id):
-    stored_logo = db.session.get(Band_logo, band_id)
+    stored_logo = Session.get(Band_logo, band_id)
     if stored_logo and stored_logo.data and stored_logo.content_type:
         return Response(stored_logo.data, mimetype=stored_logo.content_type)
     
@@ -368,8 +367,8 @@ async def get_band_logo(band_id):
                     image_data, content_type = await fetch_image(http_session, resolved_url)
                     if image_data and content_type:
                         new_logo = Band_logo(band_id=band_id, data=image_data, content_type=content_type)
-                        db.session.add(new_logo)
-                        db.session.commit()
+                        Session.add(new_logo)
+                        Session.commit()
                         return Response(image_data, mimetype=content_type)
         return jsonify('')
     
@@ -381,16 +380,47 @@ def update_album_status():
     new_status = data.get('status')
     now = datetime.now().replace(microsecond=0)
 
-    existing_preference = User_albums.query.filter_by(user_id=current_user.id, album_id=album_id, band_id=band_id).first()
+    existing_preference = Session.query(User_albums).filter_by(user_id=current_user.id, album_id=album_id, band_id=band_id).first()
     if existing_preference:
         existing_preference.status = new_status
         existing_preference.modified_date = now
     else:
         new_preference = User_albums(user_id=current_user.id, band_id=band_id, album_id=album_id, status=new_status, creation_date=now, modified_date=now)
-        db.session.add(new_preference)
-    db.session.commit()
+        Session.add(new_preference)
+    Session.commit()
 
     return jsonify({
         "album_id": album_id,
         "new_status": new_status,
     }), 200
+
+@main.route('/algorithm', methods=['GET'])
+def clusters():
+    base = (select(Candidates.cluster_id, Candidates.band_id, Candidates.score, Band.name, Genre.name.label('genre_name'), Genre.id.label('genre_id'), Prefix.name.label('prefix_name'), Prefix.id.label('prefix_id')).join(Candidates.band_obj).join(Band.genres).join(Band.prefixes, isouter=True).where(Candidates.user_id == current_user.id)).cte()
+    dc = select(base.c.cluster_id, base.c.band_id, base.c.name, base.c.score, base.c.genre_name).distinct().cte()
+    candidates = select(dc.c.cluster_id, dc.c.band_id, dc.c.name, dc.c.score, func.string_agg(dc.c.genre_name, ', ').label('genre_names')
+                        ,func.row_number().over(partition_by=dc.c.cluster_id, order_by=dc.c.score.desc()).label('rn')).distinct().group_by(dc.c.cluster_id, dc.c.band_id, dc.c.name, dc.c.score).cte()
+    candidates = Session.execute(select(candidates.c.cluster_id, candidates.c.band_id, candidates.c.name, candidates.c.genre_names, candidates.c.score).where(candidates.c.rn < 6)).all()
+
+    gbase = (select(base.c.cluster_id, base.c.band_id, base.c.genre_name, base.c.genre_id, base.c.score).distinct()).cte()
+    cluster_header = (select(gbase.c.cluster_id, gbase.c.genre_name, func.row_number().over(partition_by=gbase.c.cluster_id, order_by=func.sum(gbase.c.score).desc()).label("rank")).group_by(gbase.c.cluster_id, gbase.c.genre_name)).cte()
+    top_cluster_genre_header = Session.execute(select(cluster_header.c.cluster_id, func.string_agg(cluster_header.c.genre_name, ', ').label('genre_names')).where(cluster_header.c.rank <= 3).group_by(cluster_header.c.cluster_id)).all()
+
+    prefix_header = (select(base.c.cluster_id, base.c.prefix_name, func.row_number().over(partition_by=base.c.cluster_id, order_by=func.count(base.c.prefix_id).desc()).label("rank")).group_by(base.c.cluster_id, base.c.prefix_name)).cte()
+    top_cluster_prefix_header = Session.execute(select(prefix_header.c.cluster_id, func.string_agg(prefix_header.c.prefix_name, ', ').label('prefix_names')).where(prefix_header.c.rank <= 3).group_by(prefix_header.c.cluster_id)).all()
+    
+    candidate_list = [{"cluster": candidate.cluster_id, "band_id": candidate.band_id, "band_name": candidate.name, "genre_name": candidate.genre_names, "score": candidate.score} for candidate in candidates]
+
+    top_cluster_header = {
+    entry.cluster_id: {"cluster": entry.cluster_id, "genre_names": entry.genre_names, "prefix_names": None}
+    for entry in top_cluster_genre_header
+    }
+    
+    for entry in top_cluster_prefix_header:
+        cluster_id = entry.cluster_id
+        if cluster_id in top_cluster_header:
+            top_cluster_header[cluster_id]["prefix_names"] = entry.prefix_names
+
+    top_cluster_header = list(top_cluster_header.values())
+    
+    return render_with_base('algorithm.html', candidates=candidate_list, clusters=top_cluster_header)

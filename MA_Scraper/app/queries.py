@@ -1,6 +1,6 @@
 from sqlalchemy import func, select, case
-from MA_Scraper.app import db
-from MA_Scraper.app.models import Band, Discography, Similar_band, Genre, db
+from MA_Scraper.app.db import Session
+from MA_Scraper.app.models import Band, Discography, Similar_band, Genre
 from datetime import datetime
 
 def Top_albums(band_ids, picks_per_band=1):
@@ -28,7 +28,7 @@ def Top_albums(band_ids, picks_per_band=1):
                      )).label('rank')
     ).join(band_averages, onclause= band_averages.c.band_id == ranked_albums_subquery.c.band_id)).cte("ranked_albums_with_row_num")
 
-    selected_albums = db.session.execute(select(
+    selected_albums = Session.execute(select(
             ranked_albums_with_row_num.c.band_id,
             ranked_albums_with_row_num.c.name,
             ranked_albums_with_row_num.c.type,
@@ -79,7 +79,7 @@ def New_albums(query_limit=10, min_year=None):
             func.row_number().over(partition_by=recent_albums_ranked_by_year.c.band_id,order_by=(recent_albums_ranked_by_year.c.review_score * recent_albums_ranked_by_year.c.review_count).desc()).label("rank_by_score")
         ).where(recent_albums_ranked_by_year.c.review_score > 0)).cte('latest_albums_ranked')
 
-    first_branch_results = db.session.execute(
+    first_branch_results = Session.execute(
         select(
             latest_albums_ranked.c.band_id,
             latest_albums_ranked.c.name,
@@ -104,7 +104,7 @@ def New_albums(query_limit=10, min_year=None):
         func.sum(Similar_band.score).label("total_score")
         ).group_by(Similar_band.band_id)).cte('band_scores')
 
-    second_results = db.session.execute(
+    second_results = Session.execute(
         select(
              recent_albums_ranked_by_year.c.band_id,
              recent_albums_ranked_by_year.c.name,

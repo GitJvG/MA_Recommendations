@@ -1,4 +1,4 @@
-from MA_Scraper.app import create_app, db
+from MA_Scraper.app.db import Session
 from MA_Scraper.app.models import Band, Genre, Discography, \
                         Theme, Users, Similar_band, Candidates, Member, Prefix, Label
 from MA_Scraper.Env import Env
@@ -55,7 +55,7 @@ def create_item():
         Prefix.id
         ).join(Prefix.bands).group_by(Prefix.id).having(func.count(Band.band_id) >= 15).order_by(func.count(Band.band_id)).cte()
     
-    results = db.session.execute(select(
+    results = Session.execute(select(
         Band.band_id,
         Band.name.label('band_name'),
         case((Band.label_id.in_(select(labels.c.label_id)), Band.label), else_="Other_Label").label('b_label'),
@@ -84,7 +84,7 @@ def create_item():
     return dataframe
 
 def create_user():
-    user_band_preference_data = db.session.execute(select(
+    user_band_preference_data = Session.execute(select(
         Users.user_id.label('user'),
         Users.band_id,
         case(((Users.liked == True) | (Users.remind_me == True), 1),else_=0).label('label'),
@@ -170,7 +170,7 @@ def get_filtered_band_members(band_ids):
         .where(Member.band_id.in_(band_ids), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).cte()
 
-    result = db.session.execute(
+    result = Session.execute(
         select(Member.band_id, Member.member_id)
         .where(Member.band_id.in_(select(bands_with_shared_members_cte.c.band_id)), Member.category.in_(['Current lineup', 'Past lineup'])).distinct()
     ).all()
@@ -257,33 +257,31 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     return new_candidates + known_candidates
 
 def main(min_cluster_size=None, k=800):
-    app = create_app()
-    with app.app_context():
-        item = create_item()
-        item_embeddings, clustering_embeddings = create_item_embeddings(item)
-        users_preference = create_user()
+    item = create_item()
+    item_embeddings, clustering_embeddings = create_item_embeddings(item)
+    users_preference = create_user()
 
-        candidate_list = []
-        for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
-            user_preference = users_preference[(users_preference['user'] == user_id) & (users_preference['band_id'].isin(item['band_id']))]
+    candidate_list = []
+    for user_id in users_preference[users_preference['label'] == 1]['user'].unique():
+        user_preference = users_preference[(users_preference['user'] == user_id) & (users_preference['band_id'].isin(item['band_id']))]
 
-            interacted_bands = user_preference['band_id'].unique().astype('int64').tolist()
-            liked_bands = user_preference[user_preference['label'] == 1]['band_id'].unique().astype('int64').tolist()
-            disliked_bands = user_preference[user_preference['label'] == 0]['band_id'].unique().astype('int64').tolist()
-            band_relevance_map = user_preference[user_preference['label'] == 1].set_index('band_id')['relevance'].to_dict()
-            
-            relevances = np.array([band_relevance_map[band_id] for band_id in liked_bands])
-            weights = 1.0 / (relevances + 1e-6)
+        interacted_bands = user_preference['band_id'].unique().astype('int64').tolist()
+        liked_bands = user_preference[user_preference['label'] == 1]['band_id'].unique().astype('int64').tolist()
+        disliked_bands = user_preference[user_preference['label'] == 0]['band_id'].unique().astype('int64').tolist()
+        band_relevance_map = user_preference[user_preference['label'] == 1].set_index('band_id')['relevance'].to_dict()
+        
+        relevances = np.array([band_relevance_map[band_id] for band_id in liked_bands])
+        weights = 1.0 / (relevances + 1e-6)
 
-            user_vectors = generate_user_vectors(liked_bands, disliked_bands, weights, item_embeddings, item, clustering_embeddings, min_cluster_size)
-            index = index_faiss(item_embeddings)
+        user_vectors = generate_user_vectors(liked_bands, disliked_bands, weights, item_embeddings, item, clustering_embeddings, min_cluster_size)
+        index = index_faiss(item_embeddings)
 
-            candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
-            for candidate, cluster_id, score in candidates:
-                candidate_list.append({'user_id': user_id, 'band_id': candidate, 'cluster_id': cluster_id, 'score': score})
+        candidates = generate_candidates(index, item, interacted_bands, liked_bands, user_vectors, k)
+        for candidate, cluster_id, score in candidates:
+            candidate_list.append({'user_id': user_id, 'band_id': candidate, 'cluster_id': cluster_id, 'score': score})
 
-        candidate_df = pd.DataFrame(candidate_list)
-        candidate_df.to_csv(env.candidates, index=False)
+    candidate_df = pd.DataFrame(candidate_list)
+    candidate_df.to_csv(env.candidates, index=False)
 
 def complete_refresh(min_cluster_size=None, k=400):
     main(min_cluster_size, k)

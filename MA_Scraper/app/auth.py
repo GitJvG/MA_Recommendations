@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from MA_Scraper.app.models import User, db
+from MA_Scraper.app.models import User
+from MA_Scraper.app.db import Session
 from MA_Scraper.app.utils import render_with_base
 
 auth = Blueprint('auth', __name__)
@@ -12,7 +13,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        queried_user = User.query.filter_by(username=username).first()  # Ensure 'User' is correctly imported
+        queried_user = Session.query(User).filter_by(username=username).first()
 
         if queried_user and check_password_hash(queried_user.password, password):
             login_user(queried_user)
@@ -72,8 +73,8 @@ def register():
             genre3=genre3
         )
         
-        db.session.add(new_user)
-        db.session.commit()
+        Session.add(new_user)
+        Session.commit()
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'redirect_url': url_for('auth.login')})
@@ -96,7 +97,7 @@ def profile():
         if current_user.genre1 == current_user.genre2 or current_user.genre2 == current_user.genre3 or current_user.genre1 == current_user.genre3:
             return jsonify({'error': 'Please select three different genres'})
 
-        db.session.commit()
+        Session.commit()
         return jsonify({'success': True, 'pop_up': 'Profile updated successfully.'})
 
     return render_with_base('profile.html', user=current_user)

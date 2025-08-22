@@ -1,7 +1,8 @@
 from flask import render_template, request, jsonify
 import json
 from sqlalchemy import select
-from MA_Scraper.app import db, website_name
+from MA_Scraper.app import website_name
+from MA_Scraper.app.db import Session
 from MA_Scraper.app.models import Users
 from datetime import datetime
 from MA_Scraper.app import cache_manager
@@ -40,13 +41,13 @@ def Title(content_template):
      return title
 
 def liked_bands(current_user_id):
-    liked_bands = db.session.scalars(select(Users.band_id).where(
+    liked_bands = Session.scalars(select(Users.band_id).where(
     Users.user_id == current_user_id,Users.liked == True).distinct()).all()
     return liked_bands
 
 def Like_bands(user_id, band_id, action):
     now = datetime.now().replace(microsecond=0)
-    existing_preference = Users.query.filter_by(user_id=user_id, band_id=band_id).first()
+    existing_preference = Session.query(Users).filter_by(user_id=user_id, band_id=band_id).first()
 
     if existing_preference:
         if action == 'like':
@@ -68,12 +69,12 @@ def Like_bands(user_id, band_id, action):
             new_preference = Users(user_id=user_id, band_id=band_id, liked=False, remind_me=False, liked_date=now)
         elif action == 'remind_me':
             new_preference = Users(user_id=user_id, band_id=band_id, liked=None, remind_me=True, remind_me_date=now)
-        db.session.add(new_preference)
+        Session.add(new_preference)
 
     current_liked_state = existing_preference.liked if existing_preference else (new_preference.liked if 'new_preference' in locals() else None)
     current_remind_me_state = existing_preference.remind_me if existing_preference else (new_preference.remind_me if 'new_preference' in locals() else False)
 
-    db.session.commit()
+    Session.commit()
     if action == 'remind_me':
         cache_manager.reset_cache('/ajax/remind')
     if action == 'dislike' or action == 'like':

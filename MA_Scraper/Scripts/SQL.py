@@ -1,6 +1,7 @@
 """Script to push all data to SQL, currently fully cascades the existing DB out of convenience"""
 import pandas as pd
-from MA_Scraper.app import create_app, db
+from MA_Scraper.app.db import Session, engine
+from MA_Scraper.app.models import Base
 from MA_Scraper.app.models import Member, Similar_band, Discography, Band_logo, Band, Genre, Prefix, BandGenres, BandPrefixes, Theme, Themes, Candidates, Label
 from sqlalchemy import text, inspect
 from MA_Scraper.Env import Env
@@ -29,17 +30,15 @@ dataframes = {
 }
 
 def backup_logo():
-    app = create_app()
-    with app.app_context():
-        inspector = inspect(db.engine)
-        band_logo_table_exists = inspector.has_table(Band_logo.__tablename__)
-        if band_logo_table_exists:
-            df_logo_backup = pd.read_sql_table(Band_logo.__tablename__, con=db.engine)
-            if df_logo_backup is None or df_logo_backup.empty:
-                print(f"Info: No existing data in {Band_logo.__tablename__} to back up.")
-            else:
-                df_logo_backup.to_csv(env.band_logo, index=False)
-                print(f"Backup of {Band_logo.__tablename__} complete ({len(df_logo_backup)} rows).")
+    inspector = inspect(engine)
+    band_logo_table_exists = inspector.has_table(Band_logo.__tablename__)
+    if band_logo_table_exists:
+        df_logo_backup = pd.read_sql_table(Band_logo.__tablename__, con=engine)
+        if df_logo_backup is None or df_logo_backup.empty:
+            print(f"Info: No existing data in {Band_logo.__tablename__} to back up.")
+        else:
+            df_logo_backup.to_csv(env.band_logo, index=False)
+            print(f"Backup of {Band_logo.__tablename__} complete ({len(df_logo_backup)} rows).")
 
 def string_representation_to_bytes(byte_string_repr):
     if isinstance(byte_string_repr, bytes):
@@ -55,28 +54,26 @@ def string_representation_to_bytes(byte_string_repr):
 
 def refresh_tables(model=None):
     """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
-    app = create_app()
-    with app.app_context():
-        models = model if model else [Label, Band, Theme, Prefix, Genre, Discography, Similar_band, Band_logo, Member, BandGenres, BandPrefixes, Themes]
-        for model in models:
-            df = dataframes.get(model.__name__)()
-            if df is None or df.empty:
-                raise ValueError(f"DataFrame for model '{model.__name__}' is empty or None.")
+    models = model if model else [Label, Band, Theme, Prefix, Genre, Discography, Similar_band, Band_logo, Member, BandGenres, BandPrefixes, Themes]
+    for model in models:
+        df = dataframes.get(model.__name__)()
+        if df is None or df.empty:
+            raise ValueError(f"DataFrame for model '{model.__name__}' is empty or None.")
+    
+    if Band_logo in models:
+        backup_logo()
         
-        if Band_logo in models:
-            backup_logo()
-            
-        for model in models:
-            db.session.execute(text(f'DROP TABLE IF EXISTS "{model.__tablename__}" CASCADE;'))
-        db.session.commit()
+    for model in models:
+        Session.execute(text(f'DROP TABLE IF EXISTS "{model.__tablename__}" CASCADE;'))
+    Session.commit()
 
-        db.create_all()
+    Base.metadata.create_all()
 
-        for model in models:
-            df = dataframes.get(model.__name__)()
-            df.to_sql(model.__tablename__, con=db.engine, if_exists='append', index=False)
+    for model in models:
+        df = dataframes.get(model.__name__)()
+        df.to_sql(model.__tablename__, con=engine, if_exists='append', index=False)
 
-        print("All tables refreshed successfully with constraints applied.")
+    print("All tables refreshed successfully with constraints applied.")
 
 if __name__ == "__main__":
     refresh_tables()
