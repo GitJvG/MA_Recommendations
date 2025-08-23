@@ -9,7 +9,6 @@ from collections import defaultdict
 import numpy as np
 from sqlalchemy import func, select, case, cast, Date, text
 import hdbscan
-from sklearn.decomposition import PCA
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 

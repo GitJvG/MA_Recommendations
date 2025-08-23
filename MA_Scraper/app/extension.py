@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from MA_Scraper.app.models import Discography, Band, Users
-from flask_login import login_required, current_user
+from flask import Blueprint, request, jsonify
+from MA_Scraper.app.models import Discography, Band
+from flask_login import current_user
 from MA_Scraper.app.utils import render_with_base, Like_bands, liked_bands
 import re
 import unicodedata

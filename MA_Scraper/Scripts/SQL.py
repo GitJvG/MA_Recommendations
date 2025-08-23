@@ -67,7 +67,7 @@ def refresh_tables(model=None):
         Session.execute(text(f'DROP TABLE IF EXISTS "{model.__tablename__}" CASCADE;'))
     Session.commit()
 
-    Base.metadata.create_all()
+    Base.metadata.create_all(engine)
 
     for model in models:
         df = dataframes.get(model.__name__)()

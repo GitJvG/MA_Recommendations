@@ -7,7 +7,6 @@ from user_agents import parse
 from MA_Scraper.app.db import Session, engine
 from MA_Scraper.app.CacheManager import CacheManager
 from MA_Scraper.app.models import Base, User
-
 website_name = 'Amplifier Worship'
 backend = Env.get_instance().ytbackend
 
@@ -66,12 +65,9 @@ def create_app(test_config=None):
     def cleanup(resp_or_exc):
         Session.remove()
 
-    with app.app_context():
-        from MA_Scraper.app.models import User, Band, Similar_band, Discography, Users, Member, BandGenres, BandPrefixes, Prefix, Theme, Themes, Candidates, Band_logo, User_albums
-
-        @login_manager.user_loader
-        def load_user(user_id):
-            return Session.get(User, int(user_id))
+    @login_manager.user_loader
+    def load_user(user_id):
+        return Session.get(User, int(user_id))
 
     from MA_Scraper.app.routes import main as main
     app.register_blueprint(main)
