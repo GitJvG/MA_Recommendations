@@ -1,9 +1,8 @@
 import threading
-from flask import Flask, request, g
+from flask import Flask
 from flask_login import LoginManager
 from MA_Scraper.Env import load_config, Env
 from sqlalchemy import inspect
-from user_agents import parse
 from MA_Scraper.app.db import Session, engine
 from MA_Scraper.app.CacheManager import CacheManager
 from MA_Scraper.app.models import Base, User
@@ -23,17 +22,6 @@ if backend == 'YTM':
     ytm = ytmusic.YTMusic('browser.json')
 else:
     ytm = None
-
-def get_device():
-    if not hasattr(g, "device") or not hasattr(g, "items"):
-        user_agent = request.headers.get("User-Agent", "")
-        parsed_ua = parse(user_agent)
-        if parsed_ua.is_mobile:
-            g.device = "mobile"
-            g.items = 3
-        else:
-            g.device = "desktop"
-            g.items = 6
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -55,11 +43,6 @@ def create_app(test_config=None):
             if not inspector.has_table('user'): 
                 Base.metadata.create_all(engine)
                 print("Database tables created.")
-    
-    @app.before_request
-    def init_device():
-        get_device()
-
     
     @app.teardown_appcontext
     def cleanup(resp_or_exc):
