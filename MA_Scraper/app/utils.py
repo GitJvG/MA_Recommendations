@@ -47,7 +47,7 @@ def liked_bands(current_user_id):
 
 def Like_bands(user_id, band_id, action):
     now = datetime.now().replace(microsecond=0)
-    existing_preference = Session.query(Users).filter_by(user_id=user_id, band_id=band_id).first()
+    existing_preference = Session.query(Users).filter_by(user_id=int(user_id), band_id=int(band_id)).first()
 
     if existing_preference:
         if action == 'like':

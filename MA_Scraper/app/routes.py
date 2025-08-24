@@ -37,7 +37,6 @@ def apply_query_limit(func):
     async def wrapper(*args, **kwargs):
         endpoint = request.path
         count = min(int(request.args.get('count', 1)), 8)
-        items = g.items if endpoint == 'main.index' else g.items
         limit = ROWS.get((endpoint), 1) * count
         kwargs['query_limit'] = limit
 
