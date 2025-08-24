@@ -9,8 +9,6 @@ from collections import defaultdict
 import numpy as np
 from sqlalchemy import func, select, case, cast, Date, text
 import hdbscan
-import warnings
-warnings.filterwarnings('ignore', category=FutureWarning)
 
 env = Env.get_instance()
 
@@ -237,7 +235,7 @@ def generate_candidates(index, item_df, interacted_bands, liked_bands, user_vect
     combined_candidates_df = combined_candidates_df[~combined_candidates_df['band_id'].isin(list(disliked_bands))]
 
     max_faiss_dist = combined_candidates_df['faiss_distance'].max()
-    combined_candidates_df['jaccard_score'] = combined_candidates_df['jaccard_score'].fillna(0.0)
+    combined_candidates_df['jaccard_score'] = combined_candidates_df['jaccard_score'].fillna(0.0).astype(float)
     combined_candidates_df['faiss_normalized'] = np.minimum(combined_candidates_df['faiss_distance'] / max_faiss_dist, 1.0)
     combined_candidates_df['score'] = (combined_candidates_df['faiss_normalized'] * 0.8) + \
                                       ((1 - combined_candidates_df['jaccard_score']) * 0.2)
