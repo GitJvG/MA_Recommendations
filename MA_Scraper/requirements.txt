@@ -2,7 +2,6 @@
 beautifulsoup4==4.12.3
 pandas==2.2.3
 Requests==2.32.3
-PyYAML==6.0.2
 aiohttp==3.11.11
 
 # Website & Database

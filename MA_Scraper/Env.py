@@ -21,9 +21,6 @@ def load_config(attribute, config_file=config_json):
         print(f"Error loading {config_file}: {e}")
         raise
 
-with open(config_yaml, "r") as file:
-    yaml_conf = yaml.safe_load(file)
-
 class Env:
     _instance = None
     
@@ -38,9 +35,9 @@ class Env:
             raise Exception("This is a singleton!")
         
         try:
-            self.head = load_config('headers')
-            self.cook = load_config('cookies')
-            self.fire = load_config('Firefox_cookies.sqlite')
+            self.head =         load_config('headers')
+            self.cook =         load_config('cookies')
+            self.fire =         load_config('Firefox_cookies.sqlite')
 
         except ValueError as e:
             print(f"Error: {e}")
@@ -76,19 +73,21 @@ class Env:
         self.label_key = ['label_id']
         self.reviews_key = ['album_id', 'review_id']
 
-        self.url_modi = yaml_conf['urls']['MODIFIED']
-        self.url_band = yaml_conf['urls']['BANDS']
-        self.url_label = yaml_conf['urls']['LABELS']
-        self.url_reviews = yaml_conf['urls']['REVIEWS']
-        self.url_similar = yaml_conf['urls']['SIMILAR']
-        self.url_disc1 = yaml_conf['urls']['DISC1']
-        self.url_disc2 = yaml_conf['urls']['DISC2']
-        self.url_deta = yaml_conf['urls']['DETAILS']
+        self.url_modi =     "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
+        self.url_band =     "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
+        self.url_label =    "https://www.metal-archives.com/label/ajax-list/json/1/l/"
+        self.url_reviews =  "https://www.metal-archives.com/reviews/1/1/"
+        self.url_similar =  "https://www.metal-archives.com/band/ajax-recommendations/id/"
+        self.url_disc1 =    "https://www.metal-archives.com/band/discography/id/"
+        self.url_disc2 =    "/tab/all"
+        self.url_deta =     "https://www.metal-archives.com/bands/id/"
 
-        self.retries = yaml_conf['scraper']['RETRIES']
-        self.delay = yaml_conf['scraper']['DELAY']
-        self.batch_size = yaml_conf['scraper']['BATCH_SIZE']
+        self.retries =      10
+        self.delay =        0.3
+        self.batch_size =   1000
 
-        self.unwanted = yaml_conf['word_processing']['UNWANTED_GENRE_WORDS']
-
-        self.ytbackend = yaml_conf['website']['YOUTUBE_BACKEND']
+        self.ytbackend =    "SCRAPE"
+        # Backend for importing playlist data and embedding videos. Options: "YTDLP", "YTAPI" and "SCRAPE". 
+        # YTAPI: requires own API key, free key has limited free recourses per day
+        # YTDLP: No setup required and unlimited usage, same search results as YTAPI.
+        # SCRAPE: Best search results as it includes playlists and embeds them as a video list that automatically plays all videos. 
