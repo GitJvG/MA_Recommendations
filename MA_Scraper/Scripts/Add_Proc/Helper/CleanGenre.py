@@ -10,7 +10,8 @@ def basic_processing(df_series):
     df_series.loc[:] = df_series.str.replace(r'[^\x20-\x7E]|\(.*?\)', '', regex=True) # Remove non-ascii and everything in parenthesis
     df_series.loc[:] = df_series.str.replace(r'[;.]', ',', regex=True) # replaces semicolon and period with comma
 
-    unwanted_patterns = [re.escape(word) for word in env.unwanted]
+    unwanted_genre_words = ["influences", "earlier", "later", "early", "or", "mid", "late", "from", "elements", "music","ballad"]
+    unwanted_patterns = [re.escape(word) for word in unwanted_genre_words]
     combined_unwanted_regex = r'(?<!-)\s?\b(?:' + '|'.join(unwanted_patterns) + r')\b(?!-)'
     df_series.loc[:] = df_series.str.replace(combined_unwanted_regex, '', regex=True)
 
