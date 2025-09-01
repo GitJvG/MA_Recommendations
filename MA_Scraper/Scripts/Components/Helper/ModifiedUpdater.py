@@ -1,18 +1,12 @@
-from MA_Scraper.Scripts.utils import extract_url_id, get_last_scraped_date
+from MA_Scraper.Scripts.utils import extract_url_id, get_last_scraped_date, fetch
 from MA_Scraper.Env import Env
 from bs4 import BeautifulSoup
 import time
 from datetime import datetime, timedelta
-import requests
 import os
 import pandas as pd
 
 env = Env.get_instance()
-
-def make_request(url, params=None):
-    r = requests.get(url, params=params, headers=env.head, cookies=env.cook)
-    r.raise_for_status()
-    return r.json()
 
 def determine_urls_to_scrape(last_scraped_date, url_base):
     """Constructs urls for each yearmonth since last scraping"""
@@ -35,7 +29,7 @@ def fetch_bands_page(url, start=0, sEcho=1):
         'sSortDir_0': 'desc',
         '_': int(time.time() * 1000)
     }
-    return make_request(url, params=payload)
+    return fetch(url, params=payload, type='json')
 
 
 def Modified_Set(url, last_scraped_day=None, is_final_month=False, last_scraped_time=None):

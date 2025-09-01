@@ -1,5 +1,5 @@
 import time
-import requests
+import httpx
 from pandas import DataFrame
 import json
 import pandas as pd
@@ -16,11 +16,6 @@ label_letters = ['!', '"', '(', '%2E', '0', '1', '2', '3', '4', '5', '6', '7', '
          'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '|', '¡', 'ä', 'å', 'æ', 'é', 'ñ', 'ö', 'ü', 'ć', 'č', 'ş', 'š', 
          'ž', 'γ', 'ν', 'σ', 'φ', 'ω', 'а', 'б', 'в', 'г', 'д', 'ж', 'з', 'и', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ч', 
          'ш', 'і', 'آ', 'ව', 'อ', 'ᛉ', 'オ', 'コ', '六', '反', '古', '大', '天', '帝', '朱', '殺', '没', '酒', '金', '麦', 'ꔅ', '열', '토', ' 呪']
-
-def make_request(url, params=None):
-    r = requests.get(url, params=params, headers=env.head, cookies=env.cook)
-    r.raise_for_status()
-    return r.json()
 
 def parse_bands(data):
     data['namelink'] = data['namelink'].apply(lambda html: BeautifulSoup(html, 'html.parser'))
@@ -91,11 +86,11 @@ def scrape_json(url, letters=alphabet):
                             print('Max attempts reached, skipping this chunk.')
                             break
                         continue
-                    except requests.HTTPError as e:
+                    except httpx.HTTPError as e:
                         print(f"HTTP error occurred: {e}")
                         break
 
-        except requests.HTTPError as e:
+        except httpx.HTTPError as e:
             print(f"HTTP error occurred while fetching letter '{letter}': {e}")
             continue
 

@@ -1,5 +1,6 @@
 import json
-import os 
+import os
+import httpx
 project_root = os.path.abspath(os.path.dirname(__file__))
 
 config_yaml = os.path.join(project_root, 'config.yaml')
@@ -82,8 +83,10 @@ class Env:
         self.url_deta =     "https://www.metal-archives.com/bands/id/"
 
         self.retries =      10
-        self.delay =        0.3
+        self.delay =        0.4
         self.batch_size =   1000
+
+        self.client = httpx.Client(http2=True, headers=self.head, cookies=self.cook)
 
         self.ytbackend =    "SCRAPE"
         # Backend for importing playlist data and embedding videos. Options: "YTDLP", "YTAPI" and "SCRAPE". 

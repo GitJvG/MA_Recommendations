@@ -5,19 +5,15 @@ from threading import Lock
 from datetime import datetime
 import pytz
 from MA_Scraper.Env import Env
-import requests
 import time
+import httpx
 
 env = Env.get_instance()
 
 def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=env.head, type='text', params=None):
-    session = requests.Session()
-    session.headers.update(headers)
-    session.cookies.update(env.cook)
-    
     for attempt in range(retries):
         try:
-            response = session.get(url, params=params)
+            response = env.client.get(url, params=params)
             time.sleep(delay_between_requests)
 
             if response.status_code == 200:
@@ -26,11 +22,12 @@ def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=en
                 elif type == 'json':
                     return response.json()
             else:
-                #print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
+                if attempt % 2:
+                    print(f"Retrying {url} due to status code {response.status_code}. Attempt {attempt + 1}")
                 sleep_time = 2.5 ** attempt
                 time.sleep(sleep_time)
-        except requests.RequestException as e:
-
+                
+        except httpx.RequestError as e:
             print(f"Request failed for {url}: {e}. Attempt {attempt + 1}")
             time.sleep(2 ** attempt)
     
