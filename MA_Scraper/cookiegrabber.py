@@ -4,7 +4,7 @@ This script will fetch the required Metallum cookies from your personal browser 
 
 import sqlite3
 import json
-from MA_Scraper.Env import Env
+from MA_Scraper.Env import Env, config_json
 env = Env.get_instance()
 
 ## Set firefox profile sqlite database path in Config.json
@@ -13,8 +13,7 @@ conn = sqlite3.connect(cookie_db)
 cursor = conn.cursor()
 
 def metallum():
-    config_file = 'Config.json'
-    with open(config_file, "r") as f:
+    with open(config_json, "r") as f:
         config = json.load(f)
 
     domain = '.metal-archives.com'
@@ -30,7 +29,7 @@ def metallum():
         if cookie_name in config["cookies"]:
             config["cookies"][cookie_name] = cookie_value
 
-    with open(config_file, "w") as f:
+    with open(config_json, "w") as f:
         json.dump(config, f, indent=4)
 
 if __name__ == '__main__':
