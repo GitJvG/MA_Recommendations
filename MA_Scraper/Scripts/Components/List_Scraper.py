@@ -128,7 +128,7 @@ def Parrallel_Alphabetical_List_Scraper(url=env.url_band, letters=alphabet, batc
             letters = label_letters
     Parallel_processing(items_to_process=letters, 
                         batch_size=batch_size,
-                        output_files=output,
+                        output_files_info=output,
                         function=Alphabetical_List_Scraper,
                         url=url
     )
