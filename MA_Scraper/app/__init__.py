@@ -5,7 +5,7 @@ from MA_Scraper.Env import load_config, Env
 from sqlalchemy import inspect
 from MA_Scraper.app.db import Session, engine
 from MA_Scraper.app.CacheManager import CacheManager
-from MA_Scraper.app.models import Base, User
+from MA_Scraper.models import Base, User
 website_name = 'Amplifier Worship'
 backend = Env.get_instance().ytbackend
 

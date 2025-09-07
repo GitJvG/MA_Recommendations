@@ -78,7 +78,7 @@ def Update_list(output_path):
         print("Failed to retrieve the last scraped date.")
         return
     
-    metadata_df = pd.read_csv(env.meta)
+    metadata_df = pd.read_csv(env.meta.path, dtype=env.meta.mapping)
     if 'time' in metadata_df.columns and len(metadata_df) > 1:
         last_scraped_time = metadata_df['time'].iloc[1]
     else:
@@ -103,8 +103,8 @@ def Modified_based_list(target_path, complete = False, band_ids_to_process=None)
         band_ids_to_process = Update_list(target_path)
 
     if complete:
-        all_band_ids = set(pd.read_csv(env.band)['band_id'])
-        processed_set = set(pd.read_csv(target_path)['band_id'])
+        all_band_ids = set(pd.read_csv(env.band.path, env.band.mapping)['band_id'])
+        processed_set = set(pd.read_csv(target_path.path, target_path.mapping)['band_id'])
         missing_ids = all_band_ids - processed_set
         band_ids_to_process = list(set(band_ids_to_process).union(missing_ids))
 

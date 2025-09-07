@@ -47,7 +47,7 @@ def get_reviews(album_id):
         return None
     
 def main():
-    df = pd.read_csv(env.disc)
+    df = pd.read_csv(env.disc.path, dtype=env.disc.mapping)
     df = df[~df['review_count'].isnull()]
     album_ids = set(df['album_id'])
     existing_ids = set(pd.read_csv(env.reviews)['album_id'].drop_duplicates())

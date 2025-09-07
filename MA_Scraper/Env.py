@@ -1,10 +1,31 @@
 import json
 import os
 import httpx
+from MA_Scraper.models import BigInteger, Integer, Text, Numeric, Band, Similar_band, Discography, Member, Label
 project_root = os.path.abspath(os.path.dirname(__file__))
 
 config_yaml = os.path.join(project_root, 'config.yaml')
 config_json = os.path.join(project_root, 'config.json')
+
+type_mapping = {
+    BigInteger: 'Int64',
+    Integer: 'Int64',
+    Text: 'string',
+    Numeric: 'float64',
+}
+
+def pandas_dtype(model, type_mapping=type_mapping):
+    """Returns the pandas dtype dictionary for the SQLalchemy model"""
+    dtypes_dict = {}
+    for column in model.__table__.columns:
+        sqlalchemy_type = type(column.type)
+        
+        pandas_dtype = type_mapping.get(sqlalchemy_type)
+        if pandas_dtype:
+            dtypes_dict[column.name] = pandas_dtype
+        else:
+            print(f"Warning: No pandas dtype mapping found for SQLAlchemy type {sqlalchemy_type}. Column '{column.name}' will be inferred.")
+    return dtypes_dict
 
 def dpath(file):
     return os.path.join(project_root, 'Datasets', file)
@@ -20,6 +41,11 @@ def load_config(attribute, config_file=config_json):
     except Exception as e:
         print(f"Error loading {config_file}: {e}")
         raise
+
+class FileInfo:
+    def __init__(self, file_path, dtypes_mapping):
+        self.path = file_path
+        self.mapping = dtypes_mapping
 
 class Env:
     _instance = None
@@ -43,16 +69,16 @@ class Env:
             print(f"Error: {e}")
             raise
 
-        self.meta = dpath('metadata.csv')
-        self.simi = dpath('MA_Similar.csv')
-        self.disc = dpath('MA_Discog.csv')
-        self.band = dpath('MA_Bands.csv')
-        self.deta = dpath('MA_Details.csv')
-        self.memb = dpath('MA_Member.csv')
-        self.label = dpath('MA_Label.csv')
-        self.reviews = dpath('MA_Reviews.csv')
+        self.meta = FileInfo(dpath('metadata.csv'), None)
+        self.simi = FileInfo(dpath('MA_Similar.csv'), pandas_dtype(Similar_band))
+        self.disc = FileInfo(dpath('MA_Discog.csv'), pandas_dtype(Discography))
+        self.band = FileInfo(dpath('MA_Bands.csv'), None)
+        self.deta = FileInfo(dpath('MA_Details.csv'), None)
+        self.memb = FileInfo(dpath('MA_Member.csv'), pandas_dtype(Member))
+        self.label = FileInfo(dpath('MA_Label.csv'), pandas_dtype(Label))
+        self.reviews = FileInfo(dpath('MA_Reviews.csv'), None)
 
-        self.fband = dpath('band.csv')
+        self.fband = FileInfo(dpath('band.csv'), pandas_dtype(Band))
         self.genre = dpath('genre.csv')
         self.prefix = dpath('prefix.csv')
         self.genres = dpath('genres.csv')

@@ -1,6 +1,6 @@
 from sqlalchemy import func, select, case
 from MA_Scraper.app.db import Session
-from MA_Scraper.app.models import Band, Discography, Similar_band, Genre
+from MA_Scraper.models import Band, Discography, Similar_band, Genre
 from datetime import datetime
 
 def Top_albums(band_ids, picks_per_band=1):

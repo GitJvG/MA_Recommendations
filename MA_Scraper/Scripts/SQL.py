@@ -1,9 +1,9 @@
 """Script to push all data to SQL, currently fully cascades the existing DB out of convenience"""
 import pandas as pd
 from MA_Scraper.app.db import Session, engine
-from MA_Scraper.app.models import Base
-from MA_Scraper.app.models import Member, Similar_band, Discography, Band_logo, Band, Genre, Prefix, BandGenres, BandPrefixes, Theme, Themes, Candidates, Label
-from sqlalchemy import text, inspect
+from MA_Scraper.models import Base
+from MA_Scraper.models import Member, Similar_band, Discography, Band_logo, Band, Genre, Prefix, BandGenres, BandPrefixes, Theme, Themes, Candidates, Label
+from sqlalchemy import text, inspect, LargeBinary, TIMESTAMP
 from MA_Scraper.Env import Env
 import ast
 env = Env.get_instance()
@@ -14,11 +14,11 @@ def process_band_logo():
     return df
 
 dataframes = {
-    Member.__name__: lambda: pd.read_csv(env.memb, header=0, keep_default_na=False, na_values=['']),
-    Similar_band.__name__: lambda: pd.read_csv(env.simi, header=0),
-    Discography.__name__: lambda: pd.read_csv(env.disc, header=0, keep_default_na=False, na_values=['']),
+    Member.__name__: lambda: pd.read_csv(env.memb.path, dtype=env.memb.mapping, header=0, keep_default_na=False, na_values=['']),
+    Similar_band.__name__: lambda: pd.read_csv(env.simi.path, dtype=env.simi.mapping, header=0),
+    Discography.__name__: lambda: pd.read_csv(env.disc.path, dtype=env.disc.mapping, header=0, keep_default_na=False, na_values=['']),
     Band_logo.__name__: process_band_logo,
-    Band.__name__: lambda: pd.read_csv(env.fband, header=0, keep_default_na=False, na_values=['']),
+    Band.__name__: lambda: pd.read_csv(env.fband.path, dtype=env.fband.mapping, header=0, keep_default_na=False, na_values=['']),
     Genre.__name__: lambda: pd.read_csv(env.genre, header=0),
     Prefix.__name__: lambda: pd.read_csv(env.prefix, header=0),
     BandGenres.__name__: lambda: pd.read_csv(env.band_genres, header=0),
@@ -26,7 +26,7 @@ dataframes = {
     Theme.__name__: lambda: pd.read_csv(env.theme, header=0, keep_default_na=False, na_values=['']),
     Themes.__name__: lambda: pd.read_csv(env.themes, header=0),
     Candidates.__name__: lambda: pd.read_csv(env.candidates, header=0, keep_default_na=False, na_values=['']),
-    Label.__name__: lambda: pd.read_csv(env.label, header=0, keep_default_na=False, na_values=[''])
+    Label.__name__: lambda: pd.read_csv(env.label.path, dtype=env.label.mapping, header=0, keep_default_na=False, na_values=[''])
 }
 
 def backup_logo():
@@ -71,7 +71,10 @@ def refresh_tables(model=None):
 
     for model in models:
         df = dataframes.get(model.__name__)()
-        df.to_sql(model.__tablename__, con=engine, if_exists='append', index=False)
+        if model == Band_logo:
+            df.to_sql(model.__tablename__, con=engine, if_exists='append', index=False, dtype={'data': LargeBinary,'retrieved_at': TIMESTAMP(timezone=True)})
+        else:
+            df.to_sql(model.__tablename__, con=engine, if_exists='append', index=False)
 
     print("All tables refreshed successfully with constraints applied.")
 

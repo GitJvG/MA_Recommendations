@@ -17,7 +17,7 @@ def save_Bandthemes(anchor_groups):
     bridge_data = []
     theme_df = pd.read_csv(env.theme)
     # For each band, get the themes and their corresponding anchors
-    df = pd.read_csv(env.deta)
+    df = pd.read_csv(env.deta.path, dtype=env.deta.mapping)
     df['themes'] = df['themes'].dropna().apply(basic_processing)
     df = df.dropna(subset='themes')
 

@@ -1,5 +1,5 @@
 from MA_Scraper.app.db import Session
-from MA_Scraper.app.models import Band, Genre, Discography, \
+from MA_Scraper.models import Band, Genre, Discography, \
                         Theme, Users, Similar_band, Candidates, Member, Prefix, Label
 from MA_Scraper.Env import Env
 from MA_Scraper.Scripts.SQL import refresh_tables

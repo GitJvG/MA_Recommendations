@@ -3,7 +3,7 @@ import json
 from sqlalchemy import select
 from MA_Scraper.app import website_name
 from MA_Scraper.app.db import Session
-from MA_Scraper.app.models import Users
+from MA_Scraper.models import Users
 from datetime import datetime
 from MA_Scraper.app import cache_manager
 

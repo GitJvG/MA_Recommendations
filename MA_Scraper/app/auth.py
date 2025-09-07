@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from MA_Scraper.app.models import User
+from MA_Scraper.models import User
 from MA_Scraper.app.db import Session
 from MA_Scraper.app.utils import render_with_base
 

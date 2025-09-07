@@ -36,7 +36,7 @@ def fetch(url, retries=env.retries, delay_between_requests=env.delay, headers=en
 
 def get_last_scraped_date(file_path, filename):
     try:
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path.path, dtype=file_path.mapping)
         file_info = df[df['name'] == filename]
         if not file_info.empty:
             date_str = file_info.iloc[0]['date']
@@ -49,8 +49,8 @@ def extract_url_id(url):
     return url.split('/')[-1]
 
 def list_to_delete(target_path):
-    all_band_ids = set(pd.read_csv(env.band)['band_id'])
-    existing_set = set(pd.read_csv(target_path)['band_id'])
+    all_band_ids = set(pd.read_csv(env.band.path, dtype=env.band.mapping)['band_id'])
+    existing_set = set(pd.read_csv(target_path.path, dtype=target_path.mapping)['band_id'])
 
     band_ids_to_delete = list(existing_set-all_band_ids)
     return band_ids_to_delete
@@ -60,50 +60,50 @@ def unique_columns(path):
     unique_columns = getattr(env, f"{attribute_name}_key")
     return unique_columns
 
-def remove_dupes_and_deletions(file_path):
+def remove_dupes_and_deletions(file_path_info):
     """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
-    if file_path != env.meta:
-        filename = os.path.basename(file_path)
-        unique_cols = unique_columns(file_path)
+    if file_path_info.path != env.meta.path:
+        filename = os.path.basename(file_path_info.path)
+        unique_cols = unique_columns(file_path_info)
 
-        df = pd.read_csv(file_path, keep_default_na=False, na_values=[''])
+        df = pd.read_csv(file_path_info.path, dtype=file_path_info.mapping, keep_default_na=False, na_values=[''])
         df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
 
-        if file_path != env.label:
-            ids_to_delete = list_to_delete(file_path)
-            if file_path == env.simi:
+        if file_path_info.path != env.label.path:
+            ids_to_delete = list_to_delete(file_path_info)
+            if file_path_info.path == env.simi.path:
                 df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete) & ~df_updated['similar_id'].isin(ids_to_delete)]
             else:
                 df_updated = df_updated[~df_updated['band_id'].isin(ids_to_delete)]
-        df_updated.to_csv(file_path, mode='w', header=True, index=False)
+        df_updated.to_csv(file_path_info.path, mode='w', header=True, index=False)
     
         print(f"Duplicates removed and progress saved for {filename}.")
 
-def save_progress(new_data, output_file, final=False):
+def save_progress(new_data, output_files_info, final=False):
     df_new = pd.DataFrame(new_data)
 
-    if os.path.exists(output_file):
-        df_existing = pd.read_csv(output_file, nrows=1)
+    if os.path.exists(output_files_info.path):
+        df_existing = pd.read_csv(output_files_info.path, nrows=1, dtype=output_files_info.mapping)
         df_new = df_new[df_existing.columns]
         
-        df_new.to_csv(output_file, mode='a', header=False, index=False)
+        df_new.to_csv(output_files_info.path, mode='a', header=False, index=False)
 
         if final:
-            remove_dupes_and_deletions(output_file)
+            remove_dupes_and_deletions(output_files_info)
     else:
         # If the file doesn't exist, create it and write the new data
-        df_new.to_csv(output_file, mode='w', header=True, index=False)
+        df_new.to_csv(output_files_info.path, mode='w', header=True, index=False)
 
-    print(f"Progress saved to {output_file}")
+    print(f"Progress saved to {output_files_info.path}")
 
-def Parallel_processing(items_to_process, batch_size, output_files, function, **kwargs):
+def Parallel_processing(items_to_process, batch_size, output_files_info, function, **kwargs):
     """Wrapping function for multithreading, supports functions that have multiple dataframe outputs as long as multiple output_files are provided in order of returned dataframes."""
     # Ensure `output_files` is a list, even if only one file is passed
-    if not isinstance(output_files, list):
-        output_files = [output_files]
+    if not isinstance(output_files_info, list):
+        output_files_info = [output_files_info]
     
     # Initialize a list of lists, each one to collect data for an output file
-    all_data = [[] for _ in output_files]
+    all_data = [[] for _ in output_files_info]
     to_be_processed_count = len(items_to_process)
     processed_count = 0
     lock = Lock()
@@ -136,7 +136,7 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
                         print(f"Processed {processed_count}/{to_be_processed_count} items.")
                         for i, data_list in enumerate(all_data):
                             if data_list:
-                                save_progress(pd.concat(data_list, ignore_index=True), output_files[i])
+                                save_progress(pd.concat(data_list, ignore_index=True), output_files_info[i])
                                 data_list.clear()  # Clear data after saving
             except Exception as e:
                 print(f"Error processing item {itemid}: {e}")
@@ -144,11 +144,11 @@ def Parallel_processing(items_to_process, batch_size, output_files, function, **
     # Final save for any remaining data
     for i, data_list in enumerate(all_data):
         if data_list:
-            save_progress(pd.concat(data_list, ignore_index=True), output_files[i], final=True)
+            save_progress(pd.concat(data_list, ignore_index=True), output_files_info[i], final=True)
 
 def update_metadata(file_path=None, time=None):
     try:
-        metadata_df = pd.read_csv(env.meta)
+        metadata_df = pd.read_csv(env.meta.path, dtype=env.meta.mapping)
     except FileNotFoundError:
         metadata_df = pd.DataFrame()
 
@@ -171,18 +171,18 @@ def update_metadata(file_path=None, time=None):
         else:
             print('failed to add time, file does not exist or is empty')
 
-    metadata_df.to_csv(env.meta, index=False)
+    metadata_df.to_csv(env.meta.path, index=False)
 
     print('Metadata updated!')
     return metadata_df
 
-def Main_based_scrape(target_path):
+def Main_based_scrape(target_file_info):
     """Scrapes all ids existing in the main MA_bands, not in the target file"""
-    all_band_ids = set(pd.read_csv(env.band)['band_id'])
-    if not os.path.exists(target_path):
+    all_band_ids = set(pd.read_csv(env.band.path, dtype=target_file_info.mapping)['band_id'])
+    if not os.path.exists(target_file_info.path):
         band_ids_to_process = all_band_ids
     else:
-        processed_set = set(pd.read_csv(target_path)['band_id'])
+        processed_set = set(pd.read_csv(target_file_info.path, dtype=target_file_info.mapping)['band_id'])
         band_ids_to_process = list(all_band_ids - processed_set)
 
     return band_ids_to_process
@@ -196,11 +196,11 @@ def get_time():
     return time
 
 def get_common_date():
-    metadata = pd.read_csv(env.meta)
+    metadata = pd.read_csv(env.meta.path, dtype=env.meta.mapping)
     filtered_metadata = metadata[metadata['name'] != 'MA_Bands.csv']
     unique_dates = filtered_metadata['date'].dropna().unique()
     
     if len(unique_dates) == 1:
-        return env.simi
+        return env.simi.path
     else:
         return None
