@@ -55,19 +55,13 @@ def list_to_delete(target_path):
     band_ids_to_delete = list(existing_set-all_band_ids)
     return band_ids_to_delete
 
-def unique_columns(path):
-    attribute_name = next(key for key, value in vars(env).items() if value == path)
-    unique_columns = getattr(env, f"{attribute_name}_key")
-    return unique_columns
-
 def remove_dupes_and_deletions(file_path_info):
     """Removes duplicates from the CSV file based on unique columns defined in the file_paths dictionary, keeping last."""
     if file_path_info.path != env.meta.path:
         filename = os.path.basename(file_path_info.path)
-        unique_cols = unique_columns(file_path_info)
 
         df = pd.read_csv(file_path_info.path, dtype=file_path_info.mapping, keep_default_na=False, na_values=[''])
-        df_updated = df.drop_duplicates(subset=unique_cols, keep='last')
+        df_updated = df.drop_duplicates(subset=file_path_info.key, keep='last')
 
         if file_path_info.path != env.label.path:
             ids_to_delete = list_to_delete(file_path_info)

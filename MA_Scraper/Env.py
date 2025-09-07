@@ -8,10 +8,10 @@ config_yaml = os.path.join(project_root, 'config.yaml')
 config_json = os.path.join(project_root, 'config.json')
 
 type_mapping = {
-    BigInteger: 'Int64',
-    Integer: 'Int64',
+    BigInteger: 'int64[pyarrow]',
+    Integer: 'int64[pyarrow]',
     Text: 'string',
-    Numeric: 'float64',
+    Numeric: 'float64[pyarrow]',
 }
 
 def pandas_dtype(model, type_mapping=type_mapping):
@@ -43,9 +43,10 @@ def load_config(attribute, config_file=config_json):
         raise
 
 class FileInfo:
-    def __init__(self, file_path, dtypes_mapping):
+    def __init__(self, file_path, dtypes_mapping, key):
         self.path = file_path
         self.mapping = dtypes_mapping
+        self.key = key
 
 class Env:
     _instance = None
@@ -69,16 +70,25 @@ class Env:
             print(f"Error: {e}")
             raise
 
-        self.meta = FileInfo(dpath('metadata.csv'), None)
-        self.simi = FileInfo(dpath('MA_Similar.csv'), pandas_dtype(Similar_band))
-        self.disc = FileInfo(dpath('MA_Discog.csv'), pandas_dtype(Discography))
-        self.band = FileInfo(dpath('MA_Bands.csv'), None)
-        self.deta = FileInfo(dpath('MA_Details.csv'), None)
-        self.memb = FileInfo(dpath('MA_Member.csv'), pandas_dtype(Member))
-        self.label = FileInfo(dpath('MA_Label.csv'), pandas_dtype(Label))
-        self.reviews = FileInfo(dpath('MA_Reviews.csv'), None)
-
-        self.fband = FileInfo(dpath('band.csv'), pandas_dtype(Band))
+        self.meta = FileInfo(dpath('metadata.csv'), {
+                                                    'name': 'string',
+                                                    'date': 'string',
+                                                    'time': 'string'
+                                                    }, ['name'])
+        self.simi = FileInfo(dpath('MA_Similar.csv'), pandas_dtype(Similar_band), ['band_id', 'similar_id'])
+        self.disc = FileInfo(dpath('MA_Discog.csv'), pandas_dtype(Discography), ['album_id', 'band_id'])
+        self.band = FileInfo(dpath('MA_Bands.csv'), pandas_dtype(Band), ['band_id'])
+        self.deta = FileInfo(dpath('MA_Details.csv'), pandas_dtype(Band), ['band_id'])
+        self.memb = FileInfo(dpath('MA_Member.csv'), pandas_dtype(Member), ['band_id', 'member_id'])
+        self.label = FileInfo(dpath('MA_Label.csv'), pandas_dtype(Label), ['label_id'])
+        self.reviews = FileInfo(dpath('MA_Reviews.csv'), {
+                                                        'album_id': 'int64[pyarrow]',
+                                                        'review_id': 'int64[pyarrow]',
+                                                        'title': 'string',
+                                                        'username': 'string',
+                                                        'review_text': 'string'
+                                                        }, ['album_id', 'review_id'])
+        self.fband = FileInfo(dpath('band.csv'), pandas_dtype(Band), ['band_id'])
         self.genre = dpath('genre.csv')
         self.prefix = dpath('prefix.csv')
         self.genres = dpath('genres.csv')
@@ -89,15 +99,6 @@ class Env:
         self.dim_theme_dict = dpath('Temp/DIM_Theme_Dict.pkl')
         self.themes = dpath('themes.csv')
         self.candidates = dpath('candidates.csv')
-
-        self.meta_key = ['name']
-        self.simi_key = ['band_id', 'similar_id']
-        self.disc_key = ['album_id', 'band_id']
-        self.band_key = ['band_id']
-        self.deta_key = ['band_id']
-        self.memb_key = ['band_id', 'member_id']
-        self.label_key = ['label_id']
-        self.reviews_key = ['album_id', 'review_id']
 
         self.url_modi =     "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
         self.url_band =     "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
