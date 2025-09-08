@@ -14,19 +14,19 @@ def process_band_logo():
     return df
 
 dataframes = {
-    Member.__name__: lambda: pd.read_csv(env.memb.path, dtype=env.memb.mapping, header=0, keep_default_na=False, na_values=['']),
+    Member.__name__: lambda: pd.read_csv(env.memb.path, dtype=env.memb.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
     Similar_band.__name__: lambda: pd.read_csv(env.simi.path, dtype=env.simi.mapping, header=0),
-    Discography.__name__: lambda: pd.read_csv(env.disc.path, dtype=env.disc.mapping, header=0, keep_default_na=False, na_values=['']),
+    Discography.__name__: lambda: pd.read_csv(env.disc.path, dtype=env.disc.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
     Band_logo.__name__: process_band_logo,
-    Band.__name__: lambda: pd.read_csv(env.fband.path, dtype=env.fband.mapping, header=0, keep_default_na=False, na_values=['']),
+    Band.__name__: lambda: pd.read_csv(env.fband.path, dtype=env.fband.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
     Genre.__name__: lambda: pd.read_csv(env.genre, header=0),
     Prefix.__name__: lambda: pd.read_csv(env.prefix, header=0),
     BandGenres.__name__: lambda: pd.read_csv(env.band_genres, header=0),
     BandPrefixes.__name__: lambda: pd.read_csv(env.band_prefixes, header=0),
-    Theme.__name__: lambda: pd.read_csv(env.theme, header=0, keep_default_na=False, na_values=['']),
+    Theme.__name__: lambda: pd.read_csv(env.theme, header=0, keep_default_na=False, na_values=['', 'N/A']),
     Themes.__name__: lambda: pd.read_csv(env.themes, header=0),
-    Candidates.__name__: lambda: pd.read_csv(env.candidates, header=0, keep_default_na=False, na_values=['']),
-    Label.__name__: lambda: pd.read_csv(env.label.path, dtype=env.label.mapping, header=0, keep_default_na=False, na_values=[''])
+    Candidates.__name__: lambda: pd.read_csv(env.candidates, header=0, keep_default_na=False, na_values=['', 'N/A']),
+    Label.__name__: lambda: pd.read_csv(env.label.path, dtype=env.label.mapping, header=0, keep_default_na=False, na_values=['', 'N/A'])
 }
 
 def backup_logo():

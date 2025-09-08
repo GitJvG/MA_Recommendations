@@ -26,7 +26,7 @@ def refresh():
     ReSim(band_ids_to_scrape=band_ids_to_scrape)
     ReAlb(band_ids_to_scrape=band_ids_to_scrape)
     ReDet(band_ids_to_scrape=band_ids_to_scrape)
-    for csv in csv_files: update_metadata(csv)
+    for csv in csv_files: update_metadata(csv.path)
     update_metadata(time=time)
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ def remove_dupes_and_deletions(file_path_info):
     if file_path_info.path != env.meta.path:
         filename = os.path.basename(file_path_info.path)
 
-        df = pd.read_csv(file_path_info.path, dtype=file_path_info.mapping, keep_default_na=False, na_values=[''])
+        df = pd.read_csv(file_path_info.path, dtype=file_path_info.mapping, keep_default_na=False, na_values=['', 'N/A'])
         df_updated = df.drop_duplicates(subset=file_path_info.key, keep='last')
 
         if file_path_info.path != env.label.path:
