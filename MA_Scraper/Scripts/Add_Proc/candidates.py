@@ -114,11 +114,13 @@ def create_item_embeddings(item):
     return item_embeddings_dense, clustering_embeddings
 
 def cluster(array, disliked_embeddings_array, clustering_array, declustering_embeddings_array, weights, min_cluster_size):
-    min_cluster_size = int(len(array) * 0.05)
+    min_sample_size = int(np.log10(len(clustering_array))+0.5)
+    min_cluster_size = int(0.0375*len(clustering_array)+0.5)
+
     if len(array) < min_cluster_size:
         return [np.mean(array, axis=0)]
-    
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=15, min_samples=1, allow_single_cluster=True, prediction_data=True).fit(clustering_array)
+
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_sample_size, allow_single_cluster=True, prediction_data=True).fit(clustering_array)
     disliked_labels, strengths = hdbscan.approximate_predict(clusterer, declustering_embeddings_array)
     
     vectors = []
