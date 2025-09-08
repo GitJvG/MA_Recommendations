@@ -1,7 +1,7 @@
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, DeclarativeBase
 from flask_login import UserMixin
-from sqlalchemy import Column, Integer, String, BigInteger, Text, LargeBinary, DateTime, Boolean, Numeric, ForeignKey, ForeignKeyConstraint
+from sqlalchemy import Column, Integer, String, BigInteger, Text, LargeBinary, DateTime, Boolean, Numeric, SmallInteger, ForeignKey, ForeignKeyConstraint
 
 class Base(DeclarativeBase):
     pass
@@ -9,7 +9,7 @@ class Base(DeclarativeBase):
 class BandGenres(Base):
     __tablename__ = 'band_genres'
     band_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True)
-    id = Column(Integer, ForeignKey('genre.id'), primary_key=True)
+    id = Column(SmallInteger, ForeignKey('genre.id'), primary_key=True)
 
     band_obj = relationship('Band', viewonly=True)
     genre_item = relationship('Genre', viewonly=True)
@@ -17,7 +17,7 @@ class BandGenres(Base):
 class BandPrefixes(Base):
     __tablename__ = 'band_prefixes'
     band_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True)
-    id = Column(Integer, ForeignKey('prefix.id'), primary_key=True)
+    id = Column(SmallInteger, ForeignKey('prefix.id'), primary_key=True)
 
     band_obj = relationship('Band', viewonly=True)
     prefix_item = relationship('Prefix', viewonly=True)
@@ -25,28 +25,28 @@ class BandPrefixes(Base):
 class Themes(Base):
     __tablename__ = 'themes'
     band_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True)
-    theme_id = Column(Integer, ForeignKey('theme.theme_id'), primary_key=True)
+    theme_id = Column(SmallInteger, ForeignKey('theme.theme_id'), primary_key=True)
 
     band = relationship('Band', viewonly=True)
     theme = relationship("Theme", viewonly=True)
 
 class Genre(Base):
     __tablename__ = 'genre'
-    id = Column(Integer, primary_key=True)
+    id = Column(SmallInteger, primary_key=True)
     name = Column(Text, unique=True, nullable=False)
 
     bands = relationship('Band', secondary=BandGenres.__table__, back_populates='genres')
 
 class Prefix(Base):
     __tablename__ = 'prefix'
-    id = Column(Integer, primary_key=True)
+    id = Column(SmallInteger, primary_key=True)
     name = Column(Text, unique=True, nullable=False)
 
     bands = relationship('Band', secondary=BandPrefixes.__table__, back_populates='prefixes')
 
 class Theme(Base):
     __tablename__ = 'theme'
-    theme_id = Column(Integer, primary_key=True)
+    theme_id = Column(SmallInteger, primary_key=True)
     name = Column(Text, unique=True, nullable=False)
 
     bands = relationship('Band', secondary=Themes.__table__, back_populates='themes')
@@ -59,7 +59,7 @@ class Band(Base):
     genre = Column(Text, nullable=True)
     location = Column(Text, nullable=True)
     status = Column(Text, nullable=True)
-    year_formed = Column(Integer, nullable=True)
+    year_formed = Column(SmallInteger, nullable=True)
     theme = Column('themes', Text, nullable=True)
     label = Column(Text, nullable=True)
     label_id = Column(Integer, ForeignKey('label.label_id'), nullable=True)
@@ -85,10 +85,10 @@ class Discography(Base):
     album_id = Column(Integer, primary_key=True, nullable=False)
     name = Column( Text, nullable=False)
     type = Column(Text, nullable=True)
-    year = Column(Integer, nullable=True)
+    year = Column(SmallInteger, nullable=True)
     reviews = Column(Text, nullable=True)
-    review_count = Column(Integer, nullable=True)
-    review_score = Column(Integer, nullable=True)
+    review_count = Column(SmallInteger, nullable=True)
+    review_score = Column(SmallInteger, nullable=True)
 
     band = relationship(Band, back_populates="discography_items")
 
@@ -96,7 +96,7 @@ class Similar_band(Base):
     __tablename__ = 'similar_band'
     band_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True)
     similar_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True)
-    score = Column(Integer, nullable=True)
+    score = Column(SmallInteger, nullable=True)
 
     source_band = relationship(Band, foreign_keys=[band_id], back_populates="outgoing_similarities")
     similar_band = relationship(Band, foreign_keys=[similar_id], back_populates="incoming_similarities")
@@ -136,7 +136,7 @@ class User(Base, UserMixin):
     username = Column(String(80), unique=True, nullable=False)
     email = Column(String(120), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
-    birthyear = Column(Integer, nullable=False)
+    birthyear = Column(SmallInteger, nullable=False)
     gender = Column(String(10), nullable=False)
     nationality = Column(String(50), nullable=False)
     genre1 = Column(String(50), nullable=False)
@@ -176,7 +176,7 @@ class Candidates(Base):
     __tablename__ = 'candidates'
     user_id = Column(Integer, ForeignKey('user.id'), primary_key=True, nullable=False)
     band_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True, nullable=False)
-    cluster_id = Column(Integer, nullable=False)
+    cluster_id = Column(SmallInteger, nullable=False)
     score = Column(Numeric, nullable=True)
     
     user = relationship(User, back_populates="candidate_bands_link")

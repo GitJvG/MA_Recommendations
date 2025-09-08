@@ -9,7 +9,7 @@ import ast
 env = Env.get_instance()
 
 def process_band_logo():
-    df = pd.read_csv(env.band_logo, header=0)
+    df = pd.read_csv(env.band_logo.path, dtype=env.band_logo.mapping, header=0)
     df.loc[:, 'data'] = df['data'].apply(string_representation_to_bytes)
     return df
 
@@ -37,7 +37,7 @@ def backup_logo():
         if df_logo_backup is None or df_logo_backup.empty:
             print(f"Info: No existing data in {Band_logo.__tablename__} to back up.")
         else:
-            df_logo_backup.to_csv(env.band_logo, index=False)
+            df_logo_backup.to_csv(env.band_logo.path, index=False)
             print(f"Backup of {Band_logo.__tablename__} complete ({len(df_logo_backup)} rows).")
 
 def string_representation_to_bytes(byte_string_repr):

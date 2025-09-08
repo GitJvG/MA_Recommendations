@@ -1,7 +1,7 @@
 import json
 import os
 import httpx
-from MA_Scraper.models import BigInteger, Integer, Text, Numeric, Band, Similar_band, Discography, Member, Label
+from MA_Scraper.models import BigInteger, Integer, Text, Numeric, SmallInteger, DateTime, LargeBinary, Band, Similar_band, Discography, Member, Label, Band_logo
 project_root = os.path.abspath(os.path.dirname(__file__))
 
 config_yaml = os.path.join(project_root, 'config.yaml')
@@ -9,9 +9,12 @@ config_json = os.path.join(project_root, 'config.json')
 
 type_mapping = {
     BigInteger: 'int64[pyarrow]',
-    Integer: 'int64[pyarrow]',
+    Integer: 'int32[pyarrow]',
     Text: 'string',
     Numeric: 'float64[pyarrow]',
+    SmallInteger: 'int16[pyarrow]',
+    DateTime: 'string',
+    LargeBinary: 'string'
 }
 
 def pandas_dtype(model, type_mapping=type_mapping):
@@ -92,7 +95,7 @@ class Env:
         self.genre = dpath('genre.csv')
         self.prefix = dpath('prefix.csv')
         self.genres = dpath('genres.csv')
-        self.band_logo = dpath('band_logo.csv')
+        self.band_logo = FileInfo(dpath('band_logo.csv'), pandas_dtype(Band_logo), [None])
         self.band_genres = dpath('band_genres.csv')
         self.band_prefixes = dpath('band_prefixes.csv')
         self.theme = dpath('theme.csv')
