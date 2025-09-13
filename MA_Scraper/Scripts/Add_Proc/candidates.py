@@ -93,7 +93,7 @@ def create_user():
     return users_preference
 
 def create_item_embeddings(item):
-    multi_valued_categorical_cols = ['genre_names', 'prefix_names']
+    multi_valued_categorical_cols = ['prefix_names']
     single_value_categorical_cols = ['country', 'status', 'b_label']
     numerical_columns = ['score', 'review_count', 'median_score']
 
@@ -101,9 +101,9 @@ def create_item_embeddings(item):
     final_categorical_df = pd.get_dummies(processed_df, columns=single_value_categorical_cols, dtype=int)
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
-    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed']]
+    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed','genre_names']]
     categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
-    clustering_columns = [col for col in processed_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed'] and col not in single_value_categorical_cols]
+    clustering_columns = [col for col in processed_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed','genre_names'] and col not in single_value_categorical_cols]
     clustering_embeddings = processed_df[clustering_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([
@@ -280,7 +280,7 @@ def main(min_cluster_size=None, k=800):
             candidate_list.append({'user_id': user_id, 'band_id': candidate, 'cluster_id': cluster_id, 'score': score})
 
     candidate_df = pd.DataFrame(candidate_list)
-    candidate_df.to_csv(env.candidates, index=False)
+    candidate_df.to_csv(env.candidates.path, index=False)
 
 def complete_refresh(min_cluster_size=None, k=400):
     main(min_cluster_size, k)

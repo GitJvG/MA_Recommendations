@@ -44,18 +44,18 @@ def create_bridge_csv(processed_df, dim_df, output_file_path, item_type_label):
         print(f"Bridge data for '{item_type_label}' created with {len(bridge_df)} rows (saved to {output_file_path}).")
 
 def main():
-    df = pd.read_csv(env.band.path, dtype=env.band.mapping)
+    df = pd.read_csv(env.band.path, dtype=env.band.mapping, engine='pyarrow')
     processed_df = process_genres(df['genre'])
     processed_df['band_id'] = processed_df['row_id'].map(df['band_id'])
 
     dim_output_paths = {
-        'genre': env.genre,
-        'prefix': env.prefix,
+        'genre': env.genre.path,
+        'prefix': env.prefix.path,
     }
 
     bridge_output_paths = {
-        'genre': env.band_genres,
-        'prefix': env.band_prefixes,
+        'genre': env.band_genres.path,
+        'prefix': env.band_prefixes.path,
     }
 
     for item_type, output_path in dim_output_paths.items():

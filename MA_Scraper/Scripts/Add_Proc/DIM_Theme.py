@@ -11,11 +11,11 @@ def save_DIM_themes(anchor_groups):
         'theme_id': range(1, len(anchors) + 1),
         'name': anchors
     })
-    theme.to_csv(env.theme, index=False)
+    theme.to_csv(env.theme.path, index=False)
 
 def save_Bandthemes(anchor_groups):
     bridge_data = []
-    theme_df = pd.read_csv(env.theme)
+    theme_df = pd.read_csv(env.theme.path, dtype=env.theme.mapping, engine='pyarrow')
     # For each band, get the themes and their corresponding anchors
     df = pd.read_csv(env.deta.path, dtype=env.deta.mapping)
     df['themes'] = df['themes'].dropna().apply(basic_processing)
@@ -43,7 +43,7 @@ def save_Bandthemes(anchor_groups):
         bridge_data.extend(list(band_anchors))
 
     themes_df = pd.DataFrame(bridge_data, columns=['band_id', 'theme_id'])
-    themes_df.to_csv(env.themes, index=False)
+    themes_df.to_csv(env.themes.path, index=False)
 
 def main():
     with open(env.dim_theme_dict, 'rb') as pickle_file:

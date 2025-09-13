@@ -1,7 +1,8 @@
 import json
 import os
 import httpx
-from MA_Scraper.models import BigInteger, Integer, Text, Numeric, SmallInteger, DateTime, LargeBinary, Band, Similar_band, Discography, Member, Label, Band_logo
+from MA_Scraper.models import BigInteger, Integer, Text, Numeric, SmallInteger, DateTime, LargeBinary, Band, Similar_band, \
+    Discography, Member, Label, Band_logo, Genre, Prefix, BandPrefixes, BandGenres, Theme, Themes, Candidates
 project_root = os.path.abspath(os.path.dirname(__file__))
 
 config_yaml = os.path.join(project_root, 'config.yaml')
@@ -14,7 +15,7 @@ type_mapping = {
     Numeric: 'float64[pyarrow]',
     SmallInteger: 'int16[pyarrow]',
     DateTime: 'string',
-    LargeBinary: 'string'
+    LargeBinary: 'object'
 }
 
 def pandas_dtype(model, type_mapping=type_mapping):
@@ -92,16 +93,15 @@ class Env:
                                                         'review_text': 'string'
                                                         }, ['album_id', 'review_id'])
         self.fband = FileInfo(dpath('band.csv'), pandas_dtype(Band), ['band_id'])
-        self.genre = dpath('genre.csv')
-        self.prefix = dpath('prefix.csv')
-        self.genres = dpath('genres.csv')
+        self.genre = FileInfo(dpath('genre.csv'), pandas_dtype(Genre), [None])
+        self.prefix = FileInfo(dpath('prefix.csv'), pandas_dtype(Prefix), [None])
         self.band_logo = FileInfo(dpath('band_logo.csv'), pandas_dtype(Band_logo), [None])
-        self.band_genres = dpath('band_genres.csv')
-        self.band_prefixes = dpath('band_prefixes.csv')
-        self.theme = dpath('theme.csv')
+        self.band_genres = FileInfo(dpath('band_genres.csv'), pandas_dtype(BandGenres), [None])
+        self.band_prefixes = FileInfo(dpath('band_prefixes.csv'), pandas_dtype(BandPrefixes), [None])
+        self.theme = FileInfo(dpath('theme.csv'), pandas_dtype(Theme), [None])
         self.dim_theme_dict = dpath('Temp/DIM_Theme_Dict.pkl')
-        self.themes = dpath('themes.csv')
-        self.candidates = dpath('candidates.csv')
+        self.themes = FileInfo(dpath('themes.csv'), pandas_dtype(Themes), [None])
+        self.candidates = FileInfo(dpath('candidates.csv'), pandas_dtype(Candidates), [None])
 
         self.url_modi =     "https://www.metal-archives.com/archives/ajax-band-list/by/modified/selection/"
         self.url_band =     "https://www.metal-archives.com/browse/ajax-letter/json/1/l/"
@@ -113,7 +113,7 @@ class Env:
         self.url_deta =     "https://www.metal-archives.com/bands/id/"
 
         self.retries =      10
-        self.delay =        0.4
+        self.delay =        0.45
         self.batch_size =   1000
 
         self.client = httpx.Client(http2=True, headers=self.head, cookies=self.cook)

@@ -9,24 +9,24 @@ import ast
 env = Env.get_instance()
 
 def process_band_logo():
-    df = pd.read_csv(env.band_logo.path, dtype=env.band_logo.mapping, header=0)
+    df = pd.read_csv(env.band_logo.path, dtype=env.band_logo.mapping, engine='pyarrow', header=0)
     df.loc[:, 'data'] = df['data'].apply(string_representation_to_bytes)
     return df
 
 dataframes = {
-    Member.__name__: lambda: pd.read_csv(env.memb.path, dtype=env.memb.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
-    Similar_band.__name__: lambda: pd.read_csv(env.simi.path, dtype=env.simi.mapping, header=0),
-    Discography.__name__: lambda: pd.read_csv(env.disc.path, dtype=env.disc.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
+    Member.__name__: lambda: pd.read_csv(env.memb.path, dtype=env.memb.mapping, engine='pyarrow', header=0, keep_default_na=False, na_values=['', 'N/A']),
+    Similar_band.__name__: lambda: pd.read_csv(env.simi.path, dtype=env.simi.mapping, engine='pyarrow', header=0),
+    Discography.__name__: lambda: pd.read_csv(env.disc.path, dtype=env.disc.mapping, engine='pyarrow', header=0, keep_default_na=False, na_values=['', 'N/A']),
     Band_logo.__name__: process_band_logo,
-    Band.__name__: lambda: pd.read_csv(env.fband.path, dtype=env.fband.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
-    Genre.__name__: lambda: pd.read_csv(env.genre, header=0),
-    Prefix.__name__: lambda: pd.read_csv(env.prefix, header=0),
-    BandGenres.__name__: lambda: pd.read_csv(env.band_genres, header=0),
-    BandPrefixes.__name__: lambda: pd.read_csv(env.band_prefixes, header=0),
-    Theme.__name__: lambda: pd.read_csv(env.theme, header=0, keep_default_na=False, na_values=['', 'N/A']),
-    Themes.__name__: lambda: pd.read_csv(env.themes, header=0),
-    Candidates.__name__: lambda: pd.read_csv(env.candidates, header=0, keep_default_na=False, na_values=['', 'N/A']),
-    Label.__name__: lambda: pd.read_csv(env.label.path, dtype=env.label.mapping, header=0, keep_default_na=False, na_values=['', 'N/A'])
+    Band.__name__: lambda: pd.read_csv(env.fband.path, dtype=env.fband.mapping, engine='pyarrow', header=0, keep_default_na=False, na_values=['', 'N/A']),
+    Genre.__name__: lambda: pd.read_csv(env.genre.path, dtype=env.genre.mapping, header=0),
+    Prefix.__name__: lambda: pd.read_csv(env.prefix.path, dtype=env.prefix.mapping, header=0),
+    BandGenres.__name__: lambda: pd.read_csv(env.band_genres.path, dtype=env.band_genres.mapping, engine='pyarrow', header=0),
+    BandPrefixes.__name__: lambda: pd.read_csv(env.band_prefixes.path, dtype=env.band_prefixes.mapping, engine='pyarrow', header=0),
+    Theme.__name__: lambda: pd.read_csv(env.theme.path, dtype=env.theme.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
+    Themes.__name__: lambda: pd.read_csv(env.themes.path, dtype=env.themes.mapping, engine='pyarrow', header=0),
+    Candidates.__name__: lambda: pd.read_csv(env.candidates.path, dtype=env.candidates.mapping, header=0, keep_default_na=False, na_values=['', 'N/A']),
+    Label.__name__: lambda: pd.read_csv(env.label.path, dtype=env.label.mapping, engine='pyarrow', header=0, keep_default_na=False, na_values=['', 'N/A'])
 }
 
 def backup_logo():
